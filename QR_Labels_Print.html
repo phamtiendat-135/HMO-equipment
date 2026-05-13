@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Nhãn QR - Trang thiết bị Khoa KTTV&HDH</title>
+<style>
+@page { size: A4; margin: 10mm; }
+@media print { 
+  .no-print { display: none !important; }
+  .room-section { page-break-before: always; }
+  .room-section:first-of-type { page-break-before: auto; }
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: Arial, sans-serif; background: #f5f5f5; color: #333; }
+.header { background: #2F5496; color: white; padding: 20px 30px; text-align: center; }
+.header h1 { font-size: 20px; font-weight: 500; }
+.header p { font-size: 13px; opacity: 0.8; margin-top: 4px; }
+.instructions { background: #fff3cd; border: 1px solid #ffc107; padding: 15px 20px; margin: 15px; border-radius: 8px; font-size: 13px; line-height: 1.6; }
+.instructions strong { color: #856404; }
+.stats { display: flex; gap: 12px; padding: 15px 15px 0; flex-wrap: wrap; }
+.stat-card { flex: 1; min-width: 120px; background: white; border-radius: 8px; padding: 12px 16px; text-align: center; border: 1px solid #e0e0e0; }
+.stat-card .num { font-size: 24px; font-weight: 700; color: #2F5496; }
+.stat-card .lbl { font-size: 11px; color: #888; margin-top: 2px; }
+.room-section { margin: 15px; }
+.room-title { background: #2F5496; color: white; padding: 10px 16px; border-radius: 8px 8px 0 0; font-size: 15px; font-weight: 500; display: flex; justify-content: space-between; align-items: center; }
+.room-title .count { background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 12px; font-size: 12px; }
+.qr-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; background: white; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px; }
+.qr-card { padding: 12px; border: 0.5px dashed #ccc; display: flex; gap: 10px; align-items: center; min-height: 110px; }
+.qr-card img { width: 80px; height: 80px; flex-shrink: 0; }
+.qr-info { flex: 1; min-width: 0; }
+.qr-code-text { font-size: 11px; font-weight: 700; font-family: monospace; color: #2F5496; margin-bottom: 3px; letter-spacing: 0.5px; }
+.qr-name { font-size: 11px; line-height: 1.3; color: #333; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.qr-meta { font-size: 9px; color: #888; }
+.cat-badge { display: inline-block; font-size: 9px; font-weight: 600; padding: 1px 6px; border-radius: 3px; color: white; margin-right: 4px; }
+.cut-line { border: none; border-top: 1px dashed #ccc; margin: 0; }
+.footer { text-align: center; padding: 15px; font-size: 11px; color: #999; }
+</style>
+</head>
+<body>
+<div class="header no-print">
+  <h1>NHÃN MÃ QR - TRANG THIẾT BỊ KHOA KTTV&HDH</h1>
+  <p>Trường Đại học Khoa học Tự nhiên — ĐHQGHN | Tạo ngày 30/04/2026</p>
+</div>
+
+<div class="stats no-print">
+  <div class="stat-card"><div class="num">54</div><div class="lbl">Thiết bị có QR</div></div>
+  <div class="stat-card"><div class="num">5</div><div class="lbl">Phòng / Khu vực</div></div>
+  <div class="stat-card"><div class="num">19.2 tỷ</div><div class="lbl">Tổng giá trị</div></div>
+</div>
+<div class="instructions no-print">
+  <strong>Hướng dẫn in:</strong> Nhấn Ctrl+P → chọn khổ A4 → bỏ tick Header/Footer → In. 
+  Mỗi phòng sẽ bắt đầu ở trang mới. Cắt theo đường nét đứt và dán lên thiết bị.
+  <br><strong>Lưu ý:</strong> Với thiết bị quan trắc hiện trường (OBS), nên ép plastic nhãn QR trước khi dán.
+</div>
+
+<div class="room-section">
+  <div class="room-title">
+    <span>Phòng 204 - T3 (Quan trắc & Thí nghiệm HDH)</span>
+    <span class="count">14 thiết bị</span>
+  </div>
+  <div class="qr-grid">
+
+    
+        <div class="qr-name">Máy chủ quản lý và điều khiển Super Micro</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#2F5496">HPC</span>
+          2012 | P204-T3
+        
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACYUlEQVR4nO2ZTYobQQxGn1INs5QhB8hR1FfLkXKD8lFygIB6aSjzZaGamaw8JgmxCyK8cWnRrwvp00+buGXXTzfd8N//p/7DzGzjbKczzN/VdjMz25+A7wNThqSmjkvqygBwNUkZ49F89/BDtKQlEFLHNVwtaQvwv/kD7/UKHLb9++f/pv+d9GKMDfNv43Ny7P/o+X+DX7BxxtNAx0nfbZwCF8fj+e7wn80M4uX73jI2YiNekquZnZ6C77apLGMA3gFcEHX89Plb+kNTHzCI4X14H9ThEvyUYA4Y3ltGyxggafgK/OrKaBlVCPAuqerX4Pn1H2VU8ODCBbSM4cIXqb/quFpO/ll51QGWuH+p5YyiGUKgjOGL6I9ESY33QbSMJgFTjh7Nd0/9auoXs5YAwysX+kY8Cd9t08zW2XYCFU4tgyX0M2sE6LhGyakEMdP50Xx38WtqjiQlEFWIF9Gf3jIGoaRlSH24YFa0FfjVqoS5apbEe1MvIVqFX+/BQ6lonazA32fMu+bf11xeQf+r/9EAYFT/T1XhVeK/v6k9xPCu/KWRfjTfPfrZpOp2eMVuEqv0PxlTbTJqhHnr4laI/0/AxfaK/83FsV9PKM9Ay+fgu2UbUJsTvuR1Mzw3nafvx+P57t4/0Gr5WcuHDCUrzL+v+2fvlxN2oiVNX4GN2I79Cfg+sLl/rm0tUV1Eq/tfIH/f988VPNWIDoAl+p93v53O47Dh/WL7i3pLONaIn3n/qm8WVC2oKWaJ+5c63q9mHHutQK9fvnKY8jn4blr1zLWzqhGsvXVEC9y//f9++lD/T3XaCWce+KV8AAAAAElFTkSuQmCC" alt="HMO-HPC-7302">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-HPC-7302</div>
+        <div class="qr-name">Máy chủ quản lý và điều khiển Super Micro</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#2F5496">HPC</span>
+          2012 | P204-T3
+        </div>
+      </div>
+    </div>
+
+  </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACNklEQVR4nO2ZQWocQQxF31gNWWpu4KPIN8hZfQP5KDmAQbM0aPhZqOxAFo4hIeMCF8Mw3VrMb9XX1y/1Sby3rnfvhuEr/ndxVAAmWc1lmNI02xJ9a3wfiIckeHo5h6QDGq5nTFJ9CnzvL1VAmNSeptSsCiusPn/+j7df356/X0/gdTQnr+Nz4Psw/qeXA3s+24+Hl/Mjl4f/9P//Ar/guDwA1zPX+8cpZFxcbo/vo/pT8dsH2EF/0K+VEA2qaF+3NsBf0Z5WYUop22VKFfMIG+CXbMFWu5rAswlc2kA/kdSEKYc5ViGlJKD34H/i2T7fktKUEKrYhD9pFbh6CAMqGnBtkn+ZJAlPKZvhT+LaRD/TCpNMMqUVq5aJHfwPkqymiwUMbRjx2YT/emu4axcq8MQT3wP/1CyePXeKJsZXb4C/aGKdVojXdqAm9tCfoj2nCkxpS05TI6q3xvch/ngO89tziScxQrQD/tHM5R9US5HGBW2AvwKXSbhW5Sqno+2Cfwxbew5/8JxC3kP/63X44yvnVkwtb+Kfs0ESxMh+u6Z4N9H/mf/kMgyuuWQb/zOeU6bE04o3IdpDP2tZ6DGf40WBffI/A0NmYKgKPG3yvwH/77icTqfT4Xm9TzwPnlRcz2wyPxz9l1X0OgUL1+Tf9tD/pT/tuWbOnjOU26R+Y9yaKmb4M+U8I6Bt8Es9CXeZsomGXfrXGsGtMxfAjIN28T/A+J9e7SCBtQu3xven+Onr/elN4z8B5gNXPoj1ML0AAAAASUVORK5CYII=" alt="HMO-LAB-8374">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-LAB-8374</div>
+        <div class="qr-name">Máy tạo sóng</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#378ADD">LAB</span>
+          2021 | P204-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACMklEQVR4nO2ZUY7bMAxEn1YB+knfoEehb7bIzZij5Ab0v4LpB+2gKNBt0AU2EbCGvjwfHkgzQ1Ju4qPn9vYhDN/453CUAD0BlzQAE1bH4uPZ/B7AXRI4dm6tYcG26rp2SfkS/P6Jt7bCRdf32vZh59sCWzu9CL9HcAvsrKRfV7a151d//7P4trKtra1toUunL//+/+IoXVJXdIUkpQOSuqR8ff/e88f/WMAM+YOOZ4AUXcKip+8vn83vEf0MAB84JikwDVD6HPufrmRY9ERJVyi9K5RgM+y/oif9kBAwTKMkNId/HXyYhqm6iIFLgcUc+pEGdIUUY7eDHxKagn8Mi7thuwIcXMkc+VNS2Zc4xKNkDv2kD3zYUQbKy8k8+g9wSj91CtClWhPwT6Qo8dcJYOoloTn4e5Wtys9RyrdQMkn+qKePPUjLC1FamoR/SCrlS/q9kM2in0FJSEeEMkxKn8O/UjGvIFIyTFiMafQj8FFBVCmULgUwV/53xTjKLjimMQX/0rkFRy/Rk7LwJP5lQE+vRk6KruDeSz+b30P9/9F/Kn2Y7kHUJ/Dvjv9QnCzawmlbb8ulX1e2dlteht/fn6PtrBEs9rK7jzBz6B/oSb/PjKa6Apoj/+v+Lb3yX1mO9n0ueDa/B+f3fhQvjol4ov4HvPLzGATYJ/oJ9HPgdq7Nx84V/mN7n+X+v1qItlzaQrVwJxyYIT/f4NJaY1sBXd9vbb0tAO1nzPD/qH3/P30q/gsRrCyhmASx3wAAAABJRU5ErkJggg==" alt="HMO-LAB-8375">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-LAB-8375</div>
+        <div class="qr-name">Mô phỏng bãi biển bằng phẳng</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#378ADD">LAB</span>
+          2021 | P204-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACVklEQVR4nO2ZwW3cQAxF35i6Ux24FKqDlLTYktLBqBR3QB0DzOLnQMlHx4iBeAfInLT7D/oafX7+oZr4aD1ePoThP/41HCWAJcMFMQAXXq8lxnfz+wQekiAWdssd7xyb3jaTlE/B7494axvsyni8Chh+f6xwtOVJ+H0G9w67EnvbODbLf33/r+LHxnFrbWsrJi3//P5/i6MMSaZukknKAHRdz1C/e2uN48axcWwLWMZybI/W2voU/D5eOleHkLpJeLeM+vfp9x9lDIDAOy6p4xqgjBn8H2VYxvBu6kpMXRl1jc+w/0U743oRDNcoCU1Qv6WfkDRclkD97HifQT8v1bnausP+az3jEMfNkhnyA1If3t8L1tQhIJTM4j8A3st/uMSjZAb9UMof3sv8lZzJcw79I1XaD8vrLUBlCZtAPwvHD9jHwkBLIsBzYX+sP8cT8PtUfkssGYQlo5TvXckc/i9ZxrgawSCGd2XgfRL+XVIp/6rls5HN4Z/SICr5XBbKcCljhvqto0rHZdeDDBfexyz6SYBBKKNasDKkDszh/5dyKkVX24XANebgH6UWU78ehCrhOeq3cqZrwJkiEt6z9Hfz+9z8oVfaVMao4aF3XDZB/b4AbaW99rbSVpZjg93eNo72WJ+D34frHD9kVAo92y4xjf8ngOV5kIEYLsuY6PwrybKCXFQ51/5P45+EJWU4nImCSfLPOx54N92V0VoDTHeO7Xn4/QH3+6+1Pr7cy/zHcZtl/l/Dz+VobaUmDwsBzOGfCWDnzLDOL7IMfIr5efv//fRb8d/hEhPZoaFgFgAAAABJRU5ErkJggg==" alt="HMO-LAB-8376">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-LAB-8376</div>
+        <div class="qr-name">Bẫy trầm tích</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#378ADD">LAB</span>
+          2021 | P204-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACcUlEQVR4nO2ZQa7jOAxEHyMDWdI3+EeRbhbkZspRfANq2YCMmoXsP6v+E6CBiQU04ZW4cEEqFkuUiZ9iv/2Yhr/5P8ujAEhBd3VXB1z4OJbcP43vjXyWBPker/tmeKUVbSVJikvg+8+8WYFXb4/9S0D3575Cs+Ui+N7Je92/ngrSVmglxf/9/z/Nt0failmxlSQtl8P321BkSUmSapIUGThWYor6fZkZrSztQSsLpMhLK7uZrZfA93PojA7jCPCaIh+Ln8b3Dn86AB26S6q4OijyDPp/9C8F3WsKkqoiJ1UF+Az7r5qC0cWOg3D1QaEp6rc9IHeglXsAeej//vWcpX4BvHav/SiHfFLo+vuPgg7fBZtUIUNWMIn+DMNZ8YoLslTxqmAO/VHt5O717LkcztPrJPg1oB6YvQJJGt8E+CN3lyT8aMS40qDQBPhvQNrMzDoszfb1pc32FW2FVi6B78eQlCJ36OTj86rI+CT6qXqUwCCMq7v+7cifxvfO/nfXaFinhHKuzIA/SGfxDhXqrtGOZ+DPDfJu1ltZmqXA1py2omBpZRb/kyLjSjEql+EfcPUp+ldkvB4WSBWvY5aV5vA/N3jRyj1yUt3XYYfqmD+YzaD/J22G5vQxPPR6MOrT+N7ML17vga0srcArbYVm+3oZfL+Pw/REHtfGo+0eV5gZ+N/MzBY4ZobtsX/Ve7BAb9fn/+2cP7M0u28PxStt9mulwwz8uXHMn8HrvmIruOBlK0n1Evjey/9akZ6KbGZA0nMO/3xe2ztZqmP+pkCRZ9FPqY73F1sZFm4hMwf/v9+/8rdydj8c0Qz+0/6+n340/w8M7AQ9QG2aKwAAAABJRU5ErkJggg==" alt="HMO-LAB-8377">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-LAB-8377</div>
+        <div class="qr-name">Bộ cấp trầm tích</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#378ADD">LAB</span>
+          2021 | P204-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACY0lEQVR4nO2ZQa7bMAxEH78MZCkDPUCPwtws6JF6A/ko/wAF6GUABtOF7J9NkQZt8WMB5c6ahUcyNRzSJh7F7e0hDP/xv8VXM7OJZVptYoEFlpudzczsfAB+v8VdEkDVdYb1YnaeoEiKQ/B7HAoHL0EJSrjUqMqq/piv5vc07tR2mwFntenz3/+H+AfTJc1zWqx+zy/Bev6k9/8L/oIJpvoN0Drr3XJ2qlhfz+8JfDEz8PJ+OYVP+ISfgpuZzYfg9zjUIwCoDaAq8b58+Pvb9YcigSeetWVtWdUXx+Bfm6TOvISX8ARJWUfgr1bCqZLUVVQSVUVKjq//KFxqCsDpaROeOFUaoH4htV5tqbpXXjWAQc6/BF2Cupfoi1mH0J834Pa1TXD72m4zJSiSzQur3ez4/hNJPeGlxi771LbJ6av5PZX/QG09/4ESd1EagH8//EBSgtR2IdUg/PnQnN1IbIV4DP1RS1zh2vuXrAIv4YPovxRe1LJK4f3yFrUSPor/KZLU9ipMsn2IEfT/fmGzto/7m1UJo+hnUdvYdv+PJw6D5H943wLQv4KCu5F+Nb/n9HO7vB+0i8QY/mfrX/b+i6x7/Rol/8N78vczz55RsUOv5vfM/GSqYSzMkZNRw+r3Dfvxen7Pzx+KpOgt2FaOR+h/9/lz1XVedv//DZjwaT2+/3/b5s/rubxfgOtMrpcJkiWPwe9x3OfPauxGNAGG8D93/GrnXC1ru9r5pFYC1iHyZ4+qk8R6Pkmsl+zj9APx+3V0z1zUes/Y/19QWx9HHD5/6KWq3Hdx38sI/Zf9/3/6Uvwnf/8VJ1NdCSEAAAAASUVORK5CYII=" alt="HMO-LAB-8379">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-LAB-8379</div>
+        <div class="qr-name">Mười áp kế dạng ống</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#378ADD">LAB</span>
+          2021 | P204-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACUUlEQVR4nO2ZTY4aQQyFv0q1xNLcIEcxN0O5mTkKBxipejmS0cvCDZNNCMpIAyWNF9Cqt+jnkn+e3U3cs8uPuzB845/D0QDoigQspJAicQA8n83vAdwlATspgfXY2mGBLmm8BL/7puHgfdAH4FJgSlMf9DHF/Zf55WfUA2tbvv79n8VPuR6TU9uf0qTz4avf/5/4Aqj+7NcCWvc6t9w7Jtbn83sAP7XWwHfnYx++4Au+G1xaa/uX4HffVDYcwALAlHgdv3z+Vv2hS1iAp0VapKkOp+Df66ot0qIP78MTJKXNwL+6rSlxcCwkYepSTtB/0XAsNMBEhc3w8kgT9C+q4cLGf+u8CmAG/VPxH5I0Ni1Rh2mT1B8FeFekBXgf3iUgYY74V3RFFfxb2d9q6RT8B5WtwDV/kaIPZ4r6OdBwKSQl1APl0Sz8VZe/ZfEWORVCz+b3b9zi0g5pSljWAxZpscDufJxj/pL+KKFeydsVVYhe/v7R8L7Ff9Qsn9BvGfFsfo/wL9olnjfapmnq//A+yI+cpfIXfBL9o6RcoPS/Bh9C+tn8HtOfJdv8RrtLzKJ/hmPXagNp1/41T/xff2uKIdkyeob4XwBsLG+nnlyWho1Fpw17ez6/x/cPXVG5UJVHgznm3wG1fzYl3qVypA+fQ//U/nk97s4H4H1PrscFklO+Br/7dt0/e9fH8Fu9YAb9c8NPrG1ZW1q8t8NO0Qesh9fh9ze77f8l1TeLLvUSohPEfw1f6oqaGbd1ikXNZTPwh9pZWXnx4csM99++v58+Ff8NFZ4fGER1YyYAAAAASUVORK5CYII=" alt="HMO-LAB-8373">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-LAB-8373</div>
+        <div class="qr-name">Máng thực nghiệm</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#378ADD">LAB</span>
+          2021 | P204-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACRElEQVR4nO2ZTaobQQyEv349kGXPDXIUzc2MbyYfxTfoWQZkKgv1+IWEOIYs7IYnGgyjTXWrVPpxEY/s9vHQDV/+//OjDlA7ktQtgKZoGRaLV+N7Ar9Jqt2qvMqjOZikmtd5Nb5n/KVscPlRTuwnINqZfWMvy5vge2TL+G1OOxvOdY19+0zqV+N71r9v9XoqZSsrVVr+8L8a319t8F9e5cl5YB7+3/XHfjvAHPpzGJAhoHkGRdIE+FPzsWhOk+Q0BajbDO+ffgsuC+haFtB1+yaHC83fBN8Dk7x2wI5AEE0Btdsk+WtZcNUtLxKDSz4Df5AUkJ1DjHQwdavySd6fgMDUAatyMDB15tAfOc1pGgfLL3mdGfArmkdzySWpUyV15uG/VzlNtXOkLVXKMwH+juSZs6MQN9Wk0Bz4M3OJIwRJHnXm0B8p1Saa4hB/dcsuaAb8Xo/+WVI0ZSCyqE2A/7NgaQgpFk35ZQr8tdvoPAeRfCjqHPwRo/7m2JJC5MAc+t+Nz85/lF0wMp1fje8Z/c/mTfK8Qu1DSyfJX4LRM+Qt7uV4Fv5UeXDsD0cjl1d4f/wfwG1laV5Wysqyb3Cp14293Nb3wPfQxvahWzRl//ZrRZjg/fdSSlngW78swH66fT/XzgKxb2+A7x927J/HCks9MzrH+ffn/5jfa+dQ/jERT9L/3P1WVqSzupVSgKoz+/vz5/C3c25uaecMR+ynGfb/H+QIjy1cykq2cAsGzKGfHaDeBxYsmkZHOkH9Kl//n77U/xPFgSGwTvzKmwAAAABJRU5ErkJggg==" alt="HMO-OBS-6527">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-OBS-6527</div>
+        <div class="qr-name">Máy đo lưu lượng nước theo nguyên lý Doppler</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2012 | P204-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACY0lEQVR4nO2ZQYrkMAxFn0uBXio36KMoNyvqZq6j1A2U5YDDn4WTmoZhioZZVAwtDDFo8y1/SdZPEa9su7x0w4////woASxRBkQDXM37tUR7N75v4A9JloFXS5pXCEkmKc+P/wKUssC9EdscQPMb68JappPge2XT/vUKdwGPua3Ln6R+N77v+tfFHtdSljJj0vSX/934/mk7/3VYBjAU/++lFNZl6gssY1qXrZQynwLfazviXgFTNQmv/VIknT7+KKMB9MojqeJqHO3g3fi+gx+QqqlaYqrKMFUl+Ajx77AzmqsB0DeWMUL+7jxRRnNZAtGI5hWvY/BHAkxVqm1PhzgoNAT+2rw2QgmEqUK/EcaoPxKdLV6bC0KqeO3HOT3+C9CggSUfifI+EXos5bOeBd9Lk2QJvncuvAIm9XX6+KOkN1yI/grCZZ1CY+APwFQb0eeX40QMUn/2nG2udhR/ZfRLGQF/NclUTVVScz0b2Rj8kXrxP/JXEM2ljFHy1zJw2XGQ5rWvEfhzgdhm2rqwLh9JmcMeV0umdRlhftn9E+C37fOmvJeZUq59CjgLvn/bs1pa0l8OlvQUHiF/L4A9lsnVYJt3Oa7rD6Usp8D30pQhVal28aH5rsXhsjHyl22mzExQZqZ1wW/2WFjLNp8D30t7yj7N1ceuLyPM+fn/RX+WunjbK/9A829/QncJXYmSHv82yPxSygLgKjNlBhfcy4ypngLft/wBd+mmjFIKYLqxnr9+Hn6//SrXvqEPAut1BP3/AkgV4kO3MtOVh4kAxqifCWBPwYdnCxtCPy8//0/f6v8N39IDpRWhUJwAAAAASUVORK5CYII=" alt="HMO-OBS-6528">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-OBS-6528</div>
+        <div class="qr-name">Thiết bị định vị la bàn</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2012 | P204-T3
+        </div>
+      </div>
+    </div>
+
+    
+        <div class="qr-name">Thiết bị đo hang lượng kim loại nặng xách tay</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2013 | P204-T3
+        </div>
+      </div>
+    </div>
+
+    
+        <div class="qr-name">máy phân tích nồng độ dầu OCMA-310</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2013 | P204-T3
+        </div>
+      </div>
+    </div>
+
+    
+        <div class="qr-name">Máy đo độ đục và nồng độ chất rắn lơ lửng</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2013 | P204-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACW0lEQVR4nO2ZQWojQQxFX6UaZqm+QY6ivlnOlBuoj5IDDKiXhjJ/FmpndnFghrELpjCmaC386JJ+6ctNfLWuL1+G4X/8T+NHa60t0Nb9uu4c28IOtNZa256A727cJcE+8J6+wIDWti4pn4Lvbry1Dbzn3tZ9WIAP4GjLk/B9tZbfu59v/WPFchksFstz8H2bf78sdOgf22V959j+0e//DX7BcrztcFm4vr73BMDE8Xi+b8T31hrQ03+k94+35dh6cm2trU/B9/XSuaJLAx+gdOx8Oh7Nd58/fVj0ROldMUxdoWTYJPwKSUoHH6aBYzFwTEqfgf9klkLpPb02wGAK/qhPJU9terrSp8mfdEyjEgaUDMA0x/tP75IUmKQYeB0HJqbgV3Spf6poMkylpX2S+i3BhM+0ocRnjvxPB+/1LXWpp2OBBTYDf6mNYlicT5KBnzfCo/m+4b+2AQsOlJe5rv5DcV0ZT8F3ZykZFgPvSb+JP3YT1Ufzfev+tegSpmHnXQZeQjQDf2lmVM4rkdST6oIm4E+gOs84K1dR18Ek/Gerg6m6OCyqkOfQfwlTl0r/z0JOumKG/vkFdo42jk3JtW09ubwKuKw+h39ML8E8DZfVQQTT9D+h9FHMZSQVJURz6GfyWby3zK+Z9CzvX5JU5OlKx8p/TeEfb/Nni8trYLGwK7muTDI/pMS/J5VCmDDV++9T6P/Z+Uc5355eFzHMUr/lXwDnHKSc/nGO/vPmvKQYppq/1SBxBv9yy/9T88vFMCzqIGbgB07ZH+d1EMB5Co/muxdv//8/fWj8F/40MliDEOiYAAAAAElFTkSuQmCC" alt="HMO-OBS-8372">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-OBS-8372</div>
+        <div class="qr-name">Thiết bị đo sóng dòng chảy</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2021 | P204-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACa0lEQVR4nO2ZUYrcQAxEX28b5lO+wR5FvkGOtMzBAj1H2RuoPwMylY+2k0BgdkkIMw0RAzauD9d0q0pquYh7sb/cheE//nc4CoAa1PAqJWBKG9vi+Wh+n8BdEjjc6AVr9K0GVVI8Bb8P8VI2uCW+rw6kXekbvSxPwu9eLMfVGnZ14H3Nvv0U9aP5fRbvG30rZSsrVVp+w//1+/8UR+GSqlTVJCkcGE8UU+j3Vkqhb/S3pW8L1PClb3spZX0KfvdDZyQutSphbWyKpKdffxSeAA6eJqlhSlD4DP6PwhWuAGsKqprCq5oCbIb1V1NQw8+NIE3J+eTR/D7G+9uCf1vZVy4BOH3D2v56nUW/CVhLa3nIwc8Uev71R0FaS1wBeFUbWlYwh/8Mwqa0hglcakPLc/iPlHia6nD8H52ntUn4N6xhTdK4AerRUcyQP+FVLU1pRyHGVHX8ozn4j7Il1SBH5ltTMIf/HPnfEj9+1hQ+uqAZ+LfRPI8tGIlUg3GunID/LwWLw0JJk8Zx/tH8PrX+ASbpqGJpGuV4kvwReB5CHpXXpQbM4f/hmLBWw/Msu0dFnoZ/S8izltVgSHgG/b7Arb5vC17V9vUYx435QynbM/C7HyPbzxbU01TDhxHVCfT7ApSVS3BRKytL3/bXa33f6GVfn4Pf3dDZdubRQrdfKsIM+d9LKWXBLwFAf9tf2yVYIPss+a8ah/8rUHBoYRb/xOtQMcfwcEyEZvDPn5PafUG6ef9SIKHmjf7l66P5fRa3a5XGDXgNsr/NMP9/4TzClzGwxRMWHJjDPwOg/jiwMOTs2BTz8/L/++lD8e/NBBZ0L+6JYAAAAABJRU5ErkJggg==" alt="HMO-OBS-8380">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-OBS-8380</div>
+        <div class="qr-name">Thiết bị đo mực nước</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2021 | P204-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACTElEQVR4nO2ZQYrjQAxFX7UMvSzDHKCPIt8s5GaVo/QNVMuBCn8WcjyLodOBWSQFLQIx+Ztvl/T/t1LEvbq+3YXhB/8/HAWABaNqVA2gatQ8Fh/P5vcA7pLA3z/L0gu10TcLTFK8BL9v8VI2uPz+EFXAqGf6Ri/Li/C7V8v+XZvFZfzCPtfRt79D/Wx+j+L9RD8tfSsrJi3/4M/m92UpXJKpmSRJ4YAkkxRTzO+llEI/0belbwtY+NK3ayllfQl+90t7tQF5CtSWhyLp5Z8/Ch8AnvovNaoGKHwG/UfhFj5qk5oFpqZwU1NAneH5qwH7tAKQLmzhM8wvSp74qLIA8rpR2xz9IwHUliOc93JroSn4t1HbwBWAmxo4uIJJ9AdwqkZtVIFLjdry9xn4+6gtlVOSjuQ5Tf83CwdP56I2wKT8TMA/cgRkN8+lyrKF5uDvCmy/BUZ2fm0KJtEfWfihnCn+Cs8UNAP/plvnS8oUlEY2S/8chsUuoYwqhc8xv7fMbFLa1qiitjFL/4QD6b+ZmRWeoW4O/Q/A94ub7e6OPAl/ywhUWyaH3GXZTPmHlNDjLYYjSz+b38P5J8NPvgV4CpFNML87vkBZKStL36hn+9zo5bq+DL+va18/BHkKu+3ujvD6/f9GL6WUBSxYgH66frT3YIHRtxfg903t+7dwiz3LKdIOfBL9dEjy7EYg5UZoBv08cC8fzXRWeCkFMJ3pc/RPvrbnFjH3b5klZtFPqYGX9VJWMsItODCHfgaAHQsfDgubYn9efv4/fSr+B39xKhZSEkAWAAAAAElFTkSuQmCC" alt="HMO-OBS-8378">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-OBS-8378</div>
+        <div class="qr-name">Máy đo vận tốc nước</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2021 | P204-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACS0lEQVR4nO2ZUYobMRBEn6yBfGpusEfpuZnZm7WP4hv0fC5oqHy0JgRCnIWE2IJtDBbuD5c0Vd2lniIexXF5mIav/N/lUQDUQGE0daCJlo/F+rPxfSJvksAWbvVeaM6+KaiS4iXw/TFfyga3jzeBAb29HyvsZXkRfI9iGd/N4dZx7mvfN923//T//yq/b/W+lbKVlSpffsk/G99vQ2GSqlzyKiksFZHrGfR7K6WwX5f9yr4tUINl345SyvoS+B6HRnjH8hHQvIblry9//iisA1jHaJKcpt48iTQJfuvNe3MFVa6wKldAm+H85UAN69l8IRc1bAb9orABvqkGSaTenOZz8EcCqrw37yedTgpNgT+RWwq2ysHAFMxRfySApqQQmOQ0VzAJfzyRnz33dJ6z8D+sDs/gp2ypUn5mwH+24LPn0lSTQhPgv4Cxl1LKsbLs5VhvupdjRfeNfXsFfI9DUh/kUT+Lv8Jo09TP9M+DMD81shn4c55/WG6BJrDepLA59Cuvcprq2Ajp5fos/AljOAfG5SssTd0c9V/J9rSgo+1CzoJmwJ+w5bQkktcgJTyHfgMgJ2+5kRrww0s/G9+n/IM8ya+wtHBZiOo8+q15cx/M91TEHOc/zA+9Kf3bT1eY1+f/Jc1Pjn0A9uvx9l6DBfo+g//J+VtYHRJAQZ7/LPUTBviOMRwF0/ifgd9yBKowoMMk9/cz394/VstFFv++X2eY/18YIyz7FreyAqb7tmDAsb4Gvodxvv86Bz5Yb6phtCnm5+Xr/elT898B+P0sReUg4VcAAAAASUVORK5CYII=" alt="HMO-OTH-6532">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-OTH-6532</div>
+        <div class="qr-name">Bộ rung điện và dây dẫn</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#993556">OTH</span>
+          2012 | P204-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACb0lEQVR4nO2ZQW4bMQxFnyIBXnJu0KPQN8iRAt9Mc5TegLM0ION3wXGaTZ0ALeoREC6EGXPhP9LX56dUxKO4vTxMw3f+7/IoAGpQpSoNwITlsvh4Nr4v5F0SptvCtZRTAGt+juIQ+D7Nl3JmKwpqcF1QcFtgK+0g+L6St9620vCTelmocTR8f4p2f3Dw9Ue07fwb/H/4/3+BX9C212tDW6l4h7G9YmJ7Pr4v5NdSCnAKbzjQtnODWyllOQS+x6E9+rBe1QcOrvD89fD6icKrhHUFOVYJ0zDVmEH/7TKyiuUnAKCf5RTrdTkCvk9CEtZzCYb1GuQD+Azzv+MfOJb+wXMc1mfg/wswtnOzi2K9llKDaznX4BSwnQ+B77N8A4UD4LdlbXa5LdyWw+B7nN/OIy0Q3uzSLC1oVzCD/0ES+IAaXsOrusKr+oBhx+c/Cq+R/r8PcvQajk1Sv6SBK7Lspu33Gp4SOgH+SNg57YwPhVhT6H+Q/Jc6d/Gv4Qom4U+v6sn/XAVJCk8LNAN+gUtd4QMGPky5ELPwJydf0tjFX0mnOfxPOPu03/2/KddiFv4DmKr6Lj44OKYxgX6+AFUarNfylp17Vcf6YK1xDHwP433CFWDKFia5NAf/pSxbqTl5HJdCNAf/g91wqpM9rymJNAP/7+cPQQ1PFcqdq3x9Nr4v+P9SSmk4dml2adtb7twGk+xfl1T3VXCs7xU5fAb/8MLefFGWtSwrZOe4luUw+B5GOv+8uchj/2H9/SBrivkH2MopGHBdVsgrAB/b8c8fPvK/7yXAlMVrFv0nm/fdQqf+313cs/F9li/f96dPzf8CSIv+biNjdN0AAAAASUVORK5CYII=" alt="HMO-OTH-6530">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-OTH-6530</div>
+        <div class="qr-name">Giá lắp trên xuồng bằng vật liệu khử từ</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#993556">OTH</span>
+          2012 | P204-T3
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="room-section">
+  <div class="room-title">
+    <span>Phòng 206 - T3 (Hệ thống tính toán)</span>
+    <span class="count">18 thiết bị</span>
+  </div>
+  <div class="qr-grid">
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACR0lEQVR4nO2ZQWokMQxFn+OCWapuMEdR3Sz0zdxHyQ1Uy4CaPwu5wzAwmUBg0oYYLwq0qG/76+tbbuK9cXt6Nwzf8c/FUQD0QJKkBExYHYvnV+P7QNwlgW9c237FBuehoEuKh8D3z3hrB1wTBwfSLrd2cLbtQfB9JG7jtl8T+svBefT43///bPw8+svzdh5tp0vbw+H761C4pK4hjS4pHJBU3w+fv2/6439MYAX9mbIpCagjwEYdiqQF8IcngKcJkzQwpQ2Fr7H/4QnSUKCgayi8ayjAVtj/N6imBCBNaaOHL5K/XmxPvAfgiSvAxgr8ecJG269tv3ZdXvcpR+A9WME/oCBtzD3HuwY4uII19EcCL8+ZJnBpYKOWswT+tJGmPmvu3XmuwX8UXm5fEjawAdRa+hL8CTAljqlXITb1otAa+L0HXaP0M4v5VuVsBf5IiUsj8TnLPNhYBP/0bJMwpjRVIVuDP7X/wX0VKi+n8EXy13tQyVtlK23UXIM/AZC8XVu8/CewiP5zV8uR97JbFTnXwO9Z1xbmQnpQKbxC/j7BlbNteNqY/tNG9R9aOx4B3/tjSr3KgnpZuBKivkD+PgEJG2w22s52Htilvxyc7bY/Br53x+w+hJdmzrI7VWgF/p+ttbbBjwDgfL79HD+CDfJcg/+SetwvwoGCmQuL6CdVvObNkfkKsIb/+S1+HtJF4a01oOvC+fj8ucft8rp7fVTzIc/nVfr/0ri/vwCesOHAGvoZAP3twoKnqYdjS/TP2/f76ZfGfwE5uw1+ezUP9gAAAABJRU5ErkJggg==" alt="HMO-HPC-7303">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-HPC-7303</div>
+        <div class="qr-name">Hệ thống Máy Chủ</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#2F5496">HPC</span>
+          2012 | P206-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACYklEQVR4nO2ZQYrcQAxFX00VZFl9gxxFhhwgRwpzM/VRcoCAvByQ+VlUOcueIYG0C0YLY6yFv2Xp60tVxCM7Xh664dP/b34UADXI7jWQXPLEALB8Nr4P+E0S2JcwsAYNqrxKikvge2wKA6tSYnTRlaCwGtRYIv4A7Fvrr/XnpqBB+eoXw/eev7+OQjjKpjD27T+//2/9DRA0rGDJa4OWDrQu9ufj+4D/Xkph32rQ9h81YN/avh2llNsl8D02DQurcknZVcMUNh5fvn5RGN3pDkiq0mDUKs8F+J8R+cSqPLvXsBqWMP7FCvgBqjy7FCSWmOQK1sgfuYLsSjgz38e1LoI/u2pQJbrOewdW0D9ISmz8AiC7n+BZo37lNaCL+S0oqPIaxgL1+wIG5F4klbKNLDpuHDdy366A77EN/UnXCHt20Z0uyVfQn5PnT8JxzlrWMv1rtF2nu8bMgiWW3VfgnxeAvbyVLeEopWEKatzHRHkNfI9sMuckT9Hn8DumsMvHf4yKNsb2oSWSP0+uz59T/3Aqt1O8DQpaAr/RXWGDeRSWfS4fFtE/mmq/+6AdzV2QLcL/Z+b38SlOV3bPdfQPUGM0Aq86+9ca+mfoh5NCuxLGIMMq/CmdYZ/kc9oi8Z/7h9nIxjiT2NB1l8f/wl5KKQ07vnrbt4Z9CWrQroLvXf/YP9NAcT9KebtRbswudgF8j+3cPw8WtZE569TvTBP2LRt5o+p+3Gjp3359b7+ej++j8Q+TNJQDWEJdRT+EzbXh2QLmRD8ONZ6N7wP+uX9OqHFXUG7zLOwo15/fy+f56VP9vwG+CCxdOGabBAAAAABJRU5ErkJggg==" alt="HMO-HPC-7897">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-HPC-7897</div>
+        <div class="qr-name">Máy chủ Server</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#2F5496">HPC</span>
+          2014 | P206-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACXElEQVR4nO2ZTYrjQAyFv2oZspRvMEeRb9bkZspR+gbycqDCm0XZmVX3BAamUzDChAIt8ijr/VS5ia/q/vZlG/73/66PCsAKXCZ1wIWP1xL9u/E90Q9JEOzt3hqe7JsKk1Qvge+P/dY2uHVibHv3671t7G15EXzP9D1NVxX2sbFvVv/6//+2v7+zb61tbcWk5eXwfVqqkGTnowpA53oG/t5aa+zbeBawimXf7q219SXwfV06CzClSXiOlyLp5fcfVfSxcuGSElf3VMUM+o8KVXRPwApTqsKUKvAZ9l85zFfDfKG7uqdVzMBfVDGmvRNWQHRCBZ4zzM8bnm29LdxM15/rEYcgrJghP6Cie3ZiENaUEBAqZtEfPHEdv4SUeKqYYX6QskP3NKWk38lzjvl/6M/hXAwhPePEBPgr8JTU/TRil40RmgR/PxdW9DH5noevfTe+Z/JPJ6Tsrk504ggPnpPgT0mc/O2u7hpGNsf8jP0vTv4KortUMQd/paE/4xR/2Jlnn2Z+hKuP8FnDeYcLM4f+V1jFQ/+H7UIw6Pzd+J7ST88OHUZysGJQeAb+vsHt8rFdKkx5P/PnuH9obXsFfF/XkPpHBO0uOBKdTcDfo7/ARdlWln3Dr/axsbf7+jL4Pq8j9NRxbBwU7ocKzTD/e2utLWB1W4D9/f4jL8UCfZ9j/oeFWY2zMI/9n0E/3zjun8GzrbQVXHBrK6Z8CXxP9eO+YrqqorUGmK7sc8zPOLaPFD3u30b4n0U/pYS41K2tQPR9WwhgDv0sAHscWIjusgp8ivvz9v/76bf2fwExkguo3JyPCgAAAABJRU5ErkJggg==" alt="HMO-HPC-7912">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-HPC-7912</div>
+        <div class="qr-name">Máy chủ (Node) tính toán</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#2F5496">HPC</span>
+          2018 | P206-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACS0lEQVR4nO2ZQWokMQxFn9sFWapukKOobhb6Zuqj5AaqZUDNn4UrmWFgkkBgUoYIL0xpUd/W15ctN/Ge3S/vuuHH/zU/SoCeYFJ6ASZshMXru/F9Ar9L6uk9AcoCXFKXlOfHfwFa2+D28nhse9n13jb2tpwE32f8FnBT0p839m3E4n/+/6v+fevPT61tbaVLy+nw/dMO/iukGJwH5uH/m/74XwOYQ38Oi8K7oktYjKBImgD/0Hy88DJJgakslD7H/qcXKI/RFUrvCiXYDPuvUHJkKwBlKouePkn++iCPpJ4c8xwV4fz4L1gUtwdd4fayHnIE3hPlGfB9YFIUFD4C0RXg4Eom0R/AMWGBCVwKLMb3CfBLZVEWfSj+kcuz8B8pejoW0ghBAF0aYwL86WUqfACWhKkPCs2CH3oy9LMG8y2UzKH/UuFSjEnhx+HBYhL8B/P7WIKp7Chkc/BHKpPSu35L6NuXCfAnQ3/6IFIy5LTm4Q+mGhexHJV3VGGm0X8FptebC+P8gKmmwJ/+Wn/HQqInI4XnyN9k9NwKyuJ3OJI5+JPedWTrqMXgQ4j6BPl7AV5WHpL2GG1l2Tfs2p839nZfz4HvXdPrsXNcG0cK16FC5+f/hb211ha8JwuwP90f4yFZoPbtBPg+9LskOFqIylt/3l5WCmbgz4Wj/8zC7b7SVjDBra10xSnwfc5fFtJV6a01oOvKPgV/ALDrffUxGeJf+9Ms/X8pwJe9tRXw2rcFZw7+/9F/ViiPLmhPP57DvhvfR/728376rf5fA5MYzmxswWsAAAAASUVORK5CYII=" alt="HMO-HPC-7913">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-HPC-7913</div>
+        <div class="qr-name">Máy chủ (Node) tính toán</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#2F5496">HPC</span>
+          2018 | P206-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACYklEQVR4nO2ZQa7bMAxEn0IDf0nfoEeRbxb4ZsxRcgNq+QEF04WcdNX0AwX6LaBEVuYiA3I4HNNFvIvH5W0a/uf/Lo8SwBJcJnXAhY+21P7d+L6Qr5Kg2r08SsGDtikxSXkKfH/Ml7LB7XOto+zd90fZaGU5Cb6v5D3wXYndN9pm+a///2/z7Wr3aylbWTFpOR2+34aySjLJFJKUFRhPlFPM762UQtto16VtC1jWpW2PUsp6CnzvQ0dEp0phEh6jKZJOX3+UtQNUqN0lBa7uoawz6P+xvzooscQUymoKJfgM9VcAlvXZCLqrexxPvhvfV/hjWbtLWS2B2qlK8JiBPxc8Ptfbwg3fP9eDTlAtmcE/IEX36DAG1hRjlpXMoT8KeHpOF1Qp8FAyA39QPgdWMTzn4Tzn4D/KigsPy9o98ADscBQz8Cc5bI8fmxiXDQrNgf+X7FvSB/M9lMyh/5JllUJZO7VTD/PgMQn+kGSK4Z+7azRivFdOgD/Hwq3DeQ4JPdbxFPgVlvWYWaqS7jF+k/BHUPvTwnH0IoA59H8YBtdLdoZ/wNWnwD/0X9E9hnOwPLR0hvm9ALSyUO2+PZ7+c9wfStnOge9dKIfgMzSnuyzrECKbYH4vwALlR3wkZWVpG77bfaOVx3oOfG/jMD1PFzpG+LURJqh/K6WUBT7yBtCujx/xkSzQ2xz8PyxQjhXAq/4z6OeF4/7M4vG5UlZwwa2smOIU+L6c/9CurKUUwLTTzs+fZ9733q4d8H0cH3q7znL/HxZi8b2sDC+0UIE59DMB7PXCwmuFTXE/L/+/n35r/ifTRgFlhrr1ZQAAAABJRU5ErkJggg==" alt="HMO-HPC-7908">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-HPC-7908</div>
+        <div class="qr-name">Máy chủ (Node) tính toán</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#2F5496">HPC</span>
+          2018 | P206-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACZklEQVR4nO2ZPW7jQAyFvzEFpKRukKPQN9gjLXyz8VF8A6oMMMLbYuS4WdjeDRBrgLBQoVfok8yfx3ER92I93JXhR/+ajhLAVBuBqwEuvP8s0V7N94Qeklh+vyW6FEtYiiUmKXfB91Av5QjndT6XOfCK62OGpUw74XtOb16lynJsS7HL8duf/zXdK8txLaW812vyf+vz/1efAMEEkyc5a/lVL0WAi+X1fE/o51IKy2+7HCdign5dSynzLvge6C5JDdaZ5qd1Zn2vgCSp7oDvQShDkmU0VyOa1+a1gani2n3/RxkQSqSqxFSVYapKxuDfgNVcEHiVhMukNsD8RRnNqzI6M4RlSMKrcv/8h975y/upcf4oRcnHDMvRcid8D0JSvyppRL/ZC1kaI//hlv+WYRLQ+lu8mu+p/IfmMtXuOTfn6XUE/3ydUwRemwuwRKqWMUb/TCxRhmWfAurjrBvpEfijT1tlWNK8T66qZIT+udVv2xbJkNRclmHD8GszDJKuk8tUeyMagD+j+fYKPefh884Q/JuF67ZTqurOc5z+D9En79ZICcvo0u75D3AGJrCkzCjPwDqDa513wXc/bgOXMFVL+uRiFP+TcbNA/RQlA4Ix8v8ArDPSqYFlQEyAn3C95T747kbfXIDPw89teQQboH43w9OroBF4BRrR58IA/Algkkmte2avttm5Eb5/Pz9RVQe+1q8yRqjfbX6ZZAkuy/5fAFtHejXfP+heLc+NWMsRMJ3actwT39/j+v1rc33uj9sRyiD5I8muW2Rfvm7l8Gq+Z/tPxnZgRfT9BdcI/OXn/9OX6n8AZ7sX2wfRlqsAAAAASUVORK5CYII=" alt="HMO-HPC-7910">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-HPC-7910</div>
+        <div class="qr-name">Máy chủ (Node) tính toán</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#2F5496">HPC</span>
+          2018 | P206-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACUElEQVR4nO2ZQWrkQAxFX6UMWapvkKPINwt9M/VRcgN5OVDmz0KVzGp6AoFJF0QYY9DC31VfX1/lJu7F+XQ3DT/5r+VRAvRk4AMfgAmrbfHx3fg+gd8l9XTqKyzAJXVJ+fj4n4DWdrgN0/kiYNj1bDtH2x4E32fyFj1vSvrbzrH3/N/v/2r+eOV4bW1vF7q0PRy+v8bkv9QVkpQOLMX/W2uNY+d43Y59g56+HfvZWrs8BL77oRkx8K7oEha1KZIefv1R+gCglF8KTMNC6Yvo/7vsW/SkK5TeFUqwFda/oOJ/NsI0LHr6CvWL0nv6MA28J+ADV4LFCvx5wuK83DZu2PXXZdoh8J4oHwHfP0LJsBh4FWxXgIMrWUN/FFCeMzCBS4HNolgAf62/VQuWkrovwv+yCvGu/IEF0KejWIE/iRTD1NO7JAmrL4o1+F+ybyGpGlmRR8ka+i8NvPzPvMo8WCyCPyRhUf55mIapGtk6/HElfdavwIdJ6WvUbw3vpq7qYiWnMVbhT4LFwHt6z+q81YVZRf+n5icfbRcc01gCf7qkAVJUCfSkSniF+p3z72Y62z79p0WdP7S2PwK++6F0KaoFK70acQlRX6B+n4B2YYOtHo79fLn2t52jnZfHwHc35vFDzrGxSnhMFVqB/0drrW3wnDeA4/V8iedkg3Gswn+V+Ctdycf6r6Kfc9qVYB4eDljE/3zk/bzcpKvSW2tA15VjDf7U2P4hpJjK/K+in1KAb3ZtF8DHsW84sIZ+JkCfZ4Y1v0xHuoL/bD//T781/xugACBl/WsWrwAAAABJRU5ErkJggg==" alt="HMO-HPC-7911">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-HPC-7911</div>
+        <div class="qr-name">Máy chủ (Node) tính toán</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#2F5496">HPC</span>
+          2018 | P206-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACXElEQVR4nO2ZTWrkQAyFv4oMs5RvkKPIN8iRmj7YQPVRcgPVMlDmzaLszGymJxCYdEGEMcJa+Fn19Osi7sn+dNcM3/bP2VECWGISRAdc+DiW6F+N7wP2kARBK6YrXmmbEpOUD4Hvn/ZSNri9rbGvAXS/7mWjleVB8H3E7hW/KrHXjbZZ/u/3f9beLvZ6KWUrKyYtD4fvr6IMSaZqkiRlAJJMUk4Rv7dSCu1C25a2LWAZS9v2Usr6EPjuiw6pnRingNdxKJIe3v8oox9q4JIqru5VGTPkf5R0UGKq5z2Gjs/gf1XAMt4Poru61+PJV+P7GH+iE8qwhEMHr3PwRwJMVar9/JyTQlPgr93rwAxhqhAQSibJP2fDebSdIVW8KpmDP4P/Lo0S/N55zsL/xPLI/N0rXgGTxjUD/jNUOWouLhsUmgT/UDphSR/M96pkkvyjTvThbeLQM0YXNAP+Kgk/CePqrlHI5uCP1F0jCvA6Uuj5ZAb8J3KTRufQvY5rDv6MPnl8SI7KO6owk+T/A60l72V3zAJ9DvzgVWfzj1dLRgjPEL9PgF63Ui54fVuPddzYP5SyPQS+u6KM4XyNgcVlRzqVTRC/T8C+Up5rea5lZWnbvt7sdaOVfX0MfHdF59pn5MwRwucIMwP/WymlLNwsWYB22Z/rj2SB3mbhvyxjNNJK3v0/Q/584tg/sxBvK2UFF9zKiqk+BL578ntTu6/80C3aS4EO1m+0l59fje+jdr8e+x+/4rKkt8ss+3+pQizcygpEb9tCAHPkzwSwP6bI7jom4gnqV/n+f/ql9l8VJA/oU6uoxQAAAABJRU5ErkJggg==" alt="HMO-HPC-7914">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-HPC-7914</div>
+        <div class="qr-name">Máy chủ (Node) tính toán</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#2F5496">HPC</span>
+          2018 | P206-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACaUlEQVR4nO2ZQW4rOQxEn8wGsqSBf4AchX2DOVKQI80NlKP4BuxlABo1CymZ1fcYmEVawCcatiBuSu5isUQ38Sjul4dp+JP/f3mUAJYUYRkFuPDxWqJ+Gt8T+EOSZViC9/IOIckk5fnxX4DWdvgol93egPJ3gKNtJ8H3KLb57f3+6+/PX8ntWsdeW5wE37P5Y7fbvh17u2LSS54N3+9iAwSbaysBHH81MO+bi+Pn8T2R/2itcewc+3bsG1gGx35vrV1Pge9x6CsgTN0kvFvG2Dy9/qCh+QSuckkdV4EyFtF/YLStrsTUlWHqSvAVfn91S2ywBYByFVjGCv0LZcxHsgSiCCV4X4E/F7y360d7fYePz+u0QxCWKM+A7z9CSUERo2BNHQJCySL6A96/HkFIfdTyCvxB6uW9vNv0nIzPRfjP6FyTOeMtwDiLrcGfMGlcXmYjdo2zLML/UGLJ0M8azPeuZA39l4oo78oo4nvN2PlpfM/Ur4ZnU5dUrvLZyNbgj1SuUQXfEvq9swR+y8Al9eEchpzWKvwZPhkssRydd3RhFtH/DgzD891253VgCfwJ3qVe4yzeLRklvEL9XgC77RuB9/uX/xxTldb2U+B7GFPq1cctoHyUc8dlC9TvBSjYYPPermzHjr/bbedo9+s58D2MOX3IKFf5dM41VWgF/h+ttbbBS7IBx9v9tY91HWvwfzg3y7AM5ZxITDv00/ie7F+WmHoRTEfHMv5n4g9LhgoBxRwEnR7/V97fP181FrgsqeNthfn/hWkh4uXW2hWIOvaNANbQzwSwOTOMIv51pAvwp/35//RH8/8AHpcHWfG7yiYAAAAASUVORK5CYII=" alt="HMO-INF-7898">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-INF-7898</div>
+        <div class="qr-name">Bộ lưu điện</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#D85A30">INF</span>
+          2014 | P206-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACUklEQVR4nO2ZQYrjQAxFX6UMWco3mKPINwu5WfkouYG8bFD4s6hKBgYm3TCLTkGLWlmbb/nr61tVxKu4n16m4Sf/f3kUADVIXFICJqx/Fs/vxveFvEsCX9jLumONY1NQJcVb4Ps0X8oGu8Lr7QKkXQGOsrwJvpehcPCqJrU0KUhIvAY1puAPAMeF47IcW1mp0jneDd8/Q+GSev0lKRyoUpU0Qf2f+uN/HWAG/UEjWkJVqxLWanh/OgH+8AQgcUxSw5SPvp4Cfw2kJrUaVDWFVzUF2Az1f0D98yFMCTV8kv518DR1zQdPXAHWZuDPCWvJvrBXXT/WIUfgNZjBPyC1tJb4cxCDgyuYRX/AsYY1TOBSw5qCGfhD98xprYv/H+c5B/+RhtXvZccaD/9QJ+FPdz6JV0kSptopNAH+E8CxlVJqwFHu665bua/otnFs74HvVfTKdwkax5rCsTbH/FJT92ydRaY09UE2A39G/bvsPCU0TQqfpH+pwehZXEFa62cO/gTg3TD3Wdb9JzCH/of3bU8NnmMXHFPOgX/Armpd9mvQW3iO/g0SnszXeIshQTPgfyx/cIWnqUa3c5pl/3NfKSuLtbKyHBt2rbeNo9zX98D3Msb6ITxNacM551Ch9+f/iaOUUhb2c+wLcFzuv9o5WCCPGfxP37+FK/oIGBNB4TPo54mxf2Z5NAKmZC8rVe0t8H0t/7Fy1lXhpRSg6jqDf37k7dpdBHbt4p/HZYb9/wmQ2uP+BfA8tgUH5tDPAKjPHxZGO4+N3Hfj+yxffu5PvzX/GwVaDfnrFRJyAAAAAElFTkSuQmCC" alt="HMO-INF-7899">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-INF-7899</div>
+        <div class="qr-name">Tủ Rack 19 inch 42U</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#D85A30">INF</span>
+          2014 | P206-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACQUlEQVR4nO1ZQYrjQAysjgxzlGEfJP8szM/kp/gH8jGgUHtQOzOwbHZgl40bRhcb6+BKu1QqKY14FvfL0zTwnf+7PBgAIIGECZkAlKn1WSxfje8LeSMJ2KTv93mFOvZFtkVIxinwPQ+GASaBVEpYqqd6KiUgcf7zn/pVHVhvPwLbnPvCbflP7/9X+f0q23XalzZDyOmX/Kvx/TYYRlLoQifZ6UQKyQH4cwHW1hr2K/brtC8TIAHsy721Np8C3/PgEYCRLiTUJawenv78wbAEACQslaRDmYcujYC/kDvUJSB0hgmdAegI50+XAGCJ40Mosyg0QP12npTyfPwQdaiPwR8yAaGnevZysINCQ+D3BAozYEIHDDAGBtEfoNiintpVFOoMDMMfZerRBgLdeY7Df8CgZDzKFuUfZAz+WLc6SqlGrJSi0CD487iRQBbz1RkYRH9Ygl/K+biHDqOfn/1z1XI1sjH4Q6ayqgDqUKKMXNgw9RuAupSFDhwj8CD8CZRhljApLxTVhTGi/lfbrSc5BP4oqEj1kv1jlzKE/7kAa+7tjZRtuc19HVf7h9aWM+B7HkWbcs69C4eVEI2wvyr+FHNYzJc+kWGU+mX3P17+7dMIc37+f+yfWf0LnUKDzL+Xj/3z3mS7MlbZ2m1GAvf5FPj+mG9tAZDK24w2A0pgbTOEfgp8X8u3eX3jO8NaawCE79jH0M/SHIaRTnof3sNG0M8LgMI8YW0zAEtggmEM/j/0xx7KebSwIfbn7fv/05fmfwJH+yUa66zGZQAAAABJRU5ErkJggg==" alt="HMO-NET-7308">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-NET-7308</div>
+        <div class="qr-name">Mellanox copper cable - QSFP to CX4</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#854F0B">NET</span>
+          2012 | P206-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACaklEQVR4nO2ZTYojMQyFP7cNWaqgD9BHUd0s5EhzA+coOUCDvQy4eLNQZXaTCcwiZWgtjIk2L/LT008l8cy2j6du+PH/nx81gNwYpmEagGlYPIuPd+N7we+SwE/tWnrCKn3NtzVLaofA99QKkHC4juTgwPi8bF+t9CV/vx/fC/xx8Kw6rA6TGgPUPDdym4I/APRzvp1LX9NClsrh8P3V1FxSlvZzf479PkP8rykl+lr6Sl8L5AZ93VJKyyHwPTftVsGlmiWs5ubx6+Hjj5qPuJkwSRXTeOT1DPj3M6s+To87NkP8VUMqJcVDDNMICk2Rv/28LT5gWzg1wOkrsH1dZslfIKtKdezp4A8KHT/+qDGsBuYoxODgasyiP1gN8cEUKopVNebQHyk650fNZe88rU6CP4JfI+xYBeK/5En4M0wDz49KjCkHhSbBn6NsSbkxgvlW1ZhDf6SB/1HOgQ+rkdST4K+Ssmo8wZ7LjZgrJ8DfPMau6DxDQodJzSfJX3Ij9GfgezmzOubhD1YfM29U3qjCzKD/JXYOBS/f3D9/eV8SviXH2lbej+8l/dznL0L2Y5eV5+h/PuBKTwVX474Q4h/7h5TWI+B7brvUqyoGlr2Rq5hm2f8MKFCspoXSV7jm20pP23IMfE9tb3qah2buZXdXoRn431NKqRDDI/Tz9lVPjQKjH5//H4/9875CVLvmW7ovxER8BHz/9Ke0AnDdFtICJrimhax6CHwv+0+6qHlKCci60KfgDwB2uS8+ALuA58bo53IgfM/8sfw86ZIWwAcUnDn4/+f712Phgw9Tbo5NsT9PP99P3+r/DbUhCm9mpJFMAAAAAElFTkSuQmCC" alt="HMO-NET-7307">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-NET-7307</div>
+        <div class="qr-name">Card nối mạng</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#854F0B">NET</span>
+          2012 | P206-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACYklEQVR4nO2ZTW7jMAyFP0UGuqSBOUCPQt8syM3oo+QG8rIAgzcLKZ3FAJli/hoBJQxEMRd+lh/JR6qIR3Y7PXTDl//P/KgB1EaawBMwpfXP4vnZ+D7gd0ngCzvsWHBs9bpVSe0p8P3SX8oGe+LgQNrl9hocZXkSfI9sGb8Wte35LbiueWy6bv/p+X/Lf2wc23JsZaVKy0/+f/383/Wj5pKqoiqqpObgVerrGeJ3L6VwnDnOHNsCtcGx3Uop61Pge2y6W4IUVcKiNh83PxvfR/iTAJ54mqTAlNCJNAX+2jwt0qI2qkLNq0INbIb971Dx+4cgTdkpNEX8HmfwtABeGuAcG3B7vcwSvwlVIUWOcPA7hZ5//+mwO2bwqgAHV2OS/AM4pnHhUmAjKCbAr+iZ815/GcrTYhb8WGBR7wug64c6B38cC0lpqpIkTP1dJuG/1wYWfZGd+RZqTJJ/lHhPQeOyGB9lDvzxrp87i9JUG72vnAD/j4IlLHoKTVO/MwF+qTYf+QdXo2u5nIY/wiKhtqGZu3gA5sj/jT526Cr6/tcx5Rz4vRdcKXot67OsOof+OcH+VkpZ/bZyW8c4rs8fStmeAd9jG1JZ0bNQDiEXmOoE8XsCbitlZbEoK8uxwV6vG0e5rc+B76GN6cO9BR5l914Rnn7/f8yfq5RdM5tq82n63zF/Jo/ycj2r7fVa3lYSZuDPiTF/ZrF4WykrmGAvK1XxFPge2mh7m+eYpTgwOvo5+AOAXehnLnYBr408zjPM/0/0FhJf2MtKP0JacObg/3v+8ffM2fMPNsX8vHydn36q/zsvLglG8TWuMAAAAABJRU5ErkJggg==" alt="HMO-NET-7306">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-NET-7306</div>
+        <div class="qr-name">Hộp chia cổng nối mạng Mellanox</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#854F0B">NET</span>
+          2012 | P206-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACYUlEQVR4nO2ZTW7jOBCFP6YEeFm6QR+lfLMgN6OPkhuUlgYovF6U4lkMEAcTTEcEmvDCwFvoU6l+HskmPlv7y6cy/NW/p6MEMPVBDNcAXMPrs8T4ab4v6CGJ7XUBtmYJW7u8X01SnoLvqd7aFW6Wt8WFd1z3Fba2nITva/rwroTtOuor/Onnf0/3vrfXvbX2q+P6t/5/P/+/6ihDkkkVf2UowzJMUk5Rv7fWGtv18v66EAssAOyttfUUfE90l6QB9xX8bV/Zf/UBkqR+Ar4n68ifZBCDGN7rZ+q4Tp8/KMMSJXhXYurKMHUlc/AXcIYyIPAuCZdJY4L5S0V7uEwyCcIyRr3IFP3H+71dF2739XZvTcl9xZJjhP0835OlrJzpqrADUIUsTZH/wrtJwzU4Jhcw6i1+mu8r8X9Euzzn4Ty9T+KfARZord1X2gpbw7u9v+JTzC+UVP9R1tiVZZSRPn38UQaA9+Gy/HDRH15uAv7qPN6lXnux4bJjKE/BLyvDIJUXwrupVyOagD9jENV2Kuchhkvz8EvF3Kl0Kuc5Tf/nQVslUBYIpsj/F1xs1wUu6m1FeQP2FVz7ega+J+vw/OqDMHVLLAMXs/ifPNLGMkadokgQzJH/L8C+Ir3dVywDYtmu+BuuS56D79OlDFyWmI7Dzxq+gE1Qv4fhOXZhBN6pXpQx5vA/wFHCh2f2bh874hn46/ytK7EyQhlU/Ceo3/KfYTq2YJZ1FwBM4x8K9XH4AwyO/6fnf+i3fQ0IuFnGJWMQM5x//nP+/PD/h52epn4BHsx1C1YWYgb+9vf+9Ef13/c8H4EcuKGQAAAAAElFTkSuQmCC" alt="HMO-NET-7909">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-NET-7909</div>
+        <div class="qr-name">Bộ chuyển mạch Infiniband</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#854F0B">NET</span>
+          2018 | P206-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACYElEQVR4nO2ZwW0cMQxFn8wBcuR04FKoDlyS4ZJSQABtKdsBdQygwc9Bs05OCyMB4hVgngTwMF/S5+enpoh7cTzdTcNX/t/yKAEsgRiuAbiGz2uJ8dn4PoA/JFmGqZna8AYhySTl4+N/AkqpcBn9FQIY/kav9LI9CL6P5L3hbwPsWun1/3//X/O90mspteyYtP337/9t/sZ/ydQm54Gl+H8ppdAr/ZVeN7CMrdejlLI/BL77oVsMpgQJb/NSJD38+aOMATflkdRwDVDGKvoPDG94U2JqyjA1JfgK569miUln84W5sIwV6nfyJ5ShjNNFEPM61uCPpudpw9v4YzuTSAvgTwaM08iFqUFAKFlFfyCYhHFBSGctr8Gfef5+awOJSUoW4j8uXJrm2Rtgp6NYgj/gmrswvS8a3lbhvyWmNghLxmS+NyVr6I9kGcPbVM4p/sqYLmgF/KdnOwnjGq7ZyNbgjzRcyrjtQkw5ylikfsMyZvHOtjVcsx2vwJ8n4Hhuo5fRqyVlD7tWJVuva8wviSW47KxZpn/ANZboXxm4pmxO52DJLOEV6vcJLrqWb9fXY+fYz+e4+f5QSn0EfPfjfdqamjNuRJqMWuH8+bmzefuWlJ2tV/zNrpVejv0x8N2Nm+2M4bpNwe8jzAr876WUsoElG9Bfj+c216OvwX9JlliiDOU5iJ126LPxfSRfSp2af+yUHVyDS9kxtYfAdy9+v9Qez99Nl+gvBQbYuNBffnw2vg/Ov/O1QWpSO4f3jFX0c2Iuz29lB2LARgBr6GcC2PvAwvk7CV/i/bx8/T/91Pwv/xYWphm5adQAAAAASUVORK5CYII=" alt="HMO-OBS-8688">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-OBS-8688</div>
+        <div class="qr-name">Thiết bị GPS cầm tay</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2023 | P206-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACXUlEQVR4nO2ZQcojRwyFv/rVkKUa5gBzFPkGOZLxkXID+Sj/AQbUy0CZl0WVnUAY54cs7IIRvdPmqerp1ZO6iWdx+3iahl/5/5dHBWAFBEQHXN3HtUR/Nb4v4A9JVoGnKbsnhCSTVO+PfwMaAVcBxA36twvH7xy7/Xg9vq/gB/C8ffujg33u/Tj93dSvxvfV/HG2z3Nrp7Zj0vav/Kvx/TQm/5UPzgPr8P8Drq01jvN2nDhOG1jFdpxurbX9LfA9D81IwJQm4TkuRdLbnz+q6AB0T1xS4uqgikX0H6tQIaUVplSFKVXgK5z/AyqPi1BnFLXE+YdVdFd3DRfRie6J5wr8+cDztl83rnD9c7/boc+zFap3wPcfIWX37NPIhSmHkVOxiP7AYIsnLggp8RzlrIA/umd3SSlJhUmzqCXwS+Pkp3n2BEwa3wL4i+7ZiftDrFELnovwP6zAc+hnH8z3VLGG/ks2WmAoP9E9VTFc0Ar4p2ebhPnHQ7YGf6RODNm5SyjdpYo1+ldpBa5HId2FZ1+FPzXMG1bTM6tijAOr6P9gjs2eZfiH6Uhfje8r+jnOf+x/8LRitPAK/fsBV462uVRM/+k59g+tnd4B3/O4Sz0aCwefuzhctkD/znz7nm2n7WzHCb/Y54mj3fa3wffzmKZnjmA5n11iGf0vGOKp+8w4Hq915t9hge6Y5yA2bmEJ/BBWmNSZy8MOi/ifRz461990UUVrDTBdON5fP+95v9x/vlzGdfTjvL0Rvmd5KSE2rm1nVLERwBr6WQA2d4YxBkmrwJfYn7df/09fmv8LQwMYPO3jqPgAAAAASUVORK5CYII=" alt="HMO-OBS-8689">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-OBS-8689</div>
+        <div class="qr-name">Thiết bị định vị vệ tinh</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2023 | P206-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACc0lEQVR4nO2ZQarrSAxFT70y9FCGv4AsRdlBL6l5S+odVJbyFtAgDwMytwdVCX+UF/pD2wVfAxNyB76WVVdXchGvYv94CcNv/NdwFAA1UHhaw1TDsf5aPI/m9wZ/l1SlhKqmoEoK79fT8/8ASrkCizW2a1m5r2CNrSwn4fcOvhXw+womuPUn+j/v/+t4csNUvwr4Eff/b/gCCBZYuOrrul/aH/8UbX9iYjue3xv4rZQCXsMXqF9/gS+wl1LWU/D7BjdJSthX4LavAPulSZLaCfh9EwpXOFDVqlQl8BoDOr1+okAP8a9BgtQUJKRpAv5qWMNamhT0/oW10dSO5vcG7gkJC7elP8h21dd1X9nXU/B7HZIe/sExJYBLrR+E0+cfSTX8p1MscPBxLo7m947+9IarAFMNwNMETFL/wC1NiykhrSWwXbO7iHPwexHd/wM1fBSSBGCNSfRTUuKJV/X5BYXXYAb+H8CylQVqDAtxX32/fO6XpjgHv5eh8Gfys/9lwprCZ8j/6L81vAY1vPfftIa1GfQHSd05YHq+hf5GptF/U5XSlNbP8ohJ8t8wpbWh/Hivn2Enjub3Tv30nU8+PGeNLqStzuH/HWvSOMLd/2fvAnPUj9LUy2aokIS1nKb+VcNHztWqWg0fE9kc9UNVg3EFnsvPWc6vNCbHnvOH//cZ5t8PtlJKWfCyOibsE1DQHdEJ+H0Tz/1zF9K0Lj4PI3E0vzfnr77wqeGJD/M8h/48cBM49rlYW+B+aVibYf+wPH/VZF//htv9Ryx5q0H+OJ7f2/XfcixPGO0sppi/nt+/XGp9c9jnF6zNsP8pv7+fHor/CwDn+PKUAviaAAAAAElFTkSuQmCC" alt="HMO-SW-8698">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-SW-8698</div>
+        <div class="qr-name">Phần mềm mô phỏng thủy động lực học</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#7F77DD">SW</span>
+          2023 | P206-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACT0lEQVR4nO2ZTYojSQyFv3AkeCnDHKCOIt+sqZuFj1I3UC4NMm8WiqpqBtptaBg7oIVJErTwy9DT0080cc9uh7tu+Ov/Mz8KgB6u8MSxkXgPB8Dz2fgewO+SeriCrqGgSwqv58vjPwCtnYENv7UfQO4NG+xtexF8j/htAD24nQDYz//z//+pfz+nvae9bzg2tpfD90ub/NfoQT0T79Ii/P/Wn//8gDX0Z9roEiZppI0KiqQF8IdnvUiJF3/qE9Y4//AeLg1M3/qvoQBb4vyBylzvGl2jIjIr8rPxPcQfGyVB2OhFe6oirIBfyq/zD5LZCM1APBvfQ/yXFCgc6BI4uII19EcDvIenjbRRsUgbCtbgT3xLaLFIUo91+B9g6gF4QkJaaZH6GvzRrLYxa0ElLzbW4H+Rx6SgaJ82sDF59Wx8j+RvpW21nV+BwBbRz9kqjIS02cxVOizCH9JUPVuapuzYHIFXwO9pqoa/2h6qECzDH3Up59pkfoI0gBX0/wAX4Bh+DK4njhrXE639wJSvge++KVwaWYEIciqS+ir9T4DN5rPww08V+dn4HqxfNTyW7FAqZFpk/nJM1M6klg8aPQDW0M9Zcx2oM9fnFLMC/gN7a61tXNKUkHtrb+MYbJD7+QXw/dbvksC3vR0/2jG8f5yvJxJup5fA91t/7Z8Tv77p+vYODpd2omu8BL57tv30dukfrSe5X4Cel9s/8XR8D+kP87YC+JoFFtm/HZgjPLe3z5l9P2/4C+G7a5/7Z7pGyWZdJ2FL7M/b3/vTp/r/Be55Ikw4KLpOAAAAAElFTkSuQmCC" alt="HMO-SW-8699">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-SW-8699</div>
+        <div class="qr-name">Phần mềm biên dịch Intel cho hệ thống mã nguồn mở</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#7F77DD">SW</span>
+          2023 | P206-T3
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="room-section">
+  <div class="room-title">
+    <span>Phòng 207 - T3 (Server FIRST & Thiết bị mạng)</span>
+    <span class="count">5 thiết bị</span>
+  </div>
+  <div class="qr-grid">
+
+    
+        <div class="qr-name">Server Dell PE R720</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#2F5496">HPC</span>
+          2013 | P207-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACY0lEQVR4nO2ZQW7jQAwEa0wBPlLAPmCfQv0syM9GT8kPqKOBEXoPI2X35AQIsNEA4cE+8OC2pqfZbBXxrPbb0zb89L/WRwlgiSTLaIAL78cS7bvxfQJ/SDIJonm1BK8mmaS8Pv4bUMrCVhpY8piPE2Er00XwfabvdWIt5eWuWmb2+Wr4PuxHZw7bYonlf//9L/SlylYec+itQDRgW3C1i+D7oL+WUiDuyUQA0/YC7KWU+RL4npeOqs1lqo2A6KIk6fL6gzJMwmVJ86rk1FLZAPqJJFxSbSAd+JX0s7g8/hvQWCdi8rrPTLDP6/677uXlntfA97T+Ib9MaoR15nsdgf83YC/LPdfHvD5KseRRFrblnrAtl8D3vL8tk9duHiD2eZ38dX8fwd+P74NSRiMAk/CKq3ltLqmOoz+1EZZdS2v/bND8+vxHqrhM1VThkE3LwAeZX1Kftt3CddtvGc3rMPtLAnQK9RGMVyUj7C8cODts4hgBGUoG4U+V3tfG2ojOKFxj3N8MDsw0aERz9YMYgz/q4qNu5Hr+0L3cGPqfcD72w//7EaSMwP9bp/0E9rbsM5Yr27LPTK69jOB/AKL563RYIEwVr43V8ir4npQSy+jhFa6DTl5tFP5LnLe1b46SuhCNwP8z/1Q9jFD2zRf6pf5ufJ/NH7rnOVnUiO6rB8CfcOTP9fBsfvydMebXmT+bZBl47V5UGSP4hwkoBKyPAjPA/ithLcQV8H3S/5hkZ/jTvHIGWZd//md/K/37Ma+Akn2Otl1//v7l/7v/t4w+vEbS/3Nzb2fyiQ/hn8vP+9Nv7f8BG6cdaXP0tZYAAAAASUVORK5CYII=" alt="HMO-INF-7750">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-INF-7750</div>
+        <div class="qr-name">UPS Emerson Liebert PS2200RT3-230</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#D85A30">INF</span>
+          2013 | P207-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACSUlEQVR4nO2ZUW7bQAxE34YC8kndIEehbxb0SL3B6ii9AfVpYI3pB2UHKFA3aIDEC4TQj8wPjbizo5l1E/fq8nS3Dd/9j/b31lpbgL1d1o39tLABrbXWTg+A75/9kATbZQ321wUGtBWTlA+B734pA8Kk4d3UdS1LLGN8Nb7395f9lf3UVhZo6+c//4P9bbAB9ut0Xjf202c//z/7CyBY9hNwXri8/LTcxgIu9q/H9w7+A1jGHxcAj89/3jas+iAGKGP48eME+DOGd8uQJPXhMnUl9QoT4FfH+3ANF65B4H0QuDSBfiJpEMDwrgzLkLokYMzB/453JaY+XFI3dctQxiz8sQxcowgDSgYUlybAn2HSsQrqg+JPxzWDfh79BSxZ4Dm3yxoLMfaT5cPg+3vpyna40YYSn0n4r/KfgEkmWQbe8Y7Pgp/hfdT8j/1bK/L4/Ed5mB+pV5YZFQeIGfTnCRj+45q5fixsz8ll3SxZvD8EvrulI3mpItghnoQlYwr+J5YH/5WhLEWiXNAU+HEd5qF27rXmwC8dhs178acmP43/V7eiEJTs1K2pz+Cfn4DzyiAs49JOlpxfBJzXaOtj4Ltb5flvJz+VYuyQoMefP6WWRRu8lxaVEE2jnxKuAm91C/PMX5LeXEQGFedzkvyYQIXHbpIllWJsGvxRp7XDNbxT+zejeDUF/pv/LxYN77Uok+zfuLk1CLyrvBwxR365nf/XwP3tIHGS/BLH4aerUnB9AmohZsAPYHkk9/LPlCJNMP/2/f/pl/Z/A0QxOD2bIelHAAAAAElFTkSuQmCC" alt="HMO-NET-7751">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-NET-7751</div>
+        <div class="qr-name">Switch Cisco Catalyst WS-C2960-24TT-L</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#854F0B">NET</span>
+          2013 | P207-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACJElEQVR4nO2ZS24bQQxEX6dn37pBjkLdLGfKDaij5AbU0gCNyoI9DpCFY8SAZQJuDARhuJgSp6r40RCvnedvr4bhK/7e+H2MMQ44uB33wf16cAPGGGNcPwG+f8ZNEtyexo/EDkgYF6ak+BT4Xj8KA5tSwpTrPDOYYflofG+PHxj367hwwLh8/PPfGb8lAPPX9ely43796Of/Z/wABMf9CjxfeP7+c8YtD1ji/nh8b+A/wAz76wLg8/OfU68uKbEEheXadxvgD8vlM2wGkufSlCuon9AAvzyXcikx9qfXdzXwTySxMaOwGVZcArIH/z2XV/HKJcmnfIYprAt/ZtgsuUbpl4TiUgP8G7yzXPKk+OMsNfHPyr/vK8ilKSXWof9BcbaaGBRtKPPpwn+WpjyxKU1phrGc5awe+BWU7ew7QWLVVzfAH2z/CWqWyT0OWBP/qVdgwClhY7nCmvBHubyYn8u3eWJlRB3wl2d6cX5rIaguqAH+gOVTYvks5Z6nC37t+rv5U5nv0/+z/f9P2WUGU96kf3aF1cxVEsilEm8T/7fqHIozBXtuC+qA/8z/lJeEzztN/DPYbY/8ZH7tpLvkvyaXvUJRGKvmrybzYwDMPb9obyGq/vbAb5JmWC7P5SyxVPmfPfz/Zf9sxaJcXi+liX6turWX5Y+0C1mP/vPM/zbMcxZL6FK/pI15TwFBri3nDviBbft5jjPUOqtB/sfX/6cPjf8GNlxVrYokSbcAAAAASUVORK5CYII=" alt="HMO-NET-7752">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-NET-7752</div>
+        <div class="qr-name">Bộ định tuyến không dây LINKSYS EA6500</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#854F0B">NET</span>
+          2013 | P207-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACeklEQVR4nO2ZTYrjSBCFv3QKvAzdoC7SkLpBHcnUkeYADamj6AaRy4EUbxYh1QwM7S7ohZVQgbGN3+Yp4+WLHyfxLPbbUxi+8T/DkQNkR1L20gFTt0hL6a/m9wX+JZhnVax2q1DkJUvyMfhDyU5w7la71W7KTh6A/3R8Wt3f/voxe97m3hZty0X4fRVvj7wtU1vSTJam/+Gv5vfLOPQvZdXQPJQsDaL/G6wpJdpCe9CWCbJDW/aU0nwJfs9DR1QgUoDV7CV+vfz5o/B8wComqWLqpy9dnv8NmChysqMtTaBtuavCitVL8HsaUu2QpW6KRHRTDwkNcH9DP0VS1CwondKtYnUM/ViFdWKF9e/5bIe2R3bkV+D3m5Bqt9opp/NXKFDkDOI/YArz6SYoUsWqnBH0E+evbtJRc4n3QfR/tJ1YlSILFchHRzGGfk7zPGouppgFRtD/DQot3X3NztTSPq/a0j6jbaEtV+D3PCSF2/Rwfkq3Ki9YHaN+6VB+Vo0q9lnIRtDPWX/P+RcTlG46xslX8/vK+WcHk6QeQjpG4EH042C1hxF54TMXMIb/S9Ew5P+UXSiY+hD8/WiY5cQjZCeu8Aj39wbct3T3sr/Vz/4z9g8pjeD/XrrVcFF56absJYxohP1VzI/HK81MbcE+8rbQ0j5fg9/TONYP5y04yu65Ah3g/FtKKU1w9xWgPfa3mp0JehtD/5KO/a0XOdELRRYGOP/wGQqwz6QZTLCmmazr70/+3dQmEGtp7wk65L7S3n++mt9XcfuQl/iCKTu9PaYL8XuGSxXKZB9pBkqH6ZTTJfj9Bj/3z6DtsaclgPRWR9j/pO//T1+K/wOIPgM/ci3anAAAAABJRU5ErkJggg==" alt="HMO-NET-7758">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-NET-7758</div>
+        <div class="qr-name">PKNK Cable Thunderbolt to Ethernet gigabit</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#854F0B">NET</span>
+          2014 | P207-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACbUlEQVR4nO2ZTarjMBCEP6UNbynDHCBHad0s5GbKUXKAgdZyQKZmIXtmMRDC/CWC1yuTWrgiVZdK7SQe1XZ6CMMn/mc4CgALJEnqQFbPY1u8v5rfE7hLAk/rLa03cqUVuxeTFG/B72EtQMLhJrBgg/7lup1jaat9fT2/Z/gD5Aq3b2vYfe2t6F7+0/v/Ft4K7bK0klZMWn7B//X7fxdH4ZJMVZJJCge343mG/r2llMbi08oCFtDKllJa34Lf49JRHTdVk8jVwvcfX83vGf10AO/Qs6RKVochpBn4Y0HPtedqgakq3FQVkGdYf1WArM7YCHpWHxKaon/bxcJ7KxZ8BOC0Amzn6yz9C5hqz7Xv7eCHhN5//VHQYXAGN1VwcAWz+A9ArkfsdKmSq4I5/Efq+HDOkTn35JnrHPzDTZW8n1zkCoz8YHPoBw3PDzdJElnjH82ifwsG23GQDfEomMN/pN1twjve8Z6rwsmT+KeqRmZTldSzepYF4145Af/wnoft1OGiDDsKn6R/3cLJskNII8v1WfQTTq4dRmDjCA/AJP7P4fk/j13wPZG+mt9T+SePsVUdycGC0cIz9O8JoKUF171s674dY/6QUnkPfo9K4VKV6vCcnmXhw4hsgv49AdtKWlkgrSytkK92L7S0re/B72Ht04fYr437sbu70Az6bymltOAfAUC7bOdqwQK9vb/+T8f8GVqy+0Vxs3vaVjrMoZ9xbYw9yLHfaJgk//zAnZZMV4WnlADTlTaFfgDIV/ZT7EqWBb1dljfi9wiX6vH9hTFIXHDm0P/pmD8XQPfLlsoA0rnO8P0ofX4/fSn+HQf7A8Y70skmAAAAAElFTkSuQmCC" alt="HMO-NET-7759">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-NET-7759</div>
+        <div class="qr-name">Wireless access point TP-LINK TL-WR940N</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#854F0B">NET</span>
+          2016 | P207-T3
+        </div>
+      </div>
+    </div>
+
+    
+        <div class="qr-name">MacBook Pro 13 inch Retina Display</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#888780">PC</span>
+          2013 | P207-T3
+        </div>
+      </div>
+    </div>
+
+    
+        <div class="qr-name">Apple Laptop Macbook Air 11.6 inch</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#888780">PC</span>
+          2014 | P207-T3
+        </div>
+      </div>
+    </div>
+
+    
+        <div class="qr-name">Apple PC iMac 21.5 inch</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#888780">PC</span>
+          2014 | P207-T3
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="room-section">
+  <div class="room-title">
+    <span>Phòng 401 - T3 (Thí nghiệm Thủy văn & Môi trường)</span>
+    <span class="count">8 thiết bị</span>
+  </div>
+  <div class="qr-grid">
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACVElEQVR4nO2ZQYojMQxFn6OCWapu0Edx3SzkZq6j9A3kZYPDn4UqmdVkGhqmy9AihKL+Ih/7S/pSingV98tLGH7wr+EoACwwabgG4MLzWur4bn6fwKskqPTyK3a80Te9byYpTsHvn3gpG+wfb7qvFRh+u6/Qy3ISfp/BvVnsA+x9o28W//v3v4r3K31b+lZWTFpOx++voaiSTJKaSYoKHG9iivzdSyn0bckrAIu69O1eSllPwe916IgGmJpJeLOo+fb054+ijnxy4ZIargGKOkP9f/DMFhaYmqKamgJ8hvNXGwD1eRHDNVJCE+Tv4/xdw2UB1EGVGt5m0M8Fb7D/ih32j/WwQ/SrBTP4B6Q2vD0T1tSgQlUwR/2RcOEtJcRDPApm0A9K2+yPPhAcznMO/aMUjMui4pm2mJSfCfgHw9vg6YKEy1JCc/CvQOrfgpHK96ZgjvovjWe1oQ7q8KaoeJuEfzPJ1EztmcvZyGbRz6Cm58FbTu7Dpahz5O/hmfUU0jjawST6CTj679GCFTXHgUnqv0ziUUiz7WZHGFPwD6SslqRzsCBTeIb8vQD0baHe39p9PeSU+4dStnPwexWp9hS/og5XjsDpKKY4/7KyeFu8lZWlb/d1t/eNXu7rOfi9jIftzBGsHW336Ajn1/+f/XMOMjlLKupE868ki6ogv7OE5i2cnv+FY//MQv1YKSu4BntZMbVT8Psk7jfTTVFLKYDpRj9//Xzgfhv9mg/kINCvs+z/c4Qs615WoI6+LVRgjvoZAPYcWDjSGZ9if15+/j/9Vvw3UNEXGjbvsYUAAAAASUVORK5CYII=" alt="HMO-LAB-8695">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-LAB-8695</div>
+        <div class="qr-name">Bộ thí nghiệm mô phỏng dòng chảy qua các công trình</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#378ADD">LAB</span>
+          2023 | P401-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACUElEQVR4nO2ZTY4iMQyFv7RL6qXrBnMU180QNwtH4QapZUtBbxYOzGy6B6mloSK1VUIQL3g4z88/FPGV3d6+dMOP/3t+1ACsoRbWogMuPK8l+qvxPYE/JFkLa+C1e4VQC5PUjo//DShlg8vHGhBA9/Nthb0sB8H3jN+r6dzBrhv7Zu1/f/93/fuJ/bTsW1kxaTkcvk9t8F93awGMkzn4fymlsG9LPmAtln27lVLWQ+D72h6B74SpmoRXazEOX43vGf50AFL5pYqrg1rMoP/D3+Fd1a5lAV23d1W44PUo+D43qUJGXuMiXD0pNEH+Jn9CUndZA/Jjxesc/PG6cCnrxdrlYx3tEPvJGmpHwPcPk2r3+khYU4WAUGMS/QECr93VXdzJk+cz4I9OdK9SNUmNfJ2E/0jCNQLumbaYlM8E+FuYapI/ay4uSwpNgj/fdMIa/X4Rasyh/1JPtclEyFxogddJ8FeTTNVUs4o9Ctkc/Bnxj+w8c3LvrjyZAX/NbM3KpUZ35SA/CX+EjysYKtRiNHVT6H/qT6rlvexC5I+aAX+yne53IjUyhWfI3zeAvZRfsuv26D9z/1DKdgx8X1lKfc9BuEX30U7gsgnyd/gXr2WlrCz7Bhe7buzlth4G3+f2WPvk2DjK7r0iHD7+f/bP9pgZs3jNM/9KeuzP1cZEM9qhV+N7Tv8H8s5YHnaYpP/5y+/1XWe1KKUApjP78fXz7vfzrZw64Gdc1uj7aZb9v1QhFj+XFYi+bwsBzKGfDcDuU2TusqwFPsX+vPz8f/pS/2/ysBABEoJ1uQAAAABJRU5ErkJggg==" alt="HMO-LAB-8696">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-LAB-8696</div>
+        <div class="qr-name">Bộ mô hình Mô phỏng các quá trình thủy văn</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#378ADD">LAB</span>
+          2023 | P401-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACTUlEQVR4nO2ZTarjSgyFv4oMGZZ3cJci7yxkZ8pSsoAGeXihwumBnPB4g/sur6E7BS0KHKKBj+Wjox838ZU9Tl+64a//1/woASxRuqQBdNHrtfj40/i+gd8lWTpAj9EDXOkmKd8f/wlobYPb6AIHRr8+Vtjb8ib4vuPvAbcBdt/YN8vfff//61+O677pvsJ2AxPLj3fB913+K0whSemApEn4/9If/9cB5tCfwwIwhUn0sPT6dwL86QPA6TG6pKBrgNLniP9RuWL0UGIKpZtCCX2G+CsGHNkKwOgaRaEJ8vfEfjmnf7YNOCfgpf+Pj2tb3wHff9iz54l6EUofR/8QM8QfJQNeCWsKcHAls+gPPUp8qgWSgh5KZtGfSthnza1cro5oBvxSxd+S+gGYVGcC/DW2dB09v0SXFYUmwQ9YMrosqSpW/J9Df6SBKxn4cXpUUk+CP+wf/XOpkCXgc/DnID92JLKAVzpMgD+9kEtxEKmrBvlZ+EPXwC2xrMrrNQ5Mov9RCx9J41l2weuhJsCf1NhiWc8SLy2dIX9PwPnelv3y+RGPlRL/2kq0tr0Fvi+tWuXx1JxRy8MedNkE+XsCPlfOinPSVpZ9g5vdN/b2WN8D35d2rB/Sqws9yu5zBTpB/PfWWlvgnCzAfnl8hCULjP39+X+qPgFgb7pflDe7t7YyYA7+1NiYtYg4loe1EZpFPwHwtmK6Kr21Bpiu7FPwB4B+reDTr9QgsF9m2f9LAX7OW1sBH/u24EzDfwB7DSw8Pyf1Kfbn7e/30z/q/wmmuBq8Dy1xIAAAAABJRU5ErkJggg==" alt="HMO-LAB-8697">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-LAB-8697</div>
+        <div class="qr-name">Bộ mô hình Dòng chảy kênh mương hở</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#378ADD">LAB</span>
+          2023 | P401-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACUElEQVR4nO2ZwW3cQAxF33h0pzpwKVQHLilwYQFmS3EH1NEAFz8HSk5Oi0UMZHeA8CSIB33MfH5+Uk3ciuvLzTT8z38vjwKgB4knnoAJq2vxfDS+O/C7pB7egx6kDXCFd0nx/PhfgNY2uHy+6voqIO39usLelifBd0/eRo9LQv/Y2Lce//r7383vG/uPZd/aSpeWf/79v82f/Je6RnEeqDeT8P/SWqvzZ98W6OHLvl1ba+tT4LsdOiPxugJs9PDj5aPx3cOfBHAgTdLAlKDwSfSfhAQFPegaCu8aCrAZzr+g4pISgDRlUWiC+j14cvA/AE9cGtiYgz917DakkUc5+EmhKfCPk/8O3jXAwRVMoj9lOEfaSBMneaooJsAvFfJeih90ScE0/A8vw6/wtCpb+uEopuCPpyk5XJAkTL0oNAt+6IGkml+KPAom0R/V2FjKmXjaUDg2jX6WeT4IY0pTNbI5+CN9NSxs1OSephqBp8Dfw7FRnUtBnu1gDv4Eh+cJ7+WFwqUBzKH/J1R9iQ8OjimnwB8FFaBKoAdVwjPU7wtc9NEWPG18rmWHRu0fWtueAd/tKNsgDdXCwY5yxtQnqN8XYIEF2kpbWfbt+vrePzb2dl2fA9/N0Gk700b5tz9GmOfn/9f+2WtzAn40r3nm33JuCnq44ugIhx16NL578q1tpfnXlbaCKbm0la7xFPhuxe9NbQNx8f2tQULPC/vbz0fjuzdv75LqAVMPcv8xy/5fGuALl7YCnvu24MAc+hlw6M+pnIcjnWJ/3v7/P31o/hdMBRmN9s2kBAAAAABJRU5ErkJggg==" alt="HMO-LAB-8691">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-LAB-8691</div>
+        <div class="qr-name">Bộ thí nghiệm tính thấm của đất</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#378ADD">LAB</span>
+          2023 | P401-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACbElEQVR4nO2ZQcrjSgyEv04bspRhDvAfRb7BHCn8R5obKEfJAQa6lw9k6i3amX9geCHwFknDaGEM2pS7q6SSXMSj2E8P0/A3///yqAHUBniaEjCljWvxfDW+J/C7pNoci6pIC3BJVVJ7f/wLUHC4qn8H3yG/fdK/09f68/X4nsEPYLF//HCotzX79iXqV+N7Nt+3eruUspWVKi1/5F+N7z/j4P8gvKTmwDz8P8G1lELf6NvStwVq86VveyllfQt8j0NHBCBFlbAYlyLp7c8fNc/xZoFJCkwJaj5D/T8BtXmCGrqVBXTbzgq4YvEW+B7GYA54clzE6MK1+Rz67RfuyM8NcPqGxf7xOYt+geEc8pCDq3lVzHD+SJGQuBrgVQEOrsYc9UeBaRQfTOBSYDE+Zwr8aUrTvecynljMgb9RG9gdswVQ745iBvyuIVU7LBCmOig0Cf7aqApJtZGD+RZqTFJ/lHhapClHF7NQ8+GCZsAfVb8RxpSmMQ7Pwp+0o+wcVRTSpOaT6HfUn5BitK00YZGz8Gf45OE/2+i8/mXqXo3vSf9znP+97YIz5PxqfE/xR6GGdHxCbQwJz6DfE0DfFtO+sq/HOm7sH0rZ3gPfoxhsT4thm9MEPgpRnUC/J2BfOTfOirKy9A37rLeNXvb1PfA9DN3XPmlKi6PtHiPMDPzvpZSyHMMj9Mv+EbWxQPb35/9p+AQgeznfLmrXeitlJWEO/jQHr43aHI7lYcJE/ge8joFdMfafCZPM7/e8ff5TLuMFU21kvyxvhO9Rfji3hWtZAc++LTjT8B+g/hpY+PU7aYr9efn7//Sl+X8BxCkQVdJcPfIAAAAASUVORK5CYII=" alt="HMO-OBS-8692">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-OBS-8692</div>
+        <div class="qr-name">Máy đo độ ẩm đất</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2023 | P401-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACRUlEQVR4nO2ZQYojSwxEX1oFf5l1g38U1c0a3yx9FN9AtWxQE3+hqu5hhjENf2EntCjsAm3CmaFQSG7iUXxcHqbhJ///8igALAAHT6Are12L57PxfQO/S7Jw0zCN7ANckkmK18d/AVrb4JY4OJD9yr6xt+VF8D2K5fjuA24Jdl9z376K+tn4vpvf39i31ra2YtLyR/7Z+P4aB/81pCFJ4cA8/P/UH//tAebQnzMSl4ZJ9FGXImkC/OEJpfzZJQ26EhQ+x/kHCdKgDwtMQ+GmoYA+w/lrJFh4diUA9WLhk9Svf7K9XETi2Qd9zMEfKaGcQx7l4CeFZsAfZB+JKwA3jTJyCubQHwmgD7roAq9arp8zBf7ESzlNUlCf0/A/sHC6LOoWBmBSPTPgd5Oyy85GTJcVhSbAfwHY28It923Z28d60719rOi+sW+vge9RnPwfx0u9h5cLevnzp8r2izBd2Y9GNgN/fm1YOlS0jFzVxbPxfYc/Fk4fpqOLZRd95Cz8Cco8n2NL2aEBzKL/1Xl/bbvgdOUk+Gv4BeycAqqEZ6jfC/DettbeFLyvdR2j9g+tzaD/4XlWq8KzC7yEyCao3wuwwALt39FWln2jX+2+sbeP9TXwPYzD9NT82MfRds+O8PLn/7V//lzeHs1rovlXsjgGdsXREeoWpsAPbuUfOJaHtRGaRT8r3teb6arw1hpgus7gn898v55/vlxrFsv9bYb9/4VavuH/3FtbAc99W3BgDv0MKPOmUzkPRzrF/rz9/H/61Px/99QeZebtuU4AAAAASUVORK5CYII=" alt="HMO-OBS-8693">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-OBS-8693</div>
+        <div class="qr-name">Máy đo đa chỉ tiêu chất lượng nước</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2023 | P401-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACa0lEQVR4nO2ZQYrkSgxEX7YMfynDHEi+wRyp6SPNDVRH6RtkLj+oiL9Ie+jNL4oZmLJhREElxMKRViiUKTfxKO5vD2H4i/8ejjqAdayHehTgKp9piXo1vyf4hyTrYUqgPCEkmaR+fv5vQGsb3Gq8mwSUfzA2RltOwu8Z3BP/KLDPjbH9+ef/Lj42xtba1lZMWv74838VXwDB4rmUloLxvYHIxcV4Pb8n8FtrjfE+U7CA9VjGdm+trafg9zh0RBFSmoTnNCVJp/cfds+f4ZISV4F6XMH/d1zKAvtsC+hz+0cJNzzPwu//Q0rrmFSumYi52Nvxq/k9ox+bau9hHYgiyhPPK+gHSYApy7P2cgj1MOVF3j8FRagD8xQUEOpcw38kplo8cUFIiefczun5L4zv9Y36hnUEGutSobHiuZ2A33P+E3ha/1m2mDR/p3//qEd5zv5rkiRcNiV0Ef7q039knZrK91TnGv5znHzmYpq/esxT0BX4p0mmtLkF10zEvEVegP+XhnVYKOVSj2vUr3IyN+XsYuXCsy6jH/HlwAahHlIC1+hfx18Nmv+IsTaiEXi/L6/n99z8J8uz/BBSZ5bwFer3DW6MbSGAf9d9HDez0tp2Bn6P47D62ciiXLaf6GQXqN9D/5XNeyMWtvv6wz5XRmONl/N7dv7QmSWwt929I5xf/z/nz2HSHN7uzes6919J1rG9BOaO5iz9/Pzf2OfPged9pa3gKm5txXT++ckXfGymD/VorQGmD8b5/fPA/aOIuWBeBMb7Veb/UkK09dZWIOpoZ/f1HPwexhf/OZxTsh74Jb4ftb/fT1+K/wcWwPyB2AR4OAAAAABJRU5ErkJggg==" alt="HMO-OBS-8694">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-OBS-8694</div>
+        <div class="qr-name">Thiết bị phân tích độ mặn</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2023 | P401-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACXUlEQVR4nO2ZQaobQQxEX38NZNkDOUCOorlBjmR8s56j+AAB9fJDm8pCY5NNjOFD7IYILwa0cE13lVTSFPEorh8P0/A//7U8CgALRpWkAVSNmtfi49X4nsi7JPBvsZd1pzb6ZoFJirfA9zAWoOCwq58suML4fqb/pK/26/X4ns3XRj0PsMtG3/79/38130/0UylbWTFpeTt8fw2FSzI1SSYpHLg/z6DfvZRCPy19o28LWPjSt2spZX0LfI9DRzRAaiZRW16KpLc/fxQ+ADzLvtSoGqDwGep/9i/P87fA1BRuagqoM5x/IpcGeRGMqgEWPoN+UbiFp3mwAHzgozZqm4E/H9T2ue4LO+yf680OXU4WzOAfUDBqG3gKwdTAwRVMUn/SPDSqqDq0XFu+zgz4fVSN2o4+cHeec/Afhd971nERYFL+ZsB/n1zcJElUWVJoDvxuAenZgpHMr03BHPU/O1dtCh+34p9cmgR/M/1BmKpRj0Y2B3+kgafnOaoojKrU9RT4LaAqp/iUM7WNOfjzAVxXRt+WXiwoq9tlU7D0bZL5pR1sPzRL+geqxhz9K8nTTC2dQ+6ybA7/8wHoUhb8c+V685+5fyhlewt8D+OYttSUC4cqO4yEbB79LrBAWVn6dv1xtstGL9f1PfA9jJvtPFwot0Y8Tf0PAAtSvOBH85pn/pVk4RYoXHHbSKQdejW+Z/KlbMCorayUFaoGe1kxtbfA91y+rEhnhZdSANOZPkf9zLE9t4i5f0vzP0v9lBr4wl5WwEffFhyYo34GgN0HFg45U6fYn5f/309fmv8NMI4Y+B3XU/kAAAAASUVORK5CYII=" alt="HMO-OBS-8690">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-OBS-8690</div>
+        <div class="qr-name">Tủ ấm và bộ đo BOD</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2023 | P401-T3
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="room-section">
+  <div class="room-title">
+    <span>Phòng Server chung - T3 (Cụm FIRST)</span>
+    <span class="count">9 thiết bị</span>
+  </div>
+  <div class="qr-grid">
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACXElEQVR4nO2ZQY4qMQxEn0lLLNM3mKO4b4a4WTgKN3AvRwqqv3DDnxUf/ZGGjjQWQggvuuJUyhW3iWdxOzxNw2/+e3kUACUAB+9AFTW3xfu78b2A3yWVcKCo9drAJRVJsX/8B8BsgYvCb3YCej3fbGG1aSf4XsnXRj1LrVwX1qXETz//u/l1YT2ZLTZTpOnHn/+/+Tv/Jakl54Gh+H8xM9ZlWk+sywQlfFqXm5nNu8D3PHQPILeA2nJTJO2+/ii8A9CrepXUqOq1KXwE/T8AJZew2vFqE+i6HAO4UNsu8D0NqZWghEv6shGthI9wflF4QpWULqLjCqhtDP7U9jlf7OMMl895s0PgJVDsAd8/Qmq9tq3meFFLI6dgDP2RID1nowpcatSWyxkAf3iHXlvZei75PQj/UVDCH2WnNiDXUobgTypnlcJLNuKqkhQaAH/6fzteDWC123zR1W4zui6syy7wPQ1JClfkQfCOb+ahtjH6192zFbUkUq9bIxuBP3wl/0NCH/+MgP9Rf2UX67XlZwz+hAMdTyNE/lADxtB/taJGVRqJbLvgVPUh8G/63zqk7Jcgj/AY5zcASmzMf2zH5qXfje8l/6+W+q/wXlXCU4jKIOe3163myfyidp9fjYA/4y6b6Zw3ORqA/wdWM7MJP4YDrKfbRzsGE/R1BP9zv/lut/i8NuKbHXo3vtf855KT/88Zm6Gqc7GZov3PT/7mbeaos8LNDCg6j+Cf7/l67tvLl3OKf19Po8z/pQZ+jIvN5ORhwoHbvA98T+PRf7cLC48WNsT83H7fn741/wcDbAutL4oWPQAAAABJRU5ErkJggg==" alt="HMO-HPC-7879">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-HPC-7879</div>
+        <div class="qr-name">Máy chủ SuperMicro Server 1028U-TR4+ (174942U164832)</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#2F5496">HPC</span>
+          2017 | T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACT0lEQVR4nO2ZQW7rMAxEnyIDWdI36FHomwW5mXKU3oBeFlAwf0Elu58WKNBaQAnDQMKFx9LMkJSLeBX308s0/OW/l0cBUIOOd7wDJiy3xftv4/sCfpdUw/NntwYuqUqK4+M/AaVscHu+RbfrvWzsZTkIvq/krd3XW7dW3zf2rcZPP/+7+f1S3y+lbGWlSsvh8P03Bv+lJ+eBqfh/K6Wwb8u+sW8L1PBl3+6llPUQ+F6HRjRAalXCWm6KpMOvPwrvAOk8khqmbk3hk/g/HTpgrQZVTeFVTQE2w/orYWsUX+imbq2Gz6BfkiePKgx4xxVgbQb+nLDWuS12hdvHOtoh8BoojoDvk5BatzbWHK9qkDvCJP4DOJa2I3CpYS3/nwC/Wh/OmTWXvE/CfxSkbBV0a1gDqpTXHPjVFI6NSoypJoXmwO+5BemfPZlvTcEc/i8pXGrdNEbIbB6sTYJ/9GxVTVI3dRuFbA7+SB3PniddFLybFD6PfpXifbpQXnPwJ2f2IeTRC1U1YA7/l7L+1vD+KLvgpJx/G9/X5t+WXVBKoAYp4Tn0G9SgxmB+jgM8LGgG/F7H+kvh3ZR2iqlOoN8T8LGywDkoK8u+3ddbfd/Yy309Br6XMZqeh21m5/CoCMfn/4m9lFIW/JxHuPvl/tbOwQJ93w6A75N4Tr4KTxWnhSp8Fv98TrudcXiYJ0Iz+Ocz7+WtnXVVeCkFqLqyH58/j7xdHx9frmn+fb/Mcv4vNfBlL2UlW7gFB+bwzwCo48ww5xfVHCcnqF/l7/vpr+b/Afo4H3nOFQRXAAAAAElFTkSuQmCC" alt="HMO-HPC-7874">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-HPC-7874</div>
+        <div class="qr-name">Máy chủ SuperMicro Server 6048R-E1CR36H (S17494286A0143</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#2F5496">HPC</span>
+          2017 | T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACXElEQVR4nO2ZQW7cMBAEix4BOY5+kKeMfmbsz7hP8Q+GRwMUOgdKTi5ZL2AgFoEM9taHbZLdM02qiEe1vzyE4T/+NRwlgCWSTOqACx/HEv27+T2BhySIpZV9veOVtikxSXkJfp/ipWxwf18DAuh+28tGK8tF+D2De8VvHexto22W//r/v4q3zd5el7aVFZOWy/H7ayljONdUTVIGHF5WTuHfeymFttFeadsClrG0bS+lrJfg97h0VodxBHgdhyLp8vuPMjpAdBcuqeLqXpUxQ/8/5leHDpaYqjJMVQk+w/6rArjOg6C7ulfLmMG/HDpxdZclEJ1QgtcZ9POC18594Q739/WQE4QlM+QHpNrh2HPCVCEglEzSf87A6RUXhFTxOpYzAX/VTnSv58w9k+cc+v/Y/zq2Ha+AHYliDv1IvweuJFw2JDQH/99t35I+lO9VyRz9X4dnldGJwwsZIwXNwH849xTMH4NsDv1Io/mP5DlaaHcpYxL/hmUMz46FdK/jN4t+IDrYWAgx8icwS/83CThvLoz8gKtPwv8MzIwRZnn00hn8+wLQyo+MDvuZP8f7QynbNfg9qo/blsaDg8syRiOyCfz7AryvLF7LSllZ2rb/vNnbRiv7eg1+D+sIPacLhoX70YVm0H8rpZSFsGQB2uv+s/5IFuhtDv1LssQSy9C4NhJHHPpufs/gpWxjhO0rZQVX515WTPUS/J7DF6+mmzJKKYDpRru+fk7cb+9rdMBv4/Ght9dZ3v9HBFq4l5UhpIUA5uifCWAfFxaGneN4kftufp/h5f/302/FfwHLkv+zt3jkbAAAAABJRU5ErkJggg==" alt="HMO-HPC-7880">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-HPC-7880</div>
+        <div class="qr-name">Máy chủ SuperMicro Server 1028U-TR4+ (174942U164829))</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#2F5496">HPC</span>
+          2017 | T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACSklEQVR4nO2ZUYobQQxEX7sN/tTcIEfR3GzxzdpH2RtoPgMylQ+NlyQQ75JAdhpWNGZAH66ZKZXK5Sae1f30tA1f/X/rowDoQeKYEjBh9Vo8PxvfB/C7pB7eAyBtgEvqkuL4+E9AayvcEu/hQNr13la2dj4IvqelcPCuIQ1JChIU3oM+yfMH2Fa2tbW1LXTp/N+//2/7D/5rdI3iPDAP/9/0x387wBz686jEpdElbNRLkTQB/vAESjlN0sCUNmquD4//BPRwafRAr+0Mel0vAdywcQh8T0saCjBlLV9IU9ro4ZPMrys8TUmtYE9cATbm4I+Nttwuceu6fl92OQLvgeII+N6pWrj7M8e7Bji4gln0BxtYyY7ApYGNup0J8EtpI03a9y/1OQn/UdDLwkWtgAF0qc4U+CWlafc8EqZeFJoDf03u7pmzmG9DwRz6Lym8zH/iie/mwcYk+HfP1usWTGmqRTYHf4r8QXEeE3iaFD7H/KqmVb0sdJA26szBnwBI6A8hVdQWZhb9L9r08HysXfYsaAr8Xha6B+UcelAjPMf8BpW57ZzX2MchmIQ/jr2FP56mktOdUZ+N74P9tuznvK335dZfV7Z2Xw6D78+1pw8P2SznkLsKHZ//J7bWWjvDJQDYXu7fxiU4Q27rAfC9Uz/nz+XlSkIVPoN+ntjzZ9LGfaEtYEpubaHr+PnJL/2uq8Jba3XNdnz+PPp2vbeXuijxz+1lhvz/BEgD/BK3tlDJwxkH5tDPAOhvP1jwNPVwbIr8vH39f/qp/R+JAh00F0CqfwAAAABJRU5ErkJggg==" alt="HMO-HPC-7875">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-HPC-7875</div>
+        <div class="qr-name">Máy chủ SuperMicro Server 1028U-TR4+ (174942U1648365)</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#2F5496">HPC</span>
+          2017 | T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACaUlEQVR4nO2Zwa3cMAxEn1YG/pHuIKXInS22pHRAl7IdUMcAMiYH+n/ktPnIBxILiODDYufgsUTOjOkiXq3j9hKG//jXcBQANcCkaAMwYXksbfxrfp/AmyRo9VkWdszpm4IqKS7B77d4KRvswwQNGPY4ykYvy0X4fQY3h32Y1+dG32r87ft/Fe8b/V7KVlaqtPz1+/8pjqJJqvIqSVI0QFKVFFP0715Kod/p29K3BWq0pW9HKWW9BL/XS+dyQPIqYZ6HIuny+8+p+QANk+SYhrmizaD/KFoNJFegoMoVrcoVYDPsv7wG0AbnQQzTMK/RZujf3P8madA+HkSRjnB9/jfMj3Uv6449fqxnHIJWgxnyAwoGnHtOq3Jo0BTMoT9yAEvZETTJMc/HmYB/tAHD/PSBj+Q5R/2jaFXKH8Mcc6BKeV2e/wIcawhK9ixgsbAf6/dxAX6fym8B5pJqMLLyLe1shvqRFE1yRVpYO8OD+ST8z8xW5ZKGaZjSyObQz2jDTtlJFYX8p83Qv+erCuaSp20N87wmqR9l5qnRaqTzpgszh/7Lk3aVj3fbzXeBMQX/9/rPFsa8BtnCM/TvDfb6LAtNz+0jf+b8oZTtCvxerxT/7NY8C+wUojpB/96AsvIWLOZlZekb7PW50cuxXoPfy/URO1MzMzmMU4VmqP9eSikL1GAB+v345m/BAqPPUv+qQb6w5xQiXWAW/STNSxqcw8MBk+SfX/H9TQ9FK6UAVQ/69evnHbfH6PcB2ANTDUa/zzL/z+S22KOsZIRbaMAM+nl7nz9vgJ73o2zHClC++Qzzn/L/++k/xX8Cvwn/M3fqUWgAAAAASUVORK5CYII=" alt="HMO-HPC-7876">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-HPC-7876</div>
+        <div class="qr-name">Máy chủ SuperMicro Server 1028U-TR4+ (174942U1648336)</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#2F5496">HPC</span>
+          2017 | T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACUUlEQVR4nO2ZMW7sMAxEnyIDKeUb5Cj0zRa5GX2UvQFVBpAxv6CzXTYBfhELCLHFwmzGFDkcjYt4FsfL0zT85f8vjwKgBjRVaQBNtDwWG7+N7wd5kwRGL/RCc/qmoEqKS+D7Nl/KBrvCwIDR3o+y0ctyEXxPI2FX+WguScEAhdWgxhT9A0C/1ftWylZWqrRcDt+XoTBJVZKy/gacT+ao/15KoW9Lvy19W6CGLX07SinrJfA9D33GwCSvEs3zUCRdvv4obADYaBpNktM0mudcz4AfyFegBlWusCpXQJuh/nIlVTblW4ym0byGzTC/2T82MEk1IP8HNJ+hf15oDvvS3o91/1hPOQRWgxn0A5KP5mfNsSoHA1MwB/9INNGSdgQmOc3Puf5tfD/hn9FS/Jz651Sec/Q/yZaQFOQ0B6qUv8vjfwE+VgY24DVMYTTBfqz7uAi+p6EwPdZWMLLzmyuYg/8lhUmeW2Bgp3hoPgn+U7NVuaRUQbnI5uDPyIVr+RY0pZbLJzPgp8qz/rnFkk7HPP3z0DypmR+MOhn/5xU+SP1A05gEf15bFKRyqEGO8CTzC5B3rlQRVc4nBc2A386BxfIsHnJuIv9ngaV5WVn6Bnu9b/RyrJfB93Wc7sMnbaZyeGyECerfSyllwWrYAvTb8eavwQKjbxfA920+/Wfopd5vir3et2NlwBz9k/5tWhCc5mE6QpPwZ+K38woWBgxORT0N/rw8ytN/Sy0xC3+mBCrrXlbSeVgw5uj/l4f/DOh+O8p2rADlzWfwf8rf99Nfzf8DOSsj8hBv+PoAAAAASUVORK5CYII=" alt="HMO-HPC-7877">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-HPC-7877</div>
+        <div class="qr-name">Máy chủ SuperMicro Server 1028U-TR4+ (174942U1648362)</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#2F5496">HPC</span>
+          2017 | T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACUUlEQVR4nO2ZQWrkQAxFX3UZslTDHCBHKd9gjtTkSHMD9VFyA3kZKPNnofIQCNMTmEVcEGG6Ddp8u76+vuQiHsV+eZiG7/z/5VEA1ABaN3XAhOWxtP7V+D6Bv0mq0WpQ5d0cmqQqKc6P/wKUssK9m/ZyA7q97GVlK8tJ8D2KZfyb7z9+CXi99m1V/DwJvs/mt1t9XUtZy5UqLR/yX43vrzH4L68H54Gp+H8vpbDd2Fa2dYEabdnWvZRyPQW+x6ER3mmSVwnzPBRJp3//KFoHaNAwSY6pmyvaJPpPB8lroKDKFa3KFWAzvP+ESjsOgm7q5jXaDPWb/Enn0IaLoCnAfAb+XDBfuC/cq17ersMOQUs6nQDfPyL5P945rcqzlhXMoT/yYTjNMUGTHBtFMQH+oJt382zBCvJ3Ev6jGOa/yjHHHEgvUafgz1D7lrZfEqZ8ljn4H23cSDXoyXxzBXPov6RoCjptXGkezCfBPzxblUvqpm7KipiDP1KKfz5FSmg3KdpE9ZvVmm0r5bTPwp8A6MMwZOfNLswk+t9qVqu8H203Z4E+CX5JHao8nUMNsoRnqN8L3NnKYnq7sh/+M/cPpaxnwPc4DqlPC9q6KemEqc5Rv4nWq5TMr/IamZwBf8Yhm+/PYgb9v7CVUsoCTwHAdtuf/SlYoG9z8D/3zxoX78b5GfgTbUy78s5YHuZGaAb9/IM/B94cBBjtYAL9OfL2sj8rbzDVoG+3Gfb/F3KEpy1bKVfSwi00YL+eA9/DOL5/jSkyd1k1GjbF/rx8fz/90vxvsRocJsml/7UAAAAASUVORK5CYII=" alt="HMO-HPC-7878">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-HPC-7878</div>
+        <div class="qr-name">Máy chủ SuperMicro Server 1028U-TR4+ (174942U164825)</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#2F5496">HPC</span>
+          2017 | T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACaklEQVR4nO2ZQcrjSgyEv04bspThHeAdRb7BHCnkYAPto+QG8vIHhXqLtsPbTOZnBuZ3w4hAgrVI0V0qleQi3sXz8jYNf/O/l0cBUIPEa3gCJqxfi+dX4/sEfpdUwwGspTVwSVVSnB//BShlgVVSfdyAtDvAVqaT4HsX0/5tDdaPf4LHnNuSk58E32fz28J2m7alzFTpGn/6/381f/Bfqmqd80Adif9rKaWfP9syQQ1nW56llPkU+N6H9mgJUqsS1mp4f3r680dd8wEck9QwJSh8EP1HQVqTmoKqpvCqpgAb4fzVAPDXRaQpoYaPUL8oum3wNNUAPHFF7wjnx3/B2se8XnWvsX7Mux0Cr4HiDPh+El15XgVb1cDBFYyhPxKAtcN2utSwpmAE/qAg8bRWu+IHVRqH/3TN7IRPa1jj8A91CP4EaS1NOnouptopNAZ+V7zmL7Iz35qCMfRfquH9CpLeCJrCsTYI/qbdPDdJaXo1slH4k7bLzq6i9Cc+Rv2q1QBrVerOIa31zxj8Ced/hq0buXqYuiHw14DeiI+222eBHAW/lOwjANZq0Et4hPq9wJpbufaZ9/CffatSynIGfO9DXfz7IByeJvAuRHWA+t3zV7UJysy0Ldi9Pha28pxPg+/Hsa8fwtPU/Vt3pIPo/4WtlFIm6CrEdnv+267BBLmdn/+X7hMAtqU+boq1PpbnTMII/Lmw75+Z7F5mygymZC0zVe0U+N7F9Pr1LIjVt28FEmqubN++fzW+z+btfgzC930W224j7P8v7Cssn1jLDHjChDMG/1/vv/rO0JPjdZINsT8vf9+ffmn+P5dkBBt+iBkwAAAAAElFTkSuQmCC" alt="HMO-INF-7882">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-INF-7882</div>
+        <div class="qr-name">Bộ lưu điện</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#D85A30">INF</span>
+          2017 | T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACPUlEQVR4nO2ZTWojQQyFv4oMWVbfIEdR32yYm6mPMjdQLwNl3ixUzgyzcAKBxAUjjDGtRb9SPf09N3HPrk933fDf/1n/2VprF2itwcG5XziA1lpr+wPge9fvkuCQxPnjAgPahknKh8B335QObtIAS3QzSyx9fDe+j/svONA2LtC2r3//J/3H4ADs1/66HZz7V7//E34pOHfw143ry09LBtA1HgTfXVMCWPo/HwAen/9/Jaxi4AOUPvp8uAD+9NHD0ucRukyhpI6wAH7F6BpdA2d+R/3WAvUTSeCWKFG6pUshCRhr8D+kUEKP0SWFKSxd6avwR+kmjSIM6E/9XCL+MkkKekgxKP4EXSvUzyfOHY4LWAI853Hd/IKPc7d8BHzvmBJLlF7Ff7bdrmX4f2u4o0dxydLpQQ/6Cvgl8Jmz9SQZeM3VD4//ibNZcukyRe0y182fFdeNVea3asGA3Yo/PZS+DH96mGTS6DGLJ27JWAJ/YorRoybPug5LagpaAL9Ev02elbk3WwR/TLQ9ij8V+XXmf+hRy4tJA7fEElMsMj+Hpc/5H6/lq5J3hfpfOeswmT/6TAfwFfQfNNfeOTNYMnpUIVqnfsqqC0zmlya9SvwlSTkllGq7VvFfg/8ANvcXlQQ6++8C+J+m/nzuA9p2XF/UtrlCPiseAd99e9OfmZXfR4+6lEXy1wv5m/hTW8yUg74b38fj/yZkTebDMv3rJn5WI6txtC5iBfxQ4kPXFH96UKdYIP7t//+n3+r/DVX1P8j/SSUzAAAAAElFTkSuQmCC" alt="HMO-NET-7881">
+      <div class="qr-info">
+        <div class="qr-code-text">HMO-NET-7881</div>
+        <div class="qr-name">Gigabit Switch 176630000081</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#854F0B">NET</span>
+          2017 | T3
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="footer no-print">
+  Khoa KTTV&HDH — ĐHKHTN — ĐHQGHN | Dự án DATAI | Phó TK: TS. Phạm Tiến Đạt
+</div>
+</body></html>
