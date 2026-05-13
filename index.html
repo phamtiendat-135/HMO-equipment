@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tra cứu thiết bị - Khoa KTTV&HDH</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #f0f2f5; min-height: 100vh; }
+.top-bar { background: linear-gradient(135deg, #1a3a6b 0%, #2F5496 100%); color: white; padding: 16px 20px; text-align: center; position: sticky; top: 0; z-index: 10; }
+.top-bar h1 { font-size: 16px; font-weight: 500; }
+.top-bar .sub { font-size: 12px; opacity: 0.7; margin-top: 2px; }
+.container { max-width: 480px; margin: 0 auto; padding: 16px; }
+
+/* Search */
+.search-box { background: white; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.search-box input { width: 100%; border: none; font-size: 15px; outline: none; padding: 4px 0; }
+.search-box input::placeholder { color: #aaa; }
+
+/* Equipment image */
+.equip-image-box { background: #f8f9ff; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: center; min-height: 140px; overflow: hidden; }
+.equip-image-box img { width: 100%; max-height: 180px; object-fit: contain; padding: 8px; }
+.equip-image-placeholder { text-align: center; padding: 24px; color: #bbb; }
+.equip-image-placeholder .ph-icon { font-size: 40px; margin-bottom: 6px; }
+.equip-image-placeholder .ph-text { font-size: 12px; }
+
+/* Equipment card */
+.equip-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 16px; }
+.equip-header { padding: 16px 20px; border-bottom: 1px solid #f0f0f0; }
+.equip-code { font-family: monospace; font-size: 13px; color: #2F5496; font-weight: 600; letter-spacing: 1px; }
+.equip-name { font-size: 17px; font-weight: 600; margin-top: 6px; color: #1a1a1a; line-height: 1.3; }
+.equip-cat { display: inline-block; font-size: 11px; padding: 3px 10px; border-radius: 20px; margin-top: 8px; color: white; font-weight: 500; }
+
+.equip-details { padding: 0 20px; }
+.detail-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f5f5f5; font-size: 14px; }
+.detail-row:last-child { border-bottom: none; }
+.detail-label { color: #888; flex-shrink: 0; }
+.detail-value { color: #333; font-weight: 500; text-align: right; max-width: 60%; }
+
+.status-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+.status-good { background: #e8f5e9; color: #2e7d32; }
+.status-normal { background: #fff3e0; color: #e65100; }
+.status-broken { background: #fce4ec; color: #c62828; }
+.status-inactive { background: #eeeeee; color: #616161; }
+.status-poor { background: #fff8e1; color: #f57f17; }
+
+/* Action buttons */
+.actions { padding: 16px 20px 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.action-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 8px; border: 1.5px solid #e0e0e0; border-radius: 10px; background: white; cursor: pointer; transition: all 0.15s; text-decoration: none; color: #333; font-size: 12px; font-weight: 500; }
+.action-btn:hover { border-color: #2F5496; background: #f0f4ff; }
+.action-btn:active { transform: scale(0.97); }
+.action-btn .icon { font-size: 22px; }
+.action-btn.primary { background: #2F5496; color: white; border-color: #2F5496; grid-column: 1 / -1; flex-direction: row; justify-content: center; padding: 12px; font-size: 14px; }
+.action-btn.primary:hover { background: #1a3a6b; }
+.action-btn.disabled { opacity: 0.45; pointer-events: none; cursor: not-allowed; background: #f5f5f5; color: #999; border-color: #e0e0e0; }
+
+/* Inactive notice */
+.inactive-notice { margin: 0 20px 16px; background: #fafafa; border: 1.5px dashed #ccc; border-radius: 10px; padding: 14px 16px; text-align: center; font-size: 13px; color: #888; }
+.inactive-notice .big { font-size: 28px; margin-bottom: 6px; }
+
+/* Input sections (Đào tạo & Nghiên cứu KH) */
+.input-sections { padding: 0 20px 16px; display: flex; flex-direction: column; gap: 10px; }
+.input-section { border: 1.5px solid #e0e0e0; border-radius: 10px; overflow: hidden; }
+.input-section-header { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: #fafafa; cursor: pointer; user-select: none; transition: background 0.15s; }
+.input-section-header:hover { background: #f0f4ff; }
+.input-section-header .sec-icon { font-size: 20px; }
+.input-section-header .sec-label { flex: 1; font-size: 13px; font-weight: 600; color: #2F5496; }
+.input-section-header .sec-desc { font-size: 11px; color: #aaa; }
+.input-section-header .arrow { font-size: 12px; color: #aaa; transition: transform 0.2s; }
+.input-section-header.open .arrow { transform: rotate(180deg); }
+.input-section-body { display: none; padding: 14px; border-top: 1px solid #f0f0f0; background: white; }
+.input-section-body.open { display: block; }
+.input-section-body label { font-size: 12px; color: #888; display: block; margin-bottom: 6px; }
+.input-section-body input { width: 100%; border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 10px 12px; font-size: 14px; outline: none; transition: border-color 0.15s; }
+.input-section-body input:focus { border-color: #2F5496; }
+.input-section-body .hint { font-size: 11px; color: #aaa; margin-top: 6px; line-height: 1.4; }
+.input-section-body .submit-row { display: flex; gap: 8px; margin-top: 12px; }
+.submit-btn { flex: 1; background: #2F5496; color: white; border: none; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+.submit-btn:hover { background: #1a3a6b; }
+.submit-btn:active { transform: scale(0.98); }
+.clear-btn { background: #f5f5f5; color: #888; border: none; border-radius: 8px; padding: 10px 14px; font-size: 13px; cursor: pointer; }
+.clear-btn:hover { background: #eee; }
+.success-msg { display: none; background: #e8f5e9; color: #2e7d32; border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-top: 10px; text-align: center; }
+
+/* Not found */
+.not-found { text-align: center; padding: 60px 20px; }
+.not-found .icon { font-size: 48px; margin-bottom: 16px; }
+.not-found h2 { font-size: 18px; color: #333; margin-bottom: 8px; }
+.not-found p { font-size: 14px; color: #888; line-height: 1.5; }
+
+/* All items list */
+.item-list { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.item-row { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid #f5f5f5; cursor: pointer; transition: background 0.1s; }
+.item-row:hover { background: #f8f9ff; }
+.item-row:last-child { border-bottom: none; }
+.item-code { font-family: monospace; font-size: 11px; color: #2F5496; font-weight: 600; min-width: 130px; }
+.item-name { font-size: 13px; color: #333; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item-status { font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-left: 8px; white-space: nowrap; }
+
+.section-title { font-size: 14px; font-weight: 600; color: #2F5496; padding: 12px 16px; background: #f0f4ff; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>Khoa Khí tượng Thủy văn & Hải dương học</h1>
+  <div class="sub">Hệ thống quản lý trang thiết bị</div>
+</div>
+
+<div class="container">
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="Nhập mã QR hoặc tên thiết bị..." autofocus>
+  </div>
+  <div id="content"></div>
+</div>
+
+<script>
+// === EQUIPMENT DATA (đồng bộ từ HMO_Master_Equipment_Database.xlsx) ===
+const EQUIPMENT = {
+  "HMO-HPC-7303": {
+    "name": "Hệ thống Máy Chủ",
+    "spec": "Intel® Xeon® Westmere Six Core Processor E5649, 2.53GHz, 12M QPI 5.86 GT/sec, LGA1366; RAM: 8GB DDR3 1333; HDD WESTERN 2TB SATA; DVD-RW",
+    "cat": "Hệ thống tính toán",
+    "cat_code": "HPC",
+    "year": 2012,
+    "origin": "Trung Quốc",
+    "qty": 1,
+    "value": 427.066,
+    "location": "P206-T3",
+    "manager": "Nguyễn Hồng Quang, Đào Nguyễn Quỳnh Hoa",
+    "status": "Kém",
+    "parent_id": null,
+    "note": "Đề tài thầy Trần Tân Tiến"
+  },
+  "HMO-HPC-7302": {
+    "name": "Máy chủ quản lý và điều khiển Super Micro",
+    "spec": "CPU 2 x Intel® Xeon® Quad Core Processor E5620, 2.40GHz, 12MB L3 cache; RAM Memory 24GB(6 x 4GB) DDR3 1333 240-Pin DDR3; Supports up to 192 GB 1066/1333 MHz DDR3; HDD 2TB, DVD ROM",
+    "cat": "Hệ thống tính toán",
+    "cat_code": "HPC",
+    "year": 2012,
+    "origin": "Trung Quốc",
+    "qty": 1,
+    "value": 454.3,
+    "location": "P204-T3",
+    "manager": "Nguyễn Hồng Quang, Đào Nguyễn Quỳnh Hoa",
+    "status": "Kém",
+    "parent_id": null,
+    "note": "Đề tài TS Ngô Đức Thành"
+  },
+  "HMO-HPC-7748": {
+    "name": "Server Dell PE R720",
+    "spec": "2x Xeon E5-2630 2.3Ghz/4x8Gb Ram/ 8x300Gb HDD/DVDRom",
+    "cat": "Hệ thống tính toán",
+    "cat_code": "HPC",
+    "year": 2013,
+    "origin": "China",
+    "qty": 1,
+    "value": 161.433,
+    "location": "P207-T3",
+    "manager": "Phan Văn Tân",
+    "status": "Không hoạt động",
+    "parent_id": null,
+    "note": "Dự án 11-P04-VIE; QĐ bàn giao cho Khoa số 773//QĐ-KHCN ngày 3/29/2017"
+  },
+  "HMO-HPC-7897": {
+    "name": "Máy chủ Server",
+    "spec": "Processors: 2 x Intel Xeon Sandy Bridge 6-Core E5-2630v2 2.6GHz, 15MB L3 cache 7.2GT/s QPI; Memory: 24GB (3 x 8GB) 1333 MHz 240-pin DDR3 ECC RDIMMS/UDIMMS; HardDisk: 8 x 2.0TB WD RE4 Enterprise SATAIII 6Gbps 7200RPM 64MB 3.5 inch",
+    "cat": "Hệ thống tính toán",
+    "cat_code": "HPC",
+    "year": 2014,
+    "origin": "Trung Quốc",
+    "qty": 4,
+    "value": 514.3468,
+    "location": "P206-T3",
+    "manager": "Nguyễn Hồng Quang, Đào Nguyễn Quỳnh Hoa",
+    "status": "Kém",
+    "parent_id": null,
+    "note": ""
+  },
+  "HMO-HPC-7879": {
+    "name": "Máy chủ SuperMicro Server 1028U-TR4+ (174942U164832)",
+    "spec": "CPU 10 core 2.4GHz, RAM: 64GB DDR4, HDD: 2x120GB SSD SATA",
+    "cat": "Hệ thống tính toán",
+    "cat_code": "HPC",
+    "year": 2017,
+    "origin": "USA",
+    "qty": 1,
+    "value": 153.78,
+    "location": "T3",
+    "manager": "Phan Văn Tân",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": "Dự án FIRST-1.a-VNU2-G01"
+  },
+  "HMO-HPC-7874": {
+    "name": "Máy chủ SuperMicro Server 6048R-E1CR36H (S17494286A01435))",
+    "spec": "CPU 6 core 2.4GHz, RAM: 64GB DDR4, HDD: 3x200GB SSD SATA, 27x4TB Enterprice SATA, Cạc Raid: LSI 3108",
+    "cat": "Hệ thống tính toán",
+    "cat_code": "HPC",
+    "year": 2017,
+    "origin": "USA",
+    "qty": 1,
+    "value": 391.215,
+    "location": "T3",
+    "manager": "Phan Văn Tân",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": "Dự án FIRST-1.a-VNU2-G01"
+  },
+  "HMO-HPC-7880": {
+    "name": "Máy chủ SuperMicro Server 1028U-TR4+ (174942U164829))",
+    "spec": "CPU 10 core 2.4GHz, RAM: 64GB DDR4, HDD: 2x120GB SSD SATA",
+    "cat": "Hệ thống tính toán",
+    "cat_code": "HPC",
+    "year": 2017,
+    "origin": "USA",
+    "qty": 1,
+    "value": 153.78,
+    "location": "T3",
+    "manager": "Phan Văn Tân",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": "Dự án FIRST-1.a-VNU2-G01"
+  },
+  "HMO-HPC-7875": {
+    "name": "Máy chủ SuperMicro Server 1028U-TR4+ (174942U1648365)",
+    "spec": "CPU 10 core 2.4GHz, RAM: 64GB DDR4, HDD: 2x120GB SSD SATA",
+    "cat": "Hệ thống tính toán",
+    "cat_code": "HPC",
+    "year": 2017,
+    "origin": "USA",
+    "qty": 1,
+    "value": 153.78,
+    "location": "T3",
+    "manager": "Phan Văn Tân",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": "Dự án FIRST-1.a-VNU2-G01"
+  },
+  "HMO-HPC-7876": {
+    "name": "Máy chủ SuperMicro Server 1028U-TR4+ (174942U1648336)",
+    "spec": "CPU 10 core 2.4GHz, RAM: 64GB DDR4, HDD: 2x120GB SSD SATA",
+    "cat": "Hệ thống tính toán",
+    "cat_code": "HPC",
+    "year": 2017,
+    "origin": "USA",
+    "qty": 1,
+    "value": 153.78,
+    "location": "T3",
+    "manager": "Phan Văn Tân",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": "Dự án FIRST-1.a-VNU2-G01"
+  },
+  "HMO-HPC-7877": {
+    "name": "Máy chủ SuperMicro Server 1028U-TR4+ (174942U1648362)",
+    "spec": "CPU 10 core 2.4GHz, RAM: 64GB DDR4, HDD: 2x120GB SSD SATA",
+    "cat": "Hệ thống tính toán",
+    "cat_code": "HPC",
+    "year": 2017,
+    "origin": "USA",
+    "qty": 1,
+    "value": 153.78,
+    "location": "T3",
+    "manager": "Phan Văn Tân",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": "Dự án FIRST-1.a-VNU2-G01"
+  },
+  "HMO-HPC-7878": {
+    "name": "Máy chủ SuperMicro Server 1028U-TR4+ (174942U164825)",
+    "spec": "CPU 10 core 2.4GHz, RAM: 64GB DDR4, HDD: 2x120GB SSD SATA",
+    "cat": "Hệ thống tính toán",
+    "cat_code": "HPC",
+    "year": 2017,
+    "origin": "USA",
+    "qty": 1,
+    "value": 153.78,
+    "location": "T3",
+    "manager": "Phan Văn Tân",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": "Dự án FIRST-1.a-VNU2-G01"
+  },
+  "HMO-HPC-7912": {
+    "name": "Máy chủ (Node) tính toán",
+    "spec": "Server Supermicro 2,5\" 1028U-TR4+ E5-2630V4 (Seria number: S16745628524755)",
+    "cat": "Hệ thống tính toán",
+    "cat_code": "HPC",
+    "year": 2018,
+    "origin": "Trung Quốc",
+    "qty": 1,
+    "value": 180.833334,
+    "location": "P206-T3",
+    "manager": "Trần Quang Đức",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": "Đề tài KC.09.15/16-20"
+  },
+  "HMO-HPC-7913": {
+    "name": "Máy chủ (Node) tính toán",
+    "spec": "Server Supermicro 2,5\" 1028U-TR4+ E5-2630V4 (Seria number: S16745628524753)",
+    "cat": "Hệ thống tính toán",
+    "cat_code": "HPC",
+    "year": 2018,
+    "origin": "Trung Quốc",
+    "qty": 1,
+    "value": 180.833334,
+    "location": "P206-T3",
+    "manager": "Trần Quang Đức",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": "Đề tài KC.09.15/16-20"
+  },
+  "HMO-HPC-7908": {
+    "name": "Máy chủ (Node) tính toán",
+    "spec": "Server Supermicro 2,5\" 1028U-TR4+ E5-2630V4 (Seria number: S16745628524752)",
+    "cat": "Hệ thống tính toán",
+    "cat_code": "HPC",
+    "year": 2018,
+    "origin": "Trung Quốc",
+    "qty": 1,
+    "value": 180.833334,
+    "location": "P206-T3",
+    "manager": "Trần Quang Đức",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": "Đề tài KC.09.15/16-20"
+  },
+  "HMO-HPC-7910": {
+    "name": "Máy chủ (Node) tính toán",
+    "spec": "Server Supermicro 2,5\" 1028U-TR4+ E5-2630V4 (Seria number: S16745628524751)",
+    "cat": "Hệ thống tính toán",
+    "cat_code": "HPC",
+    "year": 2018,
+    "origin": "Trung Quốc",
+    "qty": 1,
+    "value": 180.833334,
+    "location": "P206-T3",
+    "manager": "Trần Quang Đức",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": "Đề tài KC.09.15/16-20"
+  },
+  "HMO-HPC-7911": {
+    "name": "Máy chủ (Node) tính toán",
+    "spec": "Server Supermicro 2,5\" 1028U-TR4+ E5-2630V4 (Seria number: S16745628524754)",
+    "cat": "Hệ thống tính toán",
+    "cat_code": "HPC",
+    "year": 2018,
+    "origin": "Trung Quốc",
+    "qty": 1,
+    "value": 180.833334,
+    "location": "P206-T3",
+    "manager": "Trần Quang Đức",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": "Đề tài KC.09.15/16-20"
+  },
+  "HMO-HPC-7914": {
+    "name": "Máy chủ (Node) tính toán",
+    "spec": "Server Supermicro 2,5\" 1028U-TR4+ E5-2630V4 (Seria number: S16745628524750)",
+    "cat": "Hệ thống tính toán",
+    "cat_code": "HPC",
+    "year": 2018,
+    "origin": "Trung Quốc",
+    "qty": 1,
+    "value": 180.833334,
+    "location": "P206-T3",
+    "manager": "Trần Quang Đức",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": "Đề tài KC.09.15/16-20"
+  },
+  "HMO-INF-7750": {
+    "name": "UPS Emerson Liebert PS2200RT3-230",
+    "spec": "UPS Emerson Liebert PS2200RT3-230 2200VA / 1980W",
+    "cat": "Hạ tầng phụ trợ",
+    "cat_code": "INF",
+    "year": 2013,
+    "origin": "China",
+    "qty": 1,
+    "value": 15.096,
+    "location": "P207-T3",
+    "manager": "Phan Văn Tân",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": "Dự án 11-P04-VIE; QĐ bàn giao cho Khoa số 773//QĐ-KHCN ngày 3/29/2017"
+  },
+  "HMO-INF-7898": {
+    "name": "Bộ lưu điện",
+    "spec": "SmartUPS On-line, SanTak C6KR, 4200Watts/6000VA",
+    "cat": "Hạ tầng phụ trợ",
+    "cat_code": "INF",
+    "year": 2014,
+    "origin": "Trung Quốc",
+    "qty": 1,
+    "value": 69.2604,
+    "location": "P206-T3",
+    "manager": "Phạm Tiến Đạt ",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": ""
+  },
+  "HMO-INF-7899": {
+    "name": "Tủ Rack 19 inch 42U",
+    "spec": "",
+    "cat": "Hạ tầng phụ trợ",
+    "cat_code": "INF",
+    "year": 2014,
+    "origin": "Việt Nam",
+    "qty": 1,
+    "value": 15.7993,
+    "location": "P206-T3",
+    "manager": "Phạm Tiến Đạt ",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": ""
+  },
+  "HMO-INF-7882": {
+    "name": "Bộ lưu điện",
+    "spec": "SANTAK 6KVA: C6K",
+    "cat": "Hạ tầng phụ trợ",
+    "cat_code": "INF",
+    "year": 2017,
+    "origin": "China",
+    "qty": 1,
+    "value": 66.0,
+    "location": "T3",
+    "manager": "Phan Văn Tân",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": "Dự án FIRST-1.a-VNU2-G01"
+  },
+  "HMO-LAB-8374": {
+    "name": "Máy tạo sóng",
+    "spec": "Model: HM160.41; Hãng sản xuất: GUNT",
+    "cat": "Thí nghiệm phòng",
+    "cat_code": "LAB",
+    "year": 2021,
+    "origin": "Đức",
+    "qty": 1,
+    "value": 373.74,
+    "location": "P204-T3",
+    "manager": "Nguyễn Kim Cương, Phan Nguyễn Hoàng Nam, Phạm Tiến Đạt",
+    "status": "Tốt",
+    "parent_id": null,
+    "note": "DA “Đầu tư nâng cấp các phòng thí nghiệm chuyên đề phục vụ đào tạo về khoa học cơ bản tại ĐHQGHN”"
+  },
+  "HMO-LAB-8375": {
+    "name": "Mô phỏng bãi biển bằng phẳng",
+    "spec": "Model: HM160.42; Hãng sản xuất: GUNT",
+    "cat": "Thí nghiệm phòng",
+    "cat_code": "LAB",
+    "year": 2021,
+    "origin": "Đức",
+    "qty": 1,
+    "value": 64.88,
+    "location": "P204-T3",
+    "manager": "Nguyễn Kim Cương, Phan Nguyễn Hoàng Nam, Phạm Tiến Đạt",
+    "status": "Tốt",
+    "parent_id": null,
+    "note": "DA “Đầu tư nâng cấp các phòng thí nghiệm chuyên đề phục vụ đào tạo về khoa học cơ bản tại ĐHQGHN”"
+  },
+  "HMO-LAB-8376": {
+    "name": "Bẫy trầm tích",
+    "spec": "Model: HM160.72; Hãng sản xuất: GUNT",
+    "cat": "Thí nghiệm phòng",
+    "cat_code": "LAB",
+    "year": 2021,
+    "origin": "Đức",
+    "qty": 1,
+    "value": 202.72,
+    "location": "P204-T3",
+    "manager": "Nguyễn Kim Cương, Phan Nguyễn Hoàng Nam, Phạm Tiến Đạt",
+    "status": "Tốt",
+    "parent_id": null,
+    "note": "DA “Đầu tư nâng cấp các phòng thí nghiệm chuyên đề phục vụ đào tạo về khoa học cơ bản tại ĐHQGHN”"
+  },
+  "HMO-LAB-8377": {
+    "name": "Bộ cấp trầm tích",
+    "spec": "Model: HM160.73; Hãng sản xuất: GUNT",
+    "cat": "Thí nghiệm phòng",
+    "cat_code": "LAB",
+    "year": 2021,
+    "origin": "Đức",
+    "qty": 1,
+    "value": 430.05,
+    "location": "P204-T3",
+    "manager": "Nguyễn Kim Cương, Phan Nguyễn Hoàng Nam, Phạm Tiến Đạt",
+    "status": "Tốt",
+    "parent_id": null,
+    "note": "DA “Đầu tư nâng cấp các phòng thí nghiệm chuyên đề phục vụ đào tạo về khoa học cơ bản tại ĐHQGHN”"
+  },
+  "HMO-LAB-8379": {
+    "name": "Mười áp kế dạng ống",
+    "spec": "Model: HM160.53; Hãng sản xuất: GUNT",
+    "cat": "Thí nghiệm phòng",
+    "cat_code": "LAB",
+    "year": 2021,
+    "origin": "Đức",
+    "qty": 1,
+    "value": 69.55,
+    "location": "P204-T3",
+    "manager": "Nguyễn Kim Cương, Phan Nguyễn Hoàng Nam, Phạm Tiến Đạt",
+    "status": "Tốt",
+    "parent_id": null,
+    "note": "DA “Đầu tư nâng cấp các phòng thí nghiệm chuyên đề phục vụ đào tạo về khoa học cơ bản tại ĐHQGHN”"
+  },
+  "HMO-LAB-8373": {
+    "name": "Máng thực nghiệm",
+    "spec": "Model: HM160; Hãng sản xuất: GUNT",
+    "cat": "Thí nghiệm phòng",
+    "cat_code": "LAB",
+    "year": 2021,
+    "origin": "Đức",
+    "qty": 1,
+    "value": 2262.61,
+    "location": "P204-T3",
+    "manager": "Nguyễn Kim Cương, Phan Nguyễn Hoàng Nam, Phạm Tiến Đạt",
+    "status": "Tốt",
+    "parent_id": null,
+    "note": "DA “Đầu tư nâng cấp các phòng thí nghiệm chuyên đề phục vụ đào tạo về khoa học cơ bản tại ĐHQGHN”"
+  },
+  "HMO-LAB-8695": {
+    "name": "Bộ thí nghiệm mô phỏng dòng chảy qua các công trình",
+    "spec": "- Model: FC15 - Hãng sản xuất: Tecquipment - Xuất xứ: Anh",
+    "cat": "Thí nghiệm phòng",
+    "cat_code": "LAB",
+    "year": 2023,
+    "origin": "Anh",
+    "qty": 1,
+    "value": 420.0,
+    "location": "P401-T3",
+    "manager": "Trịnh Minh Ngọc, Đặng Trần Đức Minh ",
+    "status": "Tốt",
+    "parent_id": null,
+    "note": "DA Ngành mở mới (4Khoa), QĐ 5073/QĐ-ĐHKHTN ngày 12/29/2023"
+  },
+  "HMO-LAB-8696": {
+    "name": "Bộ mô hình Mô phỏng các quá trình thủy văn",
+    "spec": "- Model: H313V - Hãng sản xuất: Tecquipment - Xuất xứ: Anh",
+    "cat": "Thí nghiệm phòng",
+    "cat_code": "LAB",
+    "year": 2023,
+    "origin": "Anh",
+    "qty": 1,
+    "value": 2100.0,
+    "location": "P401-T3",
+    "manager": "Trịnh Minh Ngọc, Đặng Trần Đức Minh ",
+    "status": "Tốt",
+    "parent_id": null,
+    "note": "DA Ngành mở mới (4Khoa), QĐ 5073/QĐ-ĐHKHTN ngày 12/29/2023"
+  },
+  "HMO-LAB-8697": {
+    "name": "Bộ mô hình Dòng chảy kênh mương hở",
+    "spec": "- Model: FC50-2.5 - Hãng sản xuất: Tecquipment - Xuất xứ: Anh",
+    "cat": "Thí nghiệm phòng",
+    "cat_code": "LAB",
+    "year": 2023,
+    "origin": "Anh",
+    "qty": 1,
+    "value": 750.0,
+    "location": "P401-T3",
+    "manager": "Trịnh Minh Ngọc, Đặng Trần Đức Minh ",
+    "status": "Tốt",
+    "parent_id": null,
+    "note": "DA Ngành mở mới (4Khoa), QĐ 5073/QĐ-ĐHKHTN ngày 12/29/2023"
+  },
+  "HMO-LAB-8691": {
+    "name": "Bộ thí nghiệm tính thấm của đất",
+    "spec": "- Hãng sản xuất: T-Tech - Xuất xứ: Việt Nam",
+    "cat": "Thí nghiệm phòng",
+    "cat_code": "LAB",
+    "year": 2023,
+    "origin": "Việt Nam",
+    "qty": 1,
+    "value": 11.0,
+    "location": "P401-T3",
+    "manager": "Trịnh Minh Ngọc, Đặng Trần Đức Minh ",
+    "status": "Tốt",
+    "parent_id": null,
+    "note": "DA Ngành mở mới (4Khoa), QĐ 5073/QĐ-ĐHKHTN ngày 12/29/2023"
+  },
+  "HMO-NET-7308": {
+    "name": "Mellanox copper cable - QSFP to CX4",
+    "spec": "Mellanox-Asian",
+    "cat": "Thiết bị mạng",
+    "cat_code": "NET",
+    "year": 2012,
+    "origin": "Trung Quốc",
+    "qty": 14,
+    "value": 75.768,
+    "location": "P206-T3",
+    "manager": "Phạm Tiến Đạt ",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": ""
+  },
+  "HMO-NET-7307": {
+    "name": "Card nối mạng",
+    "spec": "Mellanox-Asian",
+    "cat": "Thiết bị mạng",
+    "cat_code": "NET",
+    "year": 2012,
+    "origin": "Trung Quốc",
+    "qty": 14,
+    "value": 90.86,
+    "location": "P206-T3",
+    "manager": "Phạm Tiến Đạt ",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": ""
+  },
+  "HMO-NET-7306": {
+    "name": "Hộp chia cổng nối mạng Mellanox",
+    "spec": "Mellanox-Asian",
+    "cat": "Thiết bị mạng",
+    "cat_code": "NET",
+    "year": 2012,
+    "origin": "Trung Quốc",
+    "qty": 1,
+    "value": 132.0,
+    "location": "P206-T3",
+    "manager": "Phạm Tiến Đạt ",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": ""
+  },
+  "HMO-NET-7751": {
+    "name": "Switch Cisco Catalyst WS-C2960-24TT-L",
+    "spec": "Thiết bị mạng Switch Cisco Catalyst WS-C2960-24TT-L",
+    "cat": "Thiết bị mạng",
+    "cat_code": "NET",
+    "year": 2013,
+    "origin": "China",
+    "qty": 1,
+    "value": 17.618,
+    "location": "P207-T3",
+    "manager": "Phan Văn Tân",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": "Dự án 11-P04-VIE; QĐ bàn giao cho Khoa số 773//QĐ-KHCN ngày 3/29/2017"
+  },
+  "HMO-NET-7752": {
+    "name": "Bộ định tuyến không dây LINKSYS EA6500",
+    "spec": "Bộ định tuyến không dây LINKSYS EA6500",
+    "cat": "Thiết bị mạng",
+    "cat_code": "NET",
+    "year": 2013,
+    "origin": "China",
+    "qty": 1,
+    "value": 6.068,
+    "location": "P207-T3",
+    "manager": "Phan Văn Tân",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": "Dự án 11-P04-VIE; QĐ bàn giao cho Khoa số 773//QĐ-KHCN ngày 3/29/2017"
+  },
+  "HMO-NET-7758": {
+    "name": "PKNK Cable Thunderbolt to Ethernet gigabit",
+    "spec": "PKNK Cable Thunderbolt to Ethernet gigabit",
+    "cat": "Thiết bị mạng",
+    "cat_code": "NET",
+    "year": 2014,
+    "origin": "China",
+    "qty": 1,
+    "value": 1.081818,
+    "location": "P207-T3",
+    "manager": "Phan Văn Tân",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": "Dự án 11-P04-VIE; QĐ bàn giao cho Khoa số 773//QĐ-KHCN ngày 3/29/2017"
+  },
+  "HMO-NET-7759": {
+    "name": "Wireless access point TP-LINK TL-WR940N",
+    "spec": "Wireless access point TP-LINK TL-WR940N",
+    "cat": "Thiết bị mạng",
+    "cat_code": "NET",
+    "year": 2016,
+    "origin": "China",
+    "qty": 1,
+    "value": 0.544545,
+    "location": "P207-T3",
+    "manager": "Phan Văn Tân",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": "Dự án 11-P04-VIE; QĐ bàn giao cho Khoa số 773//QĐ-KHCN ngày 3/29/2017"
+  },
+  "HMO-NET-7881": {
+    "name": "Gigabit Switch 176630000081",
+    "spec": "Bộ chuyển mạch 24 cổng Gigabit DrayTek VigorSwitch G2260",
+    "cat": "Thiết bị mạng",
+    "cat_code": "NET",
+    "year": 2017,
+    "origin": "Taiwan",
+    "qty": 1,
+    "value": 9.9,
+    "location": "T3",
+    "manager": "Phan Văn Tân",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": "Dự án FIRST-1.a-VNU2-G01"
+  },
+  "HMO-NET-7909": {
+    "name": "Bộ chuyển mạch Infiniband",
+    "spec": "Mellanox SX6025 Switch Systems",
+    "cat": "Thiết bị mạng",
+    "cat_code": "NET",
+    "year": 2018,
+    "origin": "Trung Quốc",
+    "qty": 1,
+    "value": 379.9999962,
+    "location": "P206-T3",
+    "manager": "Trần Quang Đức",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": "Đề tài KC.09.15/16-20"
+  },
+  "HMO-OBS-5617": {
+    "name": "Acoustic Wave and Current Profiler(Thiết bị đo sóng và dòng chảy)",
+    "spec": "Model: AWAC Acoustic Wave and Current Profiler, Manufacturer: Nortek - Norway",
+    "cat": "Quan trắc & đo đạc",
+    "cat_code": "OBS",
+    "year": 2007,
+    "origin": "",
+    "qty": 1,
+    "value": 769.0919245,
+    "location": "P204-T3",
+    "manager": "Nguyễn Thọ Sáo",
+    "status": "Không hoạt động",
+    "parent_id": null,
+    "note": "QD 2449, DA GDH Đại học 1, mức C1, hợp đồng C1.III.2/VNU-IFB C1.III (Đã thanh lý 01 QĐ 602/QĐ-ĐHQGHN ngày 3/11/2022)"
+  },
+  "HMO-OBS-6527": {
+    "name": "Máy đo lưu lượng nước theo nguyên lý Doppler",
+    "spec": "Acoustic Doppler Current Profilers (ADCP), Model: FlowQuest 600Hãng SX: Link-Quest",
+    "cat": "Quan trắc & đo đạc",
+    "cat_code": "OBS",
+    "year": 2012,
+    "origin": "Mỹ",
+    "qty": 2,
+    "value": 941.6,
+    "location": "P204-T3",
+    "manager": "Phạm Tiến Đạt ",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": "Dự án TCNL 2012, MS QH1.11.02"
+  },
+  "HMO-OBS-6528": {
+    "name": "Thiết bị định vị la bàn",
+    "spec": "GPS Compass, Model: V102Hãng SX: Hemisphere, Canada",
+    "cat": "Quan trắc & đo đạc",
+    "cat_code": "OBS",
+    "year": 2012,
+    "origin": "Canada",
+    "qty": 2,
+    "value": 429.0,
+    "location": "P204-T3",
+    "manager": "Phạm Tiến Đạt ",
+    "status": "Bình thường",
+    "parent_id": null,
+    "note": "Dự án TCNL 2012, MS QH1.11.02"
+  },
+  "HMO-OBS-7083": {
+    "name": "Thiết bị đo hang lượng kim loại nặng xách tay",
+    "spec": "Model: HM1000, Xuất sứ: Wagtech, Anh",
+    "cat": "Quan trắc & đo đạc",
+    "cat_code": "OBS",
+    "year": 2013,
+    "origin": "Anh",
+    "qty": 1,
+    "value": 320.0,
+    "location": "P204-T3",
+    "manager": "Nguyễn Minh Huấn",
+    "status": "Không hoạt động",
+    "parent_id": null,
+    "note": "Dự án TCNL 2012, MS dự án QH1.11.02"
+  },
+  "HMO-OBS-7082": {
+    "name": "máy phân tích nồng độ dầu OCMA-310",
+    "spec": "Model: OCMA-310, Hãng SX: HORIBA Ltd, Nhật Bản",
+    "cat": "Quan trắc & đo đạc",
+    "cat_code": "OBS",
+    "year": 2013,
+    "origin": "Nhật",
+    "qty": 1,
+    "value": 350.0,
+    "location": "P204-T3",
+    "manager": "Nguyễn Minh Huấn",
+    "status": "Không hoạt động",
+    "parent_id": null,
+    "note": "Dự án TCNL 2012, MS dự án QH1.11.02"
+  },
+  "HMO-OBS-7081": {
+    "name": "Máy đo độ đục và nồng độ chất rắn lơ lửng",
+    "spec": "Model: LISST-Portable Particle Size Analyzer",
+    "cat": "Quan trắc & đo đạc",
+    "cat_code": "OBS",
+    "year": 2013,
+    "origin": "Mỹ",
+    "qty": 1,
+    "value": 680.0,
+    "location": "P204-T3",
+    "manager": "Nguyễn Minh Huấn",
+    "status": "Không hoạt động",
+    "parent_id": null,
+    "note": "Dự án TCNL 2012, MS dự án QH1.11.02"
+  },
+  "HMO-OBS-8372": {
+    "name": "Thiết bị đo sóng dòng chảy",
+    "spec": "Model: AWAC600; Hãng sản xuất: Nortek",
+    "cat": "Quan trắc & đo đạc",
+    "cat_code": "OBS",
+    "year": 2021,
+    "origin": "Nauy",
+    "qty": 1,
+    "value": 1215.85,
+    "location": "P204-T3",
+    "manager": "Nguyễn Kim Cương, Phan Nguyễn Hoàng Nam, Phạm Tiến Đạt",
+    "status": "Tốt",
+    "parent_id": null,
+    "note": "DA “Đầu tư nâng cấp các phòng thí nghiệm chuyên đề phục vụ đào tạo về khoa học cơ bản tại ĐHQGHN”"
+  },
+  "HMO-OBS-8380": {
+    "name": "Thiết bị đo mực nước",
+    "spec": "Model: HM160.52; Hãng sản xuất: GUNT",
+    "cat": "Quan trắc & đo đạc",
+    "cat_code": "OBS",
+    "year": 2021,
+    "origin": "Đức",
+    "qty": 1,
+    "value": 64.09,
+    "location": "P204-T3",
+    "manager": "Nguyễn Kim Cương, Phan Nguyễn Hoàng Nam, Phạm Tiến Đạt",
+    "status": "Tốt",
+    "parent_id": null,
+    "note": "DA “Đầu tư nâng cấp các phòng thí nghiệm chuyên đề phục vụ đào tạo về khoa học cơ bản tại ĐHQGHN”"
+  },
+  "HMO-OBS-8378": {
+    "name": "Máy đo vận tốc nước",
+    "spec": "Model: HM160.64; Hãng sản xuất: GUNT",
+    "cat": "Quan trắc & đo đạc",
+    "cat_code": "OBS",
+    "year": 2021,
+    "origin": "Đức",
+    "qty": 1,
+    "value": 329.06,
+    "location": "P204-T3",
+    "manager": "Nguyễn Kim Cương, Phan Nguyễn Hoàng Nam, Phạm Tiến Đạt",
+    "status": "Tốt",
+    "parent_id": null,
+    "note": "DA “Đầu tư nâng cấp các phòng thí nghiệm chuyên đề phục vụ đào tạo về khoa học cơ bản tại ĐHQGHN”"
+  },
+  "HMO-OBS-8692": {
+    "name": "Máy đo độ ẩm đất",
+    "spec": "- Model: SMM1 - Hãng sản xuất: PCE - Xuất xứ: Đài Loan",
+    "cat": "Quan trắc & đo đạc",
+    "cat_code": "OBS",
+    "year": 2023,
+    "origin": "Đài Loan",
+    "qty": 4,
+    "value": 40.0,
+    "location": "P401-T3",
+    "manager": "Trịnh Minh Ngọc",
+    "status": "Tốt",
+    "parent_id": null,
+    "note": "DA Ngành mở mới (4Khoa), QĐ 5073/QĐ-ĐHKHTN ngày 12/29/2023"
+  },
+  "HMO-OBS-8693": {
+    "name": "Máy đo đa chỉ tiêu chất lượng nước",
+    "spec": "- Model: U-52G - Hãng sản xuất: Horiba - Xuất xứ: Nhật Bản",
+    "cat": "Quan trắc & đo đạc",
+    "cat_code": "OBS",
+    "year": 2023,
+    "origin": "Nhật Bản",
+    "qty": 3,
+    "value": 420.0,
+    "location": "P401-T3",
+    "manager": "Trịnh Minh Ngọc",
+    "status": "Tốt",
+    "parent_id": null,
+    "note": "DA Ngành mở mới (4Khoa), QĐ 5073/QĐ-ĐHKHTN ngày 12/29/2023"
+  },
+  "HMO-OBS-8694": {
+    "name": "Thiết bị phân tích độ mặn",
+    "spec": "(bao gồm: Máy phân tích độ mặn: 01 chiếc; Điện cực đo độ dẫn: 01 chiếc) - Hãng sản xuất: Horiba - Xuất xứ: Nhật Bản",
+    "cat": "Quan trắc & đo đạc",
+    "cat_code": "OBS",
+    "year": 2023,
+    "origin": "Nhật Bản",
+    "qty": 2,
+    "value": 52.0,
+    "location": "P401-T3",
+    "manager": "Trịnh Minh Ngọc",
+    "status": "Tốt",
+    "parent_id": null,
+    "note": "DA Ngành mở mới (4Khoa), QĐ 5073/QĐ-ĐHKHTN ngày 12/29/2023"
+  },
+  "HMO-OBS-8688": {
+    "name": "Thiết bị GPS cầm tay",
+    "spec": "- Model: GPS MAP 64sc site survey - Hãng sản xuất: Garmin - Xuất xứ: Đài Loan",
+    "cat": "Quan trắc & đo đạc",
+    "cat_code": "OBS",
+    "year": 2023,
+    "origin": "Đài Loan",
+    "qty": 6,
+    "value": 90.0,
+    "location": "P206-T3",
+    "manager": "Nguyễn Quang Hưng",
+    "status": "Tốt",
+    "parent_id": null,
+    "note": "DA Ngành mở mới (4Khoa), QĐ 5073/QĐ-ĐHKHTN ngày 12/29/2023"
+  },
+  "HMO-OBS-8689": {
+    "name": "Thiết bị định vị vệ tinh",
+    "spec": "- Model: S631 - Hãng sản xuất: Hemisphere - Xuất xứ: Trung Quốc",
+    "cat": "Quan trắc & đo đạc",
+    "cat_code": "OBS",
+    "year": 2023,
+    "origin": "Trung Quốc",
+    "qty": 2,
+    "value": 1920.0,
+    "location": "P206-T3",
+    "manager": "Nguyễn Quang Hưng",
+    "status": "Tốt",
+    "parent_id": null,
+    "note": "DA Ngành mở mới (4Khoa), QĐ 5073/QĐ-ĐHKHTN ngày 12/29/2023"
+  },
+  "HMO-OBS-8690": {
+    "name": "Tủ ấm và bộ đo BOD",
+    "spec": "(bao gồm: Bộ xác định BOD: 01 chiếc; Tủ ấm lạnh: 01 chiếc) - Hãng sản xuất: VELP - Xuất xứ: Ý",
+    "cat": "Quan trắc & đo đạc",
+    "cat_code": "OBS",
+    "year": 2023,
+    "origin": "Ý",
+    "qty": 1,
+    "value": 109.0,
+    "location": "P401-T3",
+    "manager": "Trịnh Minh Ngọc",
+    "status": "Tốt",
+    "parent_id": null,
+    "note": "DA Ngành mở mới (4Khoa), QĐ 5073/QĐ-ĐHKHTN ngày 12/29/2023"
+  },
+  "HMO-OTH-6532": {
+    "name": "Bộ rung điện và dây dẫn",
+    "spec": "Phụ kiện cho máy đo lưu lượng nước ID=6527",
+    "cat": "Khác",
+    "cat_code": "OTH",
+    "year": 2012,
+    "origin": "Việt Nam",
+    "qty": 2,
+    "value": 3.3,
+    "location": "P204-T3",
+    "manager": "Phạm Tiến Đạt ",
+    "status": "Bình thường",
+    "parent_id": 6527,
+    "note": "Dự án TCNL 2012, MS QH1.11.02"
+  },
+  "HMO-OTH-6530": {
+    "name": "Giá lắp trên xuồng bằng vật liệu khử từ",
+    "spec": "Phụ kiện cho máy đo lưu lượng nước ID=6527",
+    "cat": "Khác",
+    "cat_code": "OTH",
+    "year": 2012,
+    "origin": "Việt Nam",
+    "qty": 2,
+    "value": 44.0,
+    "location": "P204-T3",
+    "manager": "Phạm Tiến Đạt ",
+    "status": "Bình thường",
+    "parent_id": 6527,
+    "note": "Dự án TCNL 2012, MS QH1.11.02"
+  },
+  "HMO-PC-7753": {
+    "name": "MacBook Pro 13 inch Retina Display",
+    "spec": "2.5GHz dual-core Intel Core i5 processor/ 8GB of 1600MHz DDR3L /128 GB Flash Storage/13.3inch with Retina Display with IPS Technology",
+    "cat": "Máy tính cá nhân",
+    "cat_code": "PC",
+    "year": 2013,
+    "origin": "China",
+    "qty": 1,
+    "value": 36.972,
+    "location": "P207-T3",
+    "manager": "Phan Văn Tân",
+    "status": "Không hoạt động",
+    "parent_id": null,
+    "note": "Dự án 11-P04-VIE; QĐ bàn giao cho Khoa số 773//QĐ-KHCN ngày 3/29/2017"
+  },
+  "HMO-PC-7754": {
+    "name": "Apple Laptop Macbook Air 11.6 inch",
+    "spec": "Apple Laptop Macbook Air 11.6 inch",
+    "cat": "Máy tính cá nhân",
+    "cat_code": "PC",
+    "year": 2014,
+    "origin": "China",
+    "qty": 2,
+    "value": 40.89091,
+    "location": "P207-T3",
+    "manager": "Phan Văn Tân",
+    "status": "Không hoạt động",
+    "parent_id": null,
+    "note": "Dự án 11-P04-VIE; QĐ bàn giao cho Khoa số 773//QĐ-KHCN ngày 3/29/2017"
+  },
+  "HMO-PC-7755": {
+    "name": "Apple PC iMac 21.5 inch",
+    "spec": "2.7 GhX Core I5/ 2x4Gb Ram/!TB HDD",
+    "cat": "Máy tính cá nhân",
+    "cat_code": "PC",
+    "year": 2014,
+    "origin": "China",
+    "qty": 1,
+    "value": 27.718182,
+    "location": "P207-T3",
+    "manager": "Phan Văn Tân",
+    "status": "Không hoạt động",
+    "parent_id": null,
+    "note": "Dự án 11-P04-VIE; QĐ bàn giao cho Khoa số 773//QĐ-KHCN ngày 3/29/2017"
+  },
+  "HMO-SW-2767": {
+    "name": "Phần mềm chuyên dụng NK Graphics",
+    "spec": "",
+    "cat": "Phần mềm",
+    "cat_code": "SW",
+    "year": 2002,
+    "origin": "",
+    "qty": 1,
+    "value": 33.63966,
+    "location": "P206-T3",
+    "manager": "",
+    "status": "Không hoạt động",
+    "parent_id": null,
+    "note": "Đề tài KC 09.04 Trần Tân Tiến"
+  },
+  "HMO-SW-2775": {
+    "name": "Phần mềm Ram",
+    "spec": "",
+    "cat": "Phần mềm",
+    "cat_code": "SW",
+    "year": 2002,
+    "origin": "",
+    "qty": 1,
+    "value": 150.0,
+    "location": "P206-T3",
+    "manager": "",
+    "status": "Không hoạt động",
+    "parent_id": null,
+    "note": "Đề tài KC 09.04 Trần Tân Tiến"
+  },
+  "HMO-SW-2917": {
+    "name": "Phần mềm số trị",
+    "spec": "32 bit",
+    "cat": "Phần mềm",
+    "cat_code": "SW",
+    "year": 2003,
+    "origin": "",
+    "qty": 1,
+    "value": 96.796,
+    "location": "P206-T3",
+    "manager": "Nguyễn Minh Huấn",
+    "status": "Không hoạt động",
+    "parent_id": null,
+    "note": ""
+  },
+  "HMO-SW-4082": {
+    "name": "Nâng cấp phần mềm chuyên dụng (1205)",
+    "spec": "",
+    "cat": "Phần mềm",
+    "cat_code": "SW",
+    "year": 2005,
+    "origin": "",
+    "qty": 1,
+    "value": 26.36,
+    "location": "Đề tài KC 09.04 Trần Tân Tiến",
+    "manager": "",
+    "status": "Không hoạt động",
+    "parent_id": null,
+    "note": "Đề tài KC 09.04 Trần Tân Tiến"
+  },
+  "HMO-SW-6052": {
+    "name": "Phần mềm",
+    "spec": "3-axis graphic",
+    "cat": "Phần mềm",
+    "cat_code": "SW",
+    "year": 2006,
+    "origin": "",
+    "qty": 1,
+    "value": 77.632,
+    "location": "P204-T3",
+    "manager": "Nguyễn Minh Huấn",
+    "status": "Không hoạt động",
+    "parent_id": null,
+    "note": "DA GDH Đại học 1, mức C"
+  },
+  "HMO-SW-6053": {
+    "name": "Phần mềm",
+    "spec": "Temperature sensor",
+    "cat": "Phần mềm",
+    "cat_code": "SW",
+    "year": 2006,
+    "origin": "",
+    "qty": 2,
+    "value": 22.88,
+    "location": "P204-T3",
+    "manager": "Nguyễn Minh Huấn",
+    "status": "Không hoạt động",
+    "parent_id": null,
+    "note": "DA GDH Đại học 1, mức C"
+  },
+  "HMO-SW-6055": {
+    "name": "Phần mềm",
+    "spec": "Spare part reed contact",
+    "cat": "Phần mềm",
+    "cat_code": "SW",
+    "year": 2006,
+    "origin": "",
+    "qty": 1,
+    "value": 2.32,
+    "location": "P204-T3",
+    "manager": "Nguyễn Minh Huấn",
+    "status": "Không hoạt động",
+    "parent_id": null,
+    "note": "DA GDH Đại học 1, mức C"
+  },
+  "HMO-SW-6054": {
+    "name": "Phần mềm",
+    "spec": "Water current … sensor",
+    "cat": "Phần mềm",
+    "cat_code": "SW",
+    "year": 2006,
+    "origin": "",
+    "qty": 2,
+    "value": 36.0,
+    "location": "P204-T3",
+    "manager": "Nguyễn Minh Huấn",
+    "status": "Không hoạt động",
+    "parent_id": null,
+    "note": "DA GDH Đại học 1, mức C"
+  },
+  "HMO-SW-6056": {
+    "name": "Phần mềm",
+    "spec": "Spare part Acrlic",
+    "cat": "Phần mềm",
+    "cat_code": "SW",
+    "year": 2006,
+    "origin": "",
+    "qty": 2,
+    "value": 3.68,
+    "location": "P204-T3",
+    "manager": "Nguyễn Minh Huấn",
+    "status": "Không hoạt động",
+    "parent_id": null,
+    "note": "DA GDH Đại học 1, mức C"
+  },
+  "HMO-SW-4781": {
+    "name": "Phần mềm hỗ trợ hệ thống đa xử lý",
+    "spec": "Redhad, Singapore",
+    "cat": "Phần mềm",
+    "cat_code": "SW",
+    "year": 2007,
+    "origin": "",
+    "qty": 1,
+    "value": 5.311,
+    "location": "P206-T3",
+    "manager": "Nguyễn Minh Huấn",
+    "status": "Không hoạt động",
+    "parent_id": null,
+    "note": ""
+  },
+  "HMO-SW-5622": {
+    "name": "Test and communication software for Sedimeter, DOS",
+    "spec": "Model: Sedimeter, Manufacturer: Erlingsson-Nautik, Norway",
+    "cat": "Phần mềm",
+    "cat_code": "SW",
+    "year": 2007,
+    "origin": "",
+    "qty": 1,
+    "value": 23.857401,
+    "location": "P204-T3",
+    "manager": "",
+    "status": "Không hoạt động",
+    "parent_id": null,
+    "note": "QD 2449, DA GDH Đại học 1, mức C1, hợp đồng C1.III.2/VNU-IFB C1.III"
+  },
+  "HMO-SW-5625": {
+    "name": "Hydrographic Survey Software: HYPACK Max Software",
+    "spec": "Manufacturer: Hypack - USA",
+    "cat": "Phần mềm",
+    "cat_code": "SW",
+    "year": 2007,
+    "origin": "",
+    "qty": 1,
+    "value": 133.159643,
+    "location": "P204-T3",
+    "manager": "Đinh Văn Ưu",
+    "status": "Không hoạt động",
+    "parent_id": null,
+    "note": "QD 2449, DA GDH Đại học 1, mức C1, hợp đồng C1.III.2/VNU-IFB C1.III"
+  },
+  "HMO-SW-8698": {
+    "name": "Phần mềm mô phỏng thủy động lực học",
+    "spec": "- Model: Delft3D Hydro-Morphodynamics Basic Service Package - Hãng sản xuất: Delft3D",
+    "cat": "Phần mềm",
+    "cat_code": "SW",
+    "year": 2023,
+    "origin": "",
+    "qty": 1,
+    "value": 350.0,
+    "location": "P206-T3",
+    "manager": "Nguyễn Quang Hưng",
+    "status": "Tốt",
+    "parent_id": null,
+    "note": "DA Ngành mở mới (4Khoa), QĐ 5073/QĐ-ĐHKHTN ngày 12/29/2023"
+  },
+  "HMO-SW-8699": {
+    "name": "Phần mềm biên dịch Intel cho hệ thống mã nguồn mở",
+    "spec": "- Model: Intel oneAPI Base & HPC Toolkit - Hãng sản xuất: Intel",
+    "cat": "Phần mềm",
+    "cat_code": "SW",
+    "year": 2023,
+    "origin": "",
+    "qty": 1,
+    "value": 185.0,
+    "location": "P206-T3",
+    "manager": "Nguyễn Quang Hưng",
+    "status": "Tốt",
+    "parent_id": null,
+    "note": "DA Ngành mở mới (4Khoa), QĐ 5073/QĐ-ĐHKHTN ngày 12/29/2023"
+  }
+};
+
+// === GOOGLE FORM URLs ===
+// Đã cập nhật URLs thực — 01/05/2026
+const FORMS = {
+  borrow: 'https://docs.google.com/forms/d/e/1FAIpQLSfwZVImdUrS8NqrKQ9H2H7su2t2jd3RjFOgBbLV4lhO4Txe5Q/viewform?usp=pp_url&entry.1492360237=',
+  return: 'https://docs.google.com/forms/d/e/1FAIpQLSeYhsLtYYCYC1tAxMu472BITIBXqA-Mch6T8fZUttelpFH41g/viewform?usp=pp_url&entry.1569370753=',
+  maintain: 'https://docs.google.com/forms/d/e/1FAIpQLSc0mJj0Q_DXoUewdFE3yWi9wUgL3Qrw2jQKmfPKZGUb2jU6cw/viewform?usp=pp_url&entry.1832659835=',
+  report: 'https://docs.google.com/forms/d/e/1FAIpQLSfuqZ1GzbTnboOz5In7fvYcRK8b2GIluDk3_UYbEBAbH5b6eQ/viewform?usp=pp_url&entry.2054726393=',
+  training: 'https://docs.google.com/forms/d/e/FORM_ID_DAOTAO/viewform?usp=pp_url&entry.FIELD_QR=',
+  research: 'https://docs.google.com/forms/d/e/FORM_ID_NCKH/viewform?usp=pp_url&entry.FIELD_QR='
+};
+
+const CAT_COLORS = {
+  'HPC': '#2F5496', 'NET': '#854F0B', 'OBS': '#0F6E56', 'LAB': '#378ADD',
+  'SW': '#7F77DD', 'PC': '#888780', 'INF': '#D85A30', 'OTH': '#993556'
+};
+
+// Statuses that block borrowing
+const INACTIVE_STATUSES = new Set(['Không hoạt động', 'Hỏng']);
+
+function getStatusClass(status) {
+  if (status === 'Tốt') return 'status-good';
+  if (status === 'Bình thường') return 'status-normal';
+  if (status === 'Kém') return 'status-poor';
+  if (status === 'Hỏng' || status === 'Không hoạt động') return 'status-broken';
+  return 'status-inactive';
+}
+
+function getEquipImage(qrCode, eq) {
+  // Image placeholder - khi có ảnh thực, thêm trường "image" vào EQUIPMENT data
+  // Ví dụ: "image": "images/HMO-LAB-8374.jpg"
+  if (eq.image) {
+    return `<div class="equip-image-box"><img src="${eq.image}" alt="${eq.name}" onerror="this.parentElement.innerHTML='<div class=equip-image-placeholder><div class=ph-icon>📷</div><div class=ph-text>Chưa có hình ảnh</div></div>'"></div>`;
+  }
+  return `<div class="equip-image-box"><div class="equip-image-placeholder"><div class="ph-icon">📷</div><div class="ph-text">Chưa có hình ảnh thiết bị</div></div></div>`;
+}
+
+function toggleSection(headerId) {
+  const header = document.getElementById(headerId);
+  const body = document.getElementById(headerId + '-body');
+  header.classList.toggle('open');
+  body.classList.toggle('open');
+}
+
+function submitInput(sectionId, qrCode, type) {
+  const input = document.getElementById(sectionId + '-input');
+  const val = input.value.trim();
+  if (!val) { input.focus(); input.style.borderColor = '#e53935'; return; }
+  input.style.borderColor = '#e0e0e0';
+  
+  // Build form URL with QR and entered code
+  let url = '';
+  if (type === 'training') url = FORMS.training + encodeURIComponent(qrCode) + '&entry.FIELD_MAHP=' + encodeURIComponent(val);
+  if (type === 'research') url = FORMS.research + encodeURIComponent(qrCode) + '&entry.FIELD_MADT=' + encodeURIComponent(val);
+  
+  // Open form (khi chưa có URL thực, hiện thông báo)
+  if (url.includes('FORM_ID')) {
+    const msg = document.getElementById(sectionId + '-success');
+    msg.textContent = '✓ Đã ghi nhận: ' + val + ' (Form chưa được kết nối — liên hệ CBQL để cấu hình)';
+    msg.style.display = 'block';
+    setTimeout(() => { msg.style.display = 'none'; input.value = ''; }, 4000);
+  } else {
+    window.open(url, '_blank');
+  }
+}
+
+function showEquipment(qrCode) {
+  const eq = EQUIPMENT[qrCode];
+  if (!eq) return showNotFound(qrCode);
+  
+  const catColor = CAT_COLORS[eq.cat_code] || '#888';
+  const statusClass = getStatusClass(eq.status);
+  const isInactive = INACTIVE_STATUSES.has(eq.status);
+  
+  const imageHtml = getEquipImage(qrCode, eq);
+  
+  const inactiveNotice = isInactive ? `
+    <div class="inactive-notice">
+      <div class="big">🚫</div>
+      <strong>Thiết bị không thể mượn</strong><br>
+      Tình trạng hiện tại: <strong>${eq.status}</strong>. Vui lòng liên hệ CB quản lý để biết thêm.
+    </div>` : '';
+  
+  const borrowBtn = isInactive
+    ? `<span class="action-btn disabled"><span class="icon">📋</span>Đăng ký mượn</span>`
+    : `<a class="action-btn" href="${FORMS.borrow}${qrCode}" target="_blank"><span class="icon">📋</span>Đăng ký mượn</a>`;
+  
+  document.getElementById('content').innerHTML = `
+    <div class="equip-card">
+      ${imageHtml}
+      <div class="equip-header">
+        <div class="equip-code">${qrCode}</div>
+        <div class="equip-name">${eq.name}</div>
+        <span class="equip-cat" style="background:${catColor}">${eq.cat}</span>
+      </div>
+      <div class="equip-details">
+        <div class="detail-row">
+          <span class="detail-label">Tình trạng</span>
+          <span class="status-badge ${statusClass}">${eq.status}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Thông số</span>
+          <span class="detail-value">${eq.spec || '—'}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Năm sử dụng</span>
+          <span class="detail-value">${eq.year || '—'}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Xuất xứ</span>
+          <span class="detail-value">${eq.origin || '—'}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Nguyên giá</span>
+          <span class="detail-value">${eq.value.toLocaleString('vi-VN')} triệu VNĐ</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Vị trí</span>
+          <span class="detail-value">${eq.location}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">CB quản lý</span>
+          <span class="detail-value">${eq.manager}</span>
+        </div>
+        ${eq.note ? `<div class="detail-row"><span class="detail-label">Ghi chú</span><span class="detail-value">${eq.note}</span></div>` : ''}
+      </div>
+
+      ${inactiveNotice}
+
+      <div class="actions">
+        ${borrowBtn}
+        <a class="action-btn" href="${FORMS.return}${qrCode}" target="_blank">
+          <span class="icon">✅</span>Xác nhận trả
+        </a>
+        <a class="action-btn" href="${FORMS.maintain}${qrCode}" target="_blank">
+          <span class="icon">🔧</span>Ghi bảo trì
+        </a>
+        <a class="action-btn" href="${FORMS.report}${qrCode}" target="_blank">
+          <span class="icon">⚠️</span>Báo hỏng
+        </a>
+      </div>
+
+      <div class="input-sections">
+        <!-- Đào tạo -->
+        <div class="input-section">
+          <div class="input-section-header" id="sec-train" onclick="toggleSection('sec-train')">
+            <span class="sec-icon">🎓</span>
+            <div>
+              <div class="sec-label">Đào tạo</div>
+              <div class="sec-desc">Ghi mã học phần sử dụng thiết bị này</div>
+            </div>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="input-section-body" id="sec-train-body">
+            <label>Mã học phần</label>
+            <input type="text" id="sec-train-input" placeholder="VD: MHH3101, TH3051..." maxlength="50">
+            <div class="hint">Nhập mã học phần trong chương trình đào tạo có sử dụng thiết bị này. Có thể nhập nhiều mã, cách nhau bởi dấu phẩy.</div>
+            <div class="submit-row">
+              <button class="submit-btn" onclick="submitInput('sec-train', '${qrCode}', 'training')">Ghi nhận</button>
+              <button class="clear-btn" onclick="document.getElementById('sec-train-input').value=''">Xóa</button>
+            </div>
+            <div class="success-msg" id="sec-train-success"></div>
+          </div>
+        </div>
+
+        <!-- Nghiên cứu KH -->
+        <div class="input-section">
+          <div class="input-section-header" id="sec-research" onclick="toggleSection('sec-research')">
+            <span class="sec-icon">🔬</span>
+            <div>
+              <div class="sec-label">Nghiên cứu khoa học</div>
+              <div class="sec-desc">Ghi mã đề tài có sử dụng thiết bị này</div>
+            </div>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="input-section-body" id="sec-research-body">
+            <label>Mã đề tài / dự án</label>
+            <input type="text" id="sec-research-input" placeholder="VD: QG.25.01, NAFOSTED-101..." maxlength="100">
+            <div class="hint">Nhập mã đề tài nghiên cứu khoa học có sử dụng thiết bị. Có thể nhập nhiều mã, cách nhau bởi dấu phẩy.</div>
+            <div class="submit-row">
+              <button class="submit-btn" onclick="submitInput('sec-research', '${qrCode}', 'research')">Ghi nhận</button>
+              <button class="clear-btn" onclick="document.getElementById('sec-research-input').value=''">Xóa</button>
+            </div>
+            <div class="success-msg" id="sec-research-success"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="action-btn primary" onclick="showAll()" style="width:100%;margin-bottom:16px">
+      <span class="icon" style="margin-right:8px">←</span> Xem tất cả thiết bị
+    </button>
+  `;
+}
+
+function showNotFound(query) {
+  document.getElementById('content').innerHTML = `
+    <div class="not-found">
+      <div class="icon">🔍</div>
+      <h2>Không tìm thấy thiết bị</h2>
+      <p>Mã "<strong>${query}</strong>" không có trong hệ thống.<br>Vui lòng kiểm tra lại mã QR hoặc liên hệ CB quản lý.</p>
+    </div>
+  `;
+}
+
+function showAll(filter) {
+  filter = (filter || '').toLowerCase();
+  const grouped = {};
+  
+  for (const [code, eq] of Object.entries(EQUIPMENT)) {
+    if (filter && !code.toLowerCase().includes(filter) && 
+        !eq.name.toLowerCase().includes(filter) &&
+        !eq.cat.toLowerCase().includes(filter)) continue;
+    
+    const loc = eq.location || 'Khác';
+    if (!grouped[loc]) grouped[loc] = [];
+    grouped[loc].push({code, ...eq});
+  }
+  
+  const roomOrder = ['P204-T3', 'P206-T3', 'P207-T3', 'P401-T3', 'T3'];
+  const roomNames = {
+    'P204-T3': 'P204 - Quan trắc & HDH',
+    'P206-T3': 'P206 - Hệ thống tính toán', 
+    'P207-T3': 'P207 - Server & Mạng',
+    'P401-T3': 'P401 - Thủy văn & MT',
+    'T3': 'Server chung T3'
+  };
+  
+  let html = '<div class="item-list">';
+  const sortedRooms = Object.keys(grouped).sort((a, b) => {
+    const ia = roomOrder.indexOf(a), ib = roomOrder.indexOf(b);
+    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+  });
+  
+  for (const loc of sortedRooms) {
+    const items = grouped[loc];
+    html += `<div class="section-title">${roomNames[loc] || loc} (${items.length})</div>`;
+    for (const item of items.sort((a,b) => a.code.localeCompare(b.code))) {
+      const statusClass = getStatusClass(item.status);
+      html += `<div class="item-row" onclick="showEquipment('${item.code}')">
+        <span class="item-code">${item.code}</span>
+        <span class="item-name">${item.name}</span>
+        <span class="item-status ${statusClass}">${item.status}</span>
+      </div>`;
+    }
+  }
+  html += '</div>';
+  
+  const shown = Object.values(grouped).reduce((s, arr) => s + arr.length, 0);
+  if (shown === 0) {
+    html = `<div class="not-found"><div class="icon">🔍</div><h2>Không tìm thấy</h2><p>Thử tìm với từ khóa khác.</p></div>`;
+  }
+  
+  document.getElementById('content').innerHTML = html;
+}
+
+// URL params
+const params = new URLSearchParams(window.location.search);
+const qrId = params.get('id');
+
+if (qrId && EQUIPMENT[qrId]) {
+  document.getElementById('searchInput').value = qrId;
+  showEquipment(qrId);
+} else if (qrId) {
+  document.getElementById('searchInput').value = qrId;
+  showNotFound(qrId);
+} else {
+  showAll();
+}
+
+// Search handler
+let searchTimeout;
+document.getElementById('searchInput').addEventListener('input', function(e) {
+  clearTimeout(searchTimeout);
+  const val = e.target.value.trim();
+  searchTimeout = setTimeout(() => {
+    if (!val) return showAll();
+    const upper = val.toUpperCase();
+    if (EQUIPMENT[upper]) return showEquipment(upper);
+    if (!upper.startsWith('HMO-')) {
+      const withPrefix = 'HMO-' + upper;
+      for (const code of Object.keys(EQUIPMENT)) {
+        if (code.startsWith(withPrefix)) return showEquipment(code);
+      }
+    }
+    showAll(val);
+  }, 300);
+});
+</script>
+</body>
+</html>
