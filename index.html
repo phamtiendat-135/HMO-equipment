@@ -3,7 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tra cứu thiết bị - Khoa KTTV&HDH</title>
+<title>Quản lý Thiết bị - HMO</title>
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1a3a6b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="HMO Thiết bị">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #f0f2f5; min-height: 100vh; }
@@ -106,9 +114,33 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 .item-status { font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-left: 8px; white-space: nowrap; }
 
 .section-title { font-size: 14px; font-weight: 600; color: #2F5496; padding: 12px 16px; background: #f0f4ff; }
+
+/* Availability dot in list view */
+.avail-dot { font-size: 10px; margin-left: 6px; transition: opacity 0.3s; }
+.avail-dot.loading { opacity: 0.3; }
+
+/* PWA install banner */
+#install-banner { display: none; align-items: center; gap: 10px; background: #1a3a6b; color: white; padding: 10px 16px; font-size: 13px; cursor: pointer; }
+#install-banner .install-icon { font-size: 20px; }
+#install-banner .install-text { flex: 1; }
+#install-banner .install-text strong { display: block; font-size: 14px; }
+#install-banner .install-text span { opacity: 0.8; font-size: 12px; }
+#install-banner .install-btn { background: white; color: #1a3a6b; border: none; border-radius: 6px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+#install-banner .install-close { background: none; border: none; color: white; font-size: 18px; padding: 0 4px; cursor: pointer; opacity: 0.7; }
 </style>
 </head>
 <body>
+
+<!-- PWA Install Banner -->
+<div id="install-banner">
+  <span class="install-icon">📲</span>
+  <div class="install-text">
+    <strong>Cài đặt ứng dụng</strong>
+    <span>Tra cứu &amp; mượn thiết bị nhanh hơn</span>
+  </div>
+  <button class="install-btn" id="install-btn">Cài đặt</button>
+  <button class="install-close" id="install-close">✕</button>
+</div>
 
 <div class="top-bar">
   <h1>Khoa Khí tượng Thủy văn & Hải dương học</h1>
@@ -1557,58 +1589,4 @@ function showAll(filter) {
   
   for (const loc of sortedRooms) {
     const items = grouped[loc];
-    html += `<div class="section-title">${roomNames[loc] || loc} (${items.length})</div>`;
-    for (const item of items.sort((a,b) => a.code.localeCompare(b.code))) {
-      const statusClass = getStatusClass(item.status);
-      html += `<div class="item-row" onclick="showEquipment('${item.code}')">
-        <span class="item-code">${item.code}</span>
-        <span class="item-name">${item.name}</span>
-        <span class="item-status ${statusClass}">${item.status}</span>
-      </div>`;
-    }
-  }
-  html += '</div>';
-  
-  const shown = Object.values(grouped).reduce((s, arr) => s + arr.length, 0);
-  if (shown === 0) {
-    html = `<div class="not-found"><div class="icon">🔍</div><h2>Không tìm thấy</h2><p>Thử tìm với từ khóa khác.</p></div>`;
-  }
-  
-  document.getElementById('content').innerHTML = html;
-}
-
-// URL params
-const params = new URLSearchParams(window.location.search);
-const qrId = params.get('id');
-
-if (qrId && EQUIPMENT[qrId]) {
-  document.getElementById('searchInput').value = qrId;
-  showEquipment(qrId);
-} else if (qrId) {
-  document.getElementById('searchInput').value = qrId;
-  showNotFound(qrId);
-} else {
-  showAll();
-}
-
-// Search handler
-let searchTimeout;
-document.getElementById('searchInput').addEventListener('input', function(e) {
-  clearTimeout(searchTimeout);
-  const val = e.target.value.trim();
-  searchTimeout = setTimeout(() => {
-    if (!val) return showAll();
-    const upper = val.toUpperCase();
-    if (EQUIPMENT[upper]) return showEquipment(upper);
-    if (!upper.startsWith('HMO-')) {
-      const withPrefix = 'HMO-' + upper;
-      for (const code of Object.keys(EQUIPMENT)) {
-        if (code.startsWith(withPrefix)) return showEquipment(code);
-      }
-    }
-    showAll(val);
-  }, 300);
-});
-</script>
-</body>
-</html>
+    html += `<div class="section-title">${roomNames[loc] || loc} (${items.length})

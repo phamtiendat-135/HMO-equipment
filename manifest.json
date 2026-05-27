@@ -1,0 +1,35 @@
+{
+  "name": "Quản lý Thiết bị - Khoa KTTV&HDH",
+  "short_name": "HMO Thiết bị",
+  "description": "Tra cứu và đăng ký mượn thiết bị Khoa Khí tượng Thủy văn và Hải dương học - HUS",
+  "start_url": "/HMO-equipment/",
+  "scope": "/HMO-equipment/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#1a3a6b",
+  "background_color": "#ffffff",
+  "lang": "vi",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Danh sách thiết bị",
+      "short_name": "Danh sách",
+      "description": "Xem toàn bộ thiết bị và trạng thái",
+      "url": "/HMO-equipment/",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
