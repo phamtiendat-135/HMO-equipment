@@ -46,7 +46,7 @@ const CONFIG = {
 
   // URL Apps Script Web App — dùng để tạo link phê duyệt 1-bấm trong email PTK
   // Lấy sau khi Deploy: Extensions → Apps Script → Deploy → Manage deployments → Copy URL
-  WEB_APP_URL: '' // ← dán URL vào đây sau khi deploy
+  WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbwfXPsePpUOqJp6F4-c58gCwzJPsCyBDFN3JMGWTHuO_F_HR4uMYl9r9s7UWfdGCmHI_Q/exec' // ← dán URL vào đây sau khi deploy
 };
 
 // ==================== SETUP (CHẠY 1 LẦN) ====================
