@@ -54,6 +54,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 .action-btn.primary:hover { background: #1a3a6b; }
 .action-btn.disabled { opacity: 0.45; pointer-events: none; cursor: not-allowed; background: #f5f5f5; color: #999; border-color: #e0e0e0; }
 
+/* Availability badge (real-time borrow status) */
+.avail-checking { color: #bbb; font-size: 12px; font-style: italic; }
+.avail-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+.avail-free    { background: #e8f5e9; color: #2e7d32; }
+.avail-partial { background: #fff8e1; color: #f57f17; }
+.avail-busy    { background: #fce4ec; color: #c62828; }
+.avail-overdue { background: #fff3e0; color: #bf360c; }
+
 /* Inactive notice */
 .inactive-notice { margin: 0 20px 16px; background: #fafafa; border: 1.5px dashed #ccc; border-radius: 10px; padding: 14px 16px; text-align: center; font-size: 13px; color: #888; }
 .inactive-notice .big { font-size: 28px; margin-bottom: 6px; }
@@ -1240,6 +1248,12 @@ const FORMS = {
   research: 'https://docs.google.com/forms/d/e/FORM_ID_NCKH/viewform?usp=pp_url&entry.FIELD_QR='
 };
 
+// === WEB APP URL — hiển thị trạng thái mượn real-time ===
+// Sau khi Deploy Apps Script Web App, paste URL vào đây rồi push lên GitHub.
+// Cách lấy URL: Extensions → Apps Script → Deploy → New deployment
+//   → Type: Web app → Execute as: Me → Who has access: Anyone → Deploy → Copy URL
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwfXPsePpUOqJp6F4-c58gCwzJPsCyBDFN3JMGWTHuO_F_HR4uMYl9r9s7UWfdGCmHI_Q/exec'; // ← dán URL vào đây, VD: 'https://script.google.com/macros/s/AKfy.../exec'
+
 const CAT_COLORS = {
   'HPC': '#2F5496', 'NET': '#854F0B', 'OBS': '#0F6E56', 'LAB': '#378ADD',
   'SW': '#7F77DD', 'PC': '#888780', 'INF': '#D85A30', 'OTH': '#993556'
@@ -1294,6 +1308,78 @@ function submitInput(sectionId, qrCode, type) {
   }
 }
 
+/**
+ * Gọi Apps Script Web App lấy trạng thái mượn real-time, cập nhật badge "Có sẵn".
+ * Nếu WEB_APP_URL chưa cấu hình hoặc bị lỗi mạng → ẩn badge, không báo lỗi cho người dùng.
+ */
+function fetchBorrowStatus(qrCode) {
+  const badge     = document.getElementById('avail-badge');
+  const borrowBtn = document.getElementById('borrow-btn');
+
+  if (!WEB_APP_URL) {
+    if (badge) badge.style.display = 'none';
+    return;
+  }
+
+  fetch(WEB_APP_URL + '?id=' + encodeURIComponent(qrCode))
+    .then(r => r.json())
+    .then(data => {
+      const bs = data._borrowStatus;
+      if (!bs || !badge) return;
+
+      // Số lượng thiết bị từ EQUIPMENT local — không cần gọi thêm API
+      const qty          = (EQUIPMENT[qrCode] && EQUIPMENT[qrCode].qty) ? EQUIPMENT[qrCode].qty : 1;
+      const borrowedCount = bs.borrowedCount || 0;
+      const remaining    = Math.max(0, qty - borrowedCount);
+
+      if (bs.available === null) {
+        badge.style.display = 'none';
+        return;
+      }
+
+      if (remaining >= qty) {
+        // Tất cả sẵn sàng
+        badge.className   = 'avail-badge avail-free';
+        badge.textContent = qty === 1 ? '🟢 Sẵn sàng' : `🟢 Còn ${remaining}/${qty} sẵn sàng`;
+
+      } else if (remaining > 0) {
+        // Còn một phần — vẫn cho đăng ký, không disable nút
+        badge.className   = 'avail-badge avail-partial';
+        badge.textContent = `🟡 Còn ${remaining}/${qty} sẵn sàng`;
+
+      } else {
+        // Hết — disable nút
+        let text = '';
+        if (qty === 1) {
+          text = '🔴 Đang được mượn';
+          if (bs.borrower) text += ' — ' + bs.borrower;
+          if (bs.dueDate)  text += ' (hạn: ' + bs.dueDate + ')';
+          if (bs.daysOverdue > 0) {
+            badge.className = 'avail-badge avail-overdue';
+            text += ' ⚠️ Quá ' + bs.daysOverdue + ' ngày';
+          } else {
+            badge.className = 'avail-badge avail-busy';
+          }
+        } else {
+          badge.className = 'avail-badge avail-busy';
+          text = `🔴 Hết thiết bị (${borrowedCount}/${qty} đang mượn)`;
+        }
+        badge.textContent = text;
+
+        if (borrowBtn && !borrowBtn.classList.contains('disabled')) {
+          borrowBtn.classList.add('disabled');
+          borrowBtn.removeAttribute('href');
+          borrowBtn.setAttribute('title', qty === 1
+            ? 'Thiết bị đang được mượn — không thể đăng ký'
+            : 'Không còn thiết bị sẵn sàng để mượn');
+        }
+      }
+    })
+    .catch(() => {
+      if (badge) badge.style.display = 'none';
+    });
+}
+
 function showEquipment(qrCode) {
   const eq = EQUIPMENT[qrCode];
   if (!eq) return showNotFound(qrCode);
@@ -1312,8 +1398,8 @@ function showEquipment(qrCode) {
     </div>` : '';
   
   const borrowBtn = isInactive
-    ? `<span class="action-btn disabled"><span class="icon">📋</span>Đăng ký mượn</span>`
-    : `<a class="action-btn" href="${FORMS.borrow}${qrCode}" target="_blank"><span class="icon">📋</span>Đăng ký mượn</a>`;
+    ? `<span class="action-btn disabled"><span class="icon">📋</span>Đăng ký mượn/Sử dụng</span>`
+    : `<a class="action-btn" id="borrow-btn" href="${FORMS.borrow}${qrCode}" target="_blank"><span class="icon">📋</span>Đăng ký mượn/Sử dụng</a>`;
   
   document.getElementById('content').innerHTML = `
     <div class="equip-card">
@@ -1327,6 +1413,10 @@ function showEquipment(qrCode) {
         <div class="detail-row">
           <span class="detail-label">Tình trạng</span>
           <span class="status-badge ${statusClass}">${eq.status}</span>
+        </div>
+        <div class="detail-row" id="avail-row">
+          <span class="detail-label">Có sẵn</span>
+          <span id="avail-badge" class="avail-checking">⏳ Đang kiểm tra...</span>
         </div>
         <div class="detail-row">
           <span class="detail-label">Thông số</span>
@@ -1421,6 +1511,9 @@ function showEquipment(qrCode) {
       <span class="icon" style="margin-right:8px">←</span> Xem tất cả thiết bị
     </button>
   `;
+
+  // Gọi API lấy trạng thái mượn real-time sau khi render xong DOM
+  fetchBorrowStatus(qrCode);
 }
 
 function showNotFound(query) {
