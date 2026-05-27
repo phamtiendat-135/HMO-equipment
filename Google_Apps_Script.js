@@ -42,7 +42,11 @@ const CONFIG = {
   REMIND_DAYS_BEFORE: 2,
 
   // URL trang landing page — dùng trong link email nhắc trả
-  LANDING_PAGE_URL: 'https://phamtiendat-135.github.io/HMO-equipment/'
+  LANDING_PAGE_URL: 'https://phamtiendat-135.github.io/HMO-equipment/',
+
+  // URL Apps Script Web App — dùng để tạo link phê duyệt 1-bấm trong email PTK
+  // Lấy sau khi Deploy: Extensions → Apps Script → Deploy → Manage deployments → Copy URL
+  WEB_APP_URL: '' // ← dán URL vào đây sau khi deploy
 };
 
 // ==================== SETUP (CHẠY 1 LẦN) ====================
@@ -567,37 +571,115 @@ function onFormSubmitBorrow(e) {
 
   // === GỬI EMAIL CHO MỌI YÊU CẦU MƯỢN ===
   const needsApproval = equipValue >= CONFIG.APPROVAL_THRESHOLD;
-  const tag = needsApproval ? '🔴 CẦN PHÊ DUYỆT' : '🟢 Thông báo';
+  const tag     = needsApproval ? '🔴 CẦN PHÊ DUYỆT' : '🟢 Thông báo';
   const subject = `[KTTV&HDH] ${tag} — Mượn TB: ${equipName} (${qrCode})`;
 
-  let body = '';
-  if (needsApproval) {
-    body += `⚠️ THIẾT BỊ GIÁ TRỊ CAO — CẦN PHÊ DUYỆT CỦA PHÓ TRƯỞNG KHOA\n`;
-    body += `${'─'.repeat(50)}\n\n`;
-  } else {
-    body += `Thông báo: Có yêu cầu mượn thiết bị mới.\n\n`;
-  }
+  // --- Plain text (fallback cho email client không hỗ trợ HTML) ---
+  let body = needsApproval
+    ? `⚠️ THIẾT BỊ GIÁ TRỊ CAO — CẦN PHÊ DUYỆT CỦA PHÓ TRƯỞNG KHOA\n${'─'.repeat(50)}\n\n`
+    : `Thông báo: Có yêu cầu mượn thiết bị mới.\n\n`;
 
   body += `THÔNG TIN THIẾT BỊ:\n`;
-  body += `  Tên: ${equipName}\n`;
-  body += `  Mã QR: ${qrCode}\n`;
+  body += `  Tên: ${equipName}\n  Mã QR: ${qrCode}\n`;
   body += `  Giá trị: ${equipValue.toLocaleString()} triệu VNĐ\n`;
   if (equipRoom) body += `  Phòng: ${equipRoom}\n`;
-
-  body += `\nNGƯỜI MƯỢN:\n`;
-  body += `  Họ tên: ${borrower}\n`;
+  body += `\nNGƯỜI MƯỢN:\n  Họ tên: ${borrower}\n`;
   if (email) body += `  Email: ${email}\n`;
   if (phone) body += `  SĐT: ${phone}\n`;
-  body += `  Mục đích: ${purpose}\n`;
-  body += `  Dự kiến trả: ${dueDate}\n\n`;
-
-  if (needsApproval) {
-    body += `→ Vui lòng phản hồi email này để PHÊ DUYỆT hoặc TỪ CHỐI.\n\n`;
-  }
-
+  body += `  Mục đích: ${purpose}\n  Dự kiến trả: ${dueDate}\n\n`;
+  body += needsApproval
+    ? `→ Vui lòng PHÊ DUYỆT hoặc TỪ CHỐI yêu cầu này.\n\n`
+    : '';
   body += `— Hệ thống quản lý TB Khoa KTTV&HDH`;
 
-  MailApp.sendEmail(CONFIG.ADMIN_EMAIL, subject, body);
+  // --- HTML email với nút bấm (chỉ khi cần phê duyệt và đã có WEB_APP_URL) ---
+  let htmlBody = null;
+  if (needsApproval && CONFIG.WEB_APP_URL) {
+    const approveLink = `${CONFIG.WEB_APP_URL}?action=approve&qr=${encodeURIComponent(qrCode)}`;
+    const rejectLink  = `${CONFIG.WEB_APP_URL}?action=reject&qr=${encodeURIComponent(qrCode)}`;
+
+    htmlBody = `
+<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f0f2f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:24px 0">
+<tr><td align="center">
+<table width="520" cellpadding="0" cellspacing="0" style="background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)">
+
+  <!-- Header đỏ -->
+  <tr><td style="background:#c62828;padding:20px 28px">
+    <p style="margin:0;color:white;font-size:13px;opacity:.85">Khoa Khí tượng Thủy văn &amp; Hải dương học</p>
+    <h2 style="margin:4px 0 0;color:white;font-size:18px">⚠️ Yêu cầu mượn cần phê duyệt</h2>
+  </td></tr>
+
+  <!-- Thông tin thiết bị -->
+  <tr><td style="padding:24px 28px 0">
+    <p style="margin:0 0 16px;font-size:13px;color:#555">Có yêu cầu mượn thiết bị giá trị cao — cần phê duyệt của Phó Trưởng khoa.</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f9fa;border-radius:8px;padding:16px;font-size:14px">
+      <tr><td style="padding:4px 0;color:#888;width:120px">Tên thiết bị</td>
+          <td style="padding:4px 0;font-weight:600;color:#1a1a1a">${equipName}</td></tr>
+      <tr><td style="padding:4px 0;color:#888">Mã QR</td>
+          <td style="padding:4px 0;font-family:monospace;color:#2F5496">${qrCode}</td></tr>
+      <tr><td style="padding:4px 0;color:#888">Giá trị</td>
+          <td style="padding:4px 0;color:#c62828;font-weight:600">${equipValue.toLocaleString()} triệu VNĐ</td></tr>
+      ${equipRoom ? `<tr><td style="padding:4px 0;color:#888">Phòng</td><td style="padding:4px 0">${equipRoom}</td></tr>` : ''}
+    </table>
+  </td></tr>
+
+  <!-- Thông tin người mượn -->
+  <tr><td style="padding:16px 28px 0">
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #f0f0f0;padding-top:16px;font-size:14px">
+      <tr><td style="padding:4px 0;color:#888;width:120px">Người mượn</td>
+          <td style="padding:4px 0;font-weight:600">${borrower}</td></tr>
+      ${email ? `<tr><td style="padding:4px 0;color:#888">Email</td><td style="padding:4px 0">${email}</td></tr>` : ''}
+      ${phone ? `<tr><td style="padding:4px 0;color:#888">SĐT</td><td style="padding:4px 0">${phone}</td></tr>` : ''}
+      <tr><td style="padding:4px 0;color:#888">Mục đích</td>
+          <td style="padding:4px 0">${purpose}</td></tr>
+      <tr><td style="padding:4px 0;color:#888">Dự kiến trả</td>
+          <td style="padding:4px 0;font-weight:600">${dueDate}</td></tr>
+    </table>
+  </td></tr>
+
+  <!-- Nút phê duyệt / từ chối -->
+  <tr><td style="padding:24px 28px">
+    <p style="margin:0 0 14px;font-size:13px;color:#555;text-align:center">Bấm một trong hai nút để xử lý yêu cầu:</p>
+    <table width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td width="48%" align="center">
+        <a href="${approveLink}" style="display:block;background:#2e7d32;color:white;text-decoration:none;
+           padding:14px 10px;border-radius:8px;font-size:15px;font-weight:700;text-align:center">
+          ✅ PHÊ DUYỆT
+        </a>
+      </td>
+      <td width="4%"></td>
+      <td width="48%" align="center">
+        <a href="${rejectLink}" style="display:block;background:#c62828;color:white;text-decoration:none;
+           padding:14px 10px;border-radius:8px;font-size:15px;font-weight:700;text-align:center">
+          ❌ TỪ CHỐI
+        </a>
+      </td>
+    </tr></table>
+    <p style="margin:12px 0 0;font-size:11px;color:#bbb;text-align:center">
+      Hệ thống tự ghi nhận và thông báo cho người mượn sau khi bấm.
+    </p>
+  </td></tr>
+
+  <!-- Footer -->
+  <tr><td style="background:#f8f9fa;padding:14px 28px;border-top:1px solid #f0f0f0">
+    <p style="margin:0;font-size:11px;color:#aaa">
+      Hệ thống quản lý trang thiết bị — Khoa KTTV&amp;HDH &nbsp;|&nbsp; ĐH Khoa học Tự nhiên, ĐHQGHN
+    </p>
+  </td></tr>
+
+</table>
+</td></tr></table>
+</body></html>`;
+  }
+
+  // Gửi email: HTML (có nút) nếu cần phê duyệt, plain text nếu chỉ thông báo
+  if (htmlBody) {
+    MailApp.sendEmail(CONFIG.ADMIN_EMAIL, subject, body, { htmlBody: htmlBody });
+  } else {
+    MailApp.sendEmail(CONFIG.ADMIN_EMAIL, subject, body);
+  }
   Logger.log(`✓ Đã gửi email thông báo mượn TB: ${qrCode} — ${equipName} (${needsApproval ? 'cần phê duyệt' : 'thông báo'})`);
 
   // === GHI VÀO LOG_MUON_TRA ===
@@ -973,6 +1055,110 @@ function lookupEquipment(qrCode) {
 }
 
 /**
+ * Xử lý phê duyệt / từ chối khi PTK bấm link trong email.
+ * Cập nhật cột M trong Log_Muon_Tra và gửi thông báo cho người mượn.
+ * Trả về trang HTML xác nhận hiển thị trên điện thoại/máy tính của PTK.
+ */
+function handleApproval_(action, qrCode) {
+  const ss        = SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID);
+  const logSheet  = ss.getSheetByName(CONFIG.SHEETS.LOG_MUON);
+
+  const errPage = (msg) => HtmlService.createHtmlOutput(`
+    <html><body style="font-family:sans-serif;text-align:center;padding:40px">
+      <div style="font-size:40px">⚠️</div><h3>${msg}</h3>
+      <p style="color:#888">Vui lòng kiểm tra lại hoặc cập nhật thủ công trong Google Sheet.</p>
+    </body></html>`);
+
+  if (!logSheet) return errPage('Không tìm thấy Log_Muon_Tra');
+
+  const data = logSheet.getDataRange().getValues();
+  let targetRow = -1;
+  let rowData   = null;
+
+  // Tìm dòng MỚI NHẤT của QR này đang chờ phê duyệt và chưa trả
+  for (let i = data.length - 1; i >= 1; i--) {
+    const rowQR    = (data[i][0]  || '').toString().trim();
+    const colM     = (data[i][12] || '').toString();
+    const returned = data[i][8]; // cột I
+
+    if (rowQR === qrCode && colM.includes('Chờ phê duyệt') && !returned) {
+      targetRow = i + 1; // 1-indexed
+      rowData   = data[i];
+      break;
+    }
+  }
+
+  if (targetRow < 0) {
+    return errPage('Yêu cầu này đã được xử lý hoặc không tìm thấy.');
+  }
+
+  // Ghi nhận vào cột M
+  const now     = new Date();
+  const dateStr = Utilities.formatDate(now, 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy HH:mm');
+  const isApprove    = action === 'approve';
+  const approvalText = isApprove
+    ? `✅ Đã phê duyệt — PTK (${dateStr})`
+    : `❌ Từ chối — PTK (${dateStr})`;
+
+  logSheet.getRange(targetRow, 13).setValue(approvalText); // cột M
+  Logger.log(`✓ handleApproval: ${approvalText} — TB ${qrCode} tại dòng ${targetRow}`);
+
+  const equipName     = (rowData[1]  || qrCode).toString();
+  const borrower      = (rowData[2]  || '').toString();
+  const borrowerEmail = (rowData[15] || '').toString().trim(); // cột P
+
+  // Gửi thông báo cho người mượn (nếu có email)
+  if (borrowerEmail) {
+    const subj = isApprove
+      ? `[KTTV&HDH] ✅ Yêu cầu mượn ${equipName} đã được PHÊ DUYỆT`
+      : `[KTTV&HDH] ❌ Yêu cầu mượn ${equipName} bị TỪ CHỐI`;
+
+    let body = `Kính gửi ${borrower},\n\n`;
+    if (isApprove) {
+      body += `Yêu cầu mượn thiết bị của bạn đã được Phó Trưởng khoa PHÊ DUYỆT.\n\n`;
+      body += `  Thiết bị    : ${equipName} (${qrCode})\n`;
+      body += `  Phê duyệt   : ${dateStr}\n\n`;
+      body += `Bạn có thể đến nhận thiết bị theo lịch đã đăng ký.\n`;
+    } else {
+      body += `Yêu cầu mượn thiết bị của bạn đã bị Phó Trưởng khoa TỪ CHỐI.\n\n`;
+      body += `  Thiết bị  : ${equipName} (${qrCode})\n`;
+      body += `  Thời gian : ${dateStr}\n\n`;
+      body += `Vui lòng liên hệ cán bộ quản lý để biết thêm thông tin.\n`;
+    }
+    body += `\n— Hệ thống quản lý TB Khoa KTTV&HDH`;
+    MailApp.sendEmail(borrowerEmail, subj, body);
+  }
+
+  // Trang xác nhận trả về cho PTK
+  const color = isApprove ? '#2e7d32' : '#c62828';
+  const emoji = isApprove ? '✅' : '❌';
+  const label = isApprove ? 'ĐÃ PHÊ DUYỆT' : 'ĐÃ TỪ CHỐI';
+
+  return HtmlService.createHtmlOutput(`
+    <html>
+    <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+    <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+                 background:#f0f2f5;min-height:100vh;display:flex;align-items:center;justify-content:center;margin:0">
+      <div style="background:white;border-radius:16px;padding:40px 32px;max-width:440px;width:90%;
+                  box-shadow:0 4px 16px rgba(0,0,0,.1);text-align:center">
+        <div style="font-size:56px;margin-bottom:12px">${emoji}</div>
+        <h2 style="color:${color};margin:0 0 8px;font-size:22px">${label}</h2>
+        <p style="font-size:16px;font-weight:600;margin:16px 0 4px">${equipName}</p>
+        <p style="font-size:13px;color:#888;font-family:monospace;margin:0 0 16px">${qrCode}</p>
+        <div style="background:#f8f9fa;border-radius:8px;padding:12px;font-size:13px;color:#555;text-align:left">
+          <div>👤 Người mượn: <strong>${borrower || 'N/A'}</strong></div>
+          <div style="margin-top:6px">🕐 Ghi nhận lúc: <strong>${dateStr}</strong></div>
+          ${borrowerEmail ? `<div style="margin-top:6px">✉️ Đã thông báo cho: <strong>${borrowerEmail}</strong></div>` : ''}
+        </div>
+        <hr style="border:none;border-top:1px solid #eee;margin:20px 0">
+        <p style="font-size:11px;color:#bbb">Hệ thống quản lý TB — Khoa KTTV&HDH<br>ĐH Khoa học Tự nhiên — ĐHQGHN</p>
+      </div>
+    </body>
+    </html>`);
+}
+
+
+/**
  * Web App entry point - để QR Landing Page gọi lấy trạng thái mượn real-time.
  * Deploy as Web App: Extensions → Apps Script → Deploy → New deployment
  *   → Type: Web app → Execute as: Me → Who has access: Anyone → Deploy
@@ -983,6 +1169,20 @@ function lookupEquipment(qrCode) {
  *   { ..., _borrowStatus: { available: null } }                          ← lỗi đọc sheet
  */
 function doGet(e) {
+  // Route: phê duyệt / từ chối mượn thiết bị (PTK bấm link trong email)
+  const action = e.parameter.action;
+  if (action === 'approve' || action === 'reject') {
+    const qr = (e.parameter.qr || '').trim();
+    if (!qr) {
+      return HtmlService.createHtmlOutput(
+        '<html><body style="font-family:sans-serif;text-align:center;padding:40px">' +
+        '<h3>⚠️ Thiếu mã QR trong link. Vui lòng kiểm tra lại email.</h3></body></html>'
+      );
+    }
+    return handleApproval_(action, qr);
+  }
+
+  // Route: tra cứu thiết bị theo mã QR (landing page gọi)
   const qrCode = e.parameter.id;
 
   if (qrCode) {
@@ -1003,51 +1203,67 @@ function doGet(e) {
 }
 
 /**
- * Kiểm tra thiết bị hiện có đang được mượn không.
- * Quét Log_Muon_Tra từ dưới lên, tìm dòng QR khớp mà cột I (Ngày trả thực tế) còn trống.
+ * Kiểm tra trạng thái mượn của thiết bị, hỗ trợ thiết bị có số lượng > 1.
+ * Đếm tổng số lượt mượn chưa trả (borrowedCount) cho QR này.
+ * Landing page sẽ tính remaining = eq.qty - borrowedCount để hiển thị đúng.
+ *
+ * Trả về:
+ *   { available: true,  borrowedCount: 0 }                            ← hoàn toàn rảnh
+ *   { available: false, borrowedCount: N, borrower, dueDate, daysOverdue } ← đang có người mượn
+ *   { available: null,  borrowedCount: 0 }                            ← lỗi đọc sheet
  */
 function checkBorrowStatus_(qrCode) {
   try {
     const ss = SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID);
     const logSheet = ss.getSheetByName(CONFIG.SHEETS.LOG_MUON);
-    if (!logSheet || logSheet.getLastRow() < 2) return { available: true };
+    if (!logSheet || logSheet.getLastRow() < 2) return { available: true, borrowedCount: 0 };
 
     const data = logSheet.getDataRange().getValues();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Quét từ dưới lên để lấy lần mượn MỚI NHẤT của QR này
+    // Đếm tổng số lượt đang mượn chưa trả cho QR này
+    let borrowedCount = 0;
+    for (let i = 1; i < data.length; i++) {
+      const rowQR      = (data[i][0] || '').toString().trim();
+      const returnDate = data[i][8]; // cột I
+      if (rowQR === qrCode && !returnDate) borrowedCount++;
+    }
+
+    if (borrowedCount === 0) return { available: true, borrowedCount: 0 };
+
+    // Lấy thông tin lần mượn MỚI NHẤT (để hiển thị tên người mượn, hạn trả)
+    let borrower    = '';
+    let dueDateStr  = '';
+    let daysOverdue = 0;
+
     for (let i = data.length - 1; i >= 1; i--) {
-      const rowQR      = (data[i][0] || '').toString().trim(); // cột A
-      const returnDate = data[i][8];                           // cột I — Ngày trả thực tế
-
+      const rowQR      = (data[i][0] || '').toString().trim();
+      const returnDate = data[i][8];
       if (rowQR === qrCode && !returnDate) {
-        const borrower = (data[i][2] || '').toString().trim(); // cột C — Người mượn
-        const dueDate  = data[i][7];                           // cột H — Ngày dự kiến trả
-
-        let dueDateStr  = '';
-        let daysOverdue = 0;
+        borrower = (data[i][2] || '').toString().trim(); // cột C
+        const dueDate = data[i][7];                      // cột H
         if (dueDate) {
           const due = new Date(dueDate);
           due.setHours(0, 0, 0, 0);
           dueDateStr  = Utilities.formatDate(due, 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy');
           daysOverdue = Math.max(0, Math.floor((today - due) / (1000 * 60 * 60 * 24)));
         }
-
-        return {
-          available   : false,
-          borrower    : borrower,
-          dueDate     : dueDateStr,
-          daysOverdue : daysOverdue
-        };
+        break;
       }
     }
 
-    return { available: true };
+    return {
+      available    : false,
+      borrowedCount: borrowedCount,
+      borrower     : borrower,
+      dueDate      : dueDateStr,
+      daysOverdue  : daysOverdue
+    };
 
   } catch (err) {
     Logger.log('checkBorrowStatus_ error: ' + err.message);
-    return { available: null }; // null = không đọc được sheet
+    return { available: null, borrowedCount: 0 };
   }
 }
 

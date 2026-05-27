@@ -58,6 +58,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 .avail-checking { color: #bbb; font-size: 12px; font-style: italic; }
 .avail-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
 .avail-free    { background: #e8f5e9; color: #2e7d32; }
+.avail-partial { background: #fff8e1; color: #f57f17; }
 .avail-busy    { background: #fce4ec; color: #c62828; }
 .avail-overdue { background: #fff3e0; color: #bf360c; }
 
@@ -1326,32 +1327,52 @@ function fetchBorrowStatus(qrCode) {
       const bs = data._borrowStatus;
       if (!bs || !badge) return;
 
-      if (bs.available === true) {
-        badge.className   = 'avail-badge avail-free';
-        badge.textContent = '🟢 Sẵn sàng';
+      // Số lượng thiết bị từ EQUIPMENT local — không cần gọi thêm API
+      const qty          = (EQUIPMENT[qrCode] && EQUIPMENT[qrCode].qty) ? EQUIPMENT[qrCode].qty : 1;
+      const borrowedCount = bs.borrowedCount || 0;
+      const remaining    = Math.max(0, qty - borrowedCount);
 
-      } else if (bs.available === false) {
-        let text = '🔴 Đang được mượn';
-        if (bs.borrower) text += ' — ' + bs.borrower;
-        if (bs.dueDate)  text += ' (hạn: ' + bs.dueDate + ')';
-        if (bs.daysOverdue > 0) {
-          badge.className = 'avail-badge avail-overdue';
-          text += ' ⚠️ Quá ' + bs.daysOverdue + ' ngày';
+      if (bs.available === null) {
+        badge.style.display = 'none';
+        return;
+      }
+
+      if (remaining >= qty) {
+        // Tất cả sẵn sàng
+        badge.className   = 'avail-badge avail-free';
+        badge.textContent = qty === 1 ? '🟢 Sẵn sàng' : `🟢 Còn ${remaining}/${qty} sẵn sàng`;
+
+      } else if (remaining > 0) {
+        // Còn một phần — vẫn cho đăng ký, không disable nút
+        badge.className   = 'avail-badge avail-partial';
+        badge.textContent = `🟡 Còn ${remaining}/${qty} sẵn sàng`;
+
+      } else {
+        // Hết — disable nút
+        let text = '';
+        if (qty === 1) {
+          text = '🔴 Đang được mượn';
+          if (bs.borrower) text += ' — ' + bs.borrower;
+          if (bs.dueDate)  text += ' (hạn: ' + bs.dueDate + ')';
+          if (bs.daysOverdue > 0) {
+            badge.className = 'avail-badge avail-overdue';
+            text += ' ⚠️ Quá ' + bs.daysOverdue + ' ngày';
+          } else {
+            badge.className = 'avail-badge avail-busy';
+          }
         } else {
           badge.className = 'avail-badge avail-busy';
+          text = `🔴 Hết thiết bị (${borrowedCount}/${qty} đang mượn)`;
         }
         badge.textContent = text;
 
-        // Disable nút Đăng ký mượn
         if (borrowBtn && !borrowBtn.classList.contains('disabled')) {
           borrowBtn.classList.add('disabled');
           borrowBtn.removeAttribute('href');
-          borrowBtn.setAttribute('title', 'Thiết bị đang được mượn — không thể đăng ký');
+          borrowBtn.setAttribute('title', qty === 1
+            ? 'Thiết bị đang được mượn — không thể đăng ký'
+            : 'Không còn thiết bị sẵn sàng để mượn');
         }
-
-      } else {
-        // available === null → lỗi đọc sheet phía server
-        if (badge) badge.style.display = 'none';
       }
     })
     .catch(() => {
@@ -1377,8 +1398,8 @@ function showEquipment(qrCode) {
     </div>` : '';
   
   const borrowBtn = isInactive
-    ? `<span class="action-btn disabled"><span class="icon">📋</span>Đăng ký mượn</span>`
-    : `<a class="action-btn" id="borrow-btn" href="${FORMS.borrow}${qrCode}" target="_blank"><span class="icon">📋</span>Đăng ký mượn</a>`;
+    ? `<span class="action-btn disabled"><span class="icon">📋</span>Đăng ký mượn/Sử dụng</span>`
+    : `<a class="action-btn" id="borrow-btn" href="${FORMS.borrow}${qrCode}" target="_blank"><span class="icon">📋</span>Đăng ký mượn/Sử dụng</a>`;
   
   document.getElementById('content').innerHTML = `
     <div class="equip-card">
