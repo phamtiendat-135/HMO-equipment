@@ -1182,6 +1182,14 @@ function doGet(e) {
     return handleApproval_(action, qr);
   }
 
+  // Route: trạng thái mượn toàn bộ thiết bị (PWA browse view gọi 1 lần)
+  if (action === 'allStatus') {
+    const statuses = getAllBorrowStatuses_();
+    return ContentService
+      .createTextOutput(JSON.stringify(statuses))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
   // Route: tra cứu thiết bị theo mã QR (landing page gọi)
   const qrCode = e.parameter.id;
 
@@ -1200,6 +1208,34 @@ function doGet(e) {
   return HtmlService.createHtmlOutput(
     '<script>window.location.href = "https://phamtiendat-135.github.io/HMO-equipment/";</script>'
   );
+}
+
+/**
+ * Trả về trạng thái mượn của TẤT CẢ thiết bị trong một lần gọi.
+ * Dùng cho PWA browse view — thay vì gọi N lần, gọi 1 lần lấy hết.
+ * Return: { "HMO-OBS-8688": 1, "HMO-HPC-7303": 0, ... }
+ *   Key = mã QR, Value = số lượng đang mượn chưa trả
+ */
+function getAllBorrowStatuses_() {
+  try {
+    const ss = SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID);
+    const logSheet = ss.getSheetByName(CONFIG.SHEETS.LOG_MUON);
+    const result = {};
+    if (!logSheet || logSheet.getLastRow() < 2) return result;
+
+    const data = logSheet.getDataRange().getValues();
+    for (let i = 1; i < data.length; i++) {
+      const qr = (data[i][0] || '').toString().trim();
+      const returnDate = data[i][8]; // cột I
+      if (qr && !returnDate) {
+        result[qr] = (result[qr] || 0) + 1;
+      }
+    }
+    return result;
+  } catch (err) {
+    Logger.log('getAllBorrowStatuses_ error: ' + err.message);
+    return {};
+  }
 }
 
 /**

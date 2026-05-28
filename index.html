@@ -1589,4 +1589,121 @@ function showAll(filter) {
   
   for (const loc of sortedRooms) {
     const items = grouped[loc];
-    html += `<div class="section-title">${roomNames[loc] || loc} (${items.length})
+    html += `<div class="section-title">${roomNames[loc] || loc} (${items.length})</div>`;
+    for (const item of items.sort((a,b) => a.code.localeCompare(b.code))) {
+      const statusClass = getStatusClass(item.status);
+      html += `<div class="item-row" onclick="showEquipment('${item.code}')">
+        <span class="item-code">${item.code}</span>
+        <span class="item-name">${item.name}</span>
+        <span class="item-status ${statusClass}">${item.status}</span>
+        <span class="avail-dot loading" id="avail-dot-${item.code}" title="Đang kiểm tra...">●</span>
+      </div>`;
+    }
+  }
+  html += '</div>';
+  
+  const shown = Object.values(grouped).reduce((s, arr) => s + arr.length, 0);
+  if (shown === 0) {
+    html = `<div class="not-found"><div class="icon">🔍</div><h2>Không tìm thấy</h2><p>Thử tìm với từ khóa khác.</p></div>`;
+  }
+  
+  document.getElementById('content').innerHTML = html;
+}
+
+/**
+ * Gọi 1 lần duy nhất lấy trạng thái mượn tất cả thiết bị → cập nhật dots trong list view.
+ */
+function loadAllStatuses() {
+  if (!WEB_APP_URL) return;
+  fetch(WEB_APP_URL + '?action=allStatus')
+    .then(r => r.json())
+    .then(statuses => {
+      for (const [code, eq] of Object.entries(EQUIPMENT)) {
+        const dot = document.getElementById('avail-dot-' + code);
+        if (!dot) continue;
+        const qty = (eq.qty) ? eq.qty : 1;
+        const borrowed = statuses[code] || 0;
+        const remaining = qty - borrowed;
+        dot.classList.remove('loading');
+        if (remaining >= qty) {
+          dot.textContent = '🟢'; dot.title = 'Sẵn sàng';
+        } else if (remaining > 0) {
+          dot.textContent = '🟡'; dot.title = `Còn ${remaining}/${qty} sẵn sàng`;
+        } else {
+          dot.textContent = '🔴'; dot.title = `Đang được mượn (${borrowed}/${qty})`;
+        }
+      }
+    })
+    .catch(() => {
+      // offline hoặc lỗi → ẩn dots
+      document.querySelectorAll('.avail-dot').forEach(d => d.style.display = 'none');
+    });
+}
+
+// URL params
+const params = new URLSearchParams(window.location.search);
+const qrId = params.get('id');
+
+if (qrId && EQUIPMENT[qrId]) {
+  document.getElementById('searchInput').value = qrId;
+  showEquipment(qrId);
+} else if (qrId) {
+  document.getElementById('searchInput').value = qrId;
+  showNotFound(qrId);
+} else {
+  showAll();
+  loadAllStatuses();
+}
+
+// Search handler
+let searchTimeout;
+document.getElementById('searchInput').addEventListener('input', function(e) {
+  clearTimeout(searchTimeout);
+  const val = e.target.value.trim();
+  searchTimeout = setTimeout(() => {
+    if (!val) { showAll(); loadAllStatuses(); return; }
+    const upper = val.toUpperCase();
+    if (EQUIPMENT[upper]) return showEquipment(upper);
+    if (!upper.startsWith('HMO-')) {
+      const withPrefix = 'HMO-' + upper;
+      for (const code of Object.keys(EQUIPMENT)) {
+        if (code.startsWith(withPrefix)) return showEquipment(code);
+      }
+    }
+    showAll(val);
+    loadAllStatuses();
+  }, 300);
+});
+
+// ===== PWA: Service Worker + Install Prompt =====
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  const banner = document.getElementById('install-banner');
+  if (banner) banner.style.display = 'flex';
+});
+
+document.getElementById('install-btn').addEventListener('click', () => {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  deferredInstallPrompt.userChoice.then(() => {
+    deferredInstallPrompt = null;
+    document.getElementById('install-banner').style.display = 'none';
+  });
+});
+
+document.getElementById('install-close').addEventListener('click', () => {
+  document.getElementById('install-banner').style.display = 'none';
+});
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('install-banner').style.display = 'none';
+});
+</script>
+</body>
+</html>
