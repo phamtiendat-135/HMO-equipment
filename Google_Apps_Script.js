@@ -35,8 +35,8 @@ const CONFIG = {
   // Số ngày nhắc trước khi đến hạn bảo trì
   MAINTENANCE_REMINDER_DAYS: 30,
 
-  // Số ngày quá hạn trả trước khi gửi nhắc nhở
-  OVERDUE_DAYS: 3,
+  // Số ngày quá hạn trả trước khi gửi nhắc nhở (0 = gửi ngay ngày đến hạn)
+  OVERDUE_DAYS: 0,
 
   // Số ngày trước hạn trả để gửi email nhắc người mượn
   REMIND_DAYS_BEFORE: 2,
@@ -145,6 +145,33 @@ function findBorrowSheets_(ss) {
  * Kiểm tra thiết bị quá hạn trả và gửi email nhắc nhở
  * Tự động quét cả sheet Log_Muon_Tra và các sheet Form Responses
  */
+/**
+ * Parse ngày linh hoạt: nhận Date object HOẶC chuỗi DD/MM/YYYY hoặc YYYY-MM-DD.
+ * Trả về Date (không giờ) hoặc null nếu không parse được.
+ */
+function parseDate_(val) {
+  if (!val) return null;
+  if (val instanceof Date) {
+    if (isNaN(val.getTime())) return null;
+    const d = new Date(val);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+  const s = val.toString().trim();
+  // Thử DD/MM/YYYY
+  const dmyMatch = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (dmyMatch) {
+    const d = new Date(Number(dmyMatch[3]), Number(dmyMatch[2]) - 1, Number(dmyMatch[1]));
+    d.setHours(0, 0, 0, 0);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  // Thử parse mặc định (ISO, v.v.)
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return null;
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 function checkOverdueReturns() {
   const ss = SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID);
   const borrowSheets = findBorrowSheets_(ss);
@@ -178,9 +205,8 @@ function checkOverdueReturns() {
 
       // Chỉ xét các dòng chưa trả và đã quá hạn
       if (!traTT && hanTra) {
-        const dueDate = new Date(hanTra);
-        if (isNaN(dueDate.getTime())) continue; // bỏ qua giá trị không hợp lệ
-        dueDate.setHours(0, 0, 0, 0);
+        const dueDate = parseDate_(hanTra);
+        if (!dueDate) continue; // bỏ qua giá trị không parse được
         const daysOverdue = Math.floor((today - dueDate) / (1000 * 60 * 60 * 24));
 
         if (daysOverdue >= CONFIG.OVERDUE_DAYS) {
@@ -261,8 +287,8 @@ function checkUpcomingReturns() {
     // Bỏ qua: đã trả, không có hạn, không có email người mượn
     if (returnDate || !dueDate || !email) continue;
 
-    const due = new Date(dueDate);
-    due.setHours(0, 0, 0, 0);
+    const due = parseDate_(dueDate);
+    if (!due) continue;
     const daysUntilDue = Math.floor((due - today) / (1000 * 60 * 60 * 24));
 
     // Chỉ gửi khi còn đúng REMIND_DAYS_BEFORE ngày (tránh gửi lặp)
