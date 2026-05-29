@@ -3,15 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quản lý Thiết bị - HMO</title>
-<!-- PWA -->
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#1a3a6b">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="HMO Thiết bị">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Tra cứu thiết bị - Khoa KTTV&HDH</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #f0f2f5; min-height: 100vh; }
@@ -68,6 +60,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 .avail-free    { background: #e8f5e9; color: #2e7d32; }
 .avail-partial { background: #fff8e1; color: #f57f17; }
 .avail-busy    { background: #fce4ec; color: #c62828; }
+.avail-inactive { background: #f5f5f5; color: #bdbdbd; opacity: 0.7; }
 .avail-overdue { background: #fff3e0; color: #bf360c; }
 
 /* Inactive notice */
@@ -114,33 +107,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 .item-status { font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-left: 8px; white-space: nowrap; }
 
 .section-title { font-size: 14px; font-weight: 600; color: #2F5496; padding: 12px 16px; background: #f0f4ff; }
-
-/* Availability dot in list view */
-.avail-dot { font-size: 10px; margin-left: 6px; transition: opacity 0.3s; }
-.avail-dot.loading { opacity: 0.3; }
-
-/* PWA install banner */
-#install-banner { display: none; align-items: center; gap: 10px; background: #1a3a6b; color: white; padding: 10px 16px; font-size: 13px; cursor: pointer; }
-#install-banner .install-icon { font-size: 20px; }
-#install-banner .install-text { flex: 1; }
-#install-banner .install-text strong { display: block; font-size: 14px; }
-#install-banner .install-text span { opacity: 0.8; font-size: 12px; }
-#install-banner .install-btn { background: white; color: #1a3a6b; border: none; border-radius: 6px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
-#install-banner .install-close { background: none; border: none; color: white; font-size: 18px; padding: 0 4px; cursor: pointer; opacity: 0.7; }
 </style>
 </head>
 <body>
-
-<!-- PWA Install Banner -->
-<div id="install-banner">
-  <span class="install-icon">📲</span>
-  <div class="install-text">
-    <strong>Cài đặt ứng dụng</strong>
-    <span>Tra cứu &amp; mượn thiết bị nhanh hơn</span>
-  </div>
-  <button class="install-btn" id="install-btn">Cài đặt</button>
-  <button class="install-close" id="install-close">✕</button>
-</div>
 
 <div class="top-bar">
   <h1>Khoa Khí tượng Thủy văn & Hải dương học</h1>
@@ -197,7 +166,7 @@ const EQUIPMENT = {
     "qty": 1,
     "value": 161.433,
     "location": "P207-T3",
-    "manager": "Phan Văn Tân",
+    "manager": "",
     "status": "Không hoạt động",
     "parent_id": null,
     "note": "Dự án 11-P04-VIE; QĐ bàn giao cho Khoa số 773//QĐ-KHCN ngày 3/29/2017"
@@ -767,7 +736,7 @@ const EQUIPMENT = {
     "qty": 1,
     "value": 769.0919245,
     "location": "P204-T3",
-    "manager": "Nguyễn Thọ Sáo",
+    "manager": "",
     "status": "Không hoạt động",
     "parent_id": null,
     "note": "QD 2449, DA GDH Đại học 1, mức C1, hợp đồng C1.III.2/VNU-IFB C1.III (Đã thanh lý 01 QĐ 602/QĐ-ĐHQGHN ngày 3/11/2022)"
@@ -812,7 +781,7 @@ const EQUIPMENT = {
     "qty": 1,
     "value": 320.0,
     "location": "P204-T3",
-    "manager": "Nguyễn Minh Huấn",
+    "manager": "",
     "status": "Không hoạt động",
     "parent_id": null,
     "note": "Dự án TCNL 2012, MS dự án QH1.11.02"
@@ -827,7 +796,7 @@ const EQUIPMENT = {
     "qty": 1,
     "value": 350.0,
     "location": "P204-T3",
-    "manager": "Nguyễn Minh Huấn",
+    "manager": "",
     "status": "Không hoạt động",
     "parent_id": null,
     "note": "Dự án TCNL 2012, MS dự án QH1.11.02"
@@ -842,7 +811,7 @@ const EQUIPMENT = {
     "qty": 1,
     "value": 680.0,
     "location": "P204-T3",
-    "manager": "Nguyễn Minh Huấn",
+    "manager": "",
     "status": "Không hoạt động",
     "parent_id": null,
     "note": "Dự án TCNL 2012, MS dự án QH1.11.02"
@@ -1022,7 +991,7 @@ const EQUIPMENT = {
     "qty": 1,
     "value": 36.972,
     "location": "P207-T3",
-    "manager": "Phan Văn Tân",
+    "manager": "",
     "status": "Không hoạt động",
     "parent_id": null,
     "note": "Dự án 11-P04-VIE; QĐ bàn giao cho Khoa số 773//QĐ-KHCN ngày 3/29/2017"
@@ -1037,7 +1006,7 @@ const EQUIPMENT = {
     "qty": 2,
     "value": 40.89091,
     "location": "P207-T3",
-    "manager": "Phan Văn Tân",
+    "manager": "",
     "status": "Không hoạt động",
     "parent_id": null,
     "note": "Dự án 11-P04-VIE; QĐ bàn giao cho Khoa số 773//QĐ-KHCN ngày 3/29/2017"
@@ -1052,7 +1021,7 @@ const EQUIPMENT = {
     "qty": 1,
     "value": 27.718182,
     "location": "P207-T3",
-    "manager": "Phan Văn Tân",
+    "manager": "",
     "status": "Không hoạt động",
     "parent_id": null,
     "note": "Dự án 11-P04-VIE; QĐ bàn giao cho Khoa số 773//QĐ-KHCN ngày 3/29/2017"
@@ -1097,7 +1066,7 @@ const EQUIPMENT = {
     "qty": 1,
     "value": 96.796,
     "location": "P206-T3",
-    "manager": "Nguyễn Minh Huấn",
+    "manager": "",
     "status": "Không hoạt động",
     "parent_id": null,
     "note": ""
@@ -1127,7 +1096,7 @@ const EQUIPMENT = {
     "qty": 1,
     "value": 77.632,
     "location": "P204-T3",
-    "manager": "Nguyễn Minh Huấn",
+    "manager": "",
     "status": "Không hoạt động",
     "parent_id": null,
     "note": "DA GDH Đại học 1, mức C"
@@ -1142,7 +1111,7 @@ const EQUIPMENT = {
     "qty": 2,
     "value": 22.88,
     "location": "P204-T3",
-    "manager": "Nguyễn Minh Huấn",
+    "manager": "",
     "status": "Không hoạt động",
     "parent_id": null,
     "note": "DA GDH Đại học 1, mức C"
@@ -1157,7 +1126,7 @@ const EQUIPMENT = {
     "qty": 1,
     "value": 2.32,
     "location": "P204-T3",
-    "manager": "Nguyễn Minh Huấn",
+    "manager": "",
     "status": "Không hoạt động",
     "parent_id": null,
     "note": "DA GDH Đại học 1, mức C"
@@ -1172,7 +1141,7 @@ const EQUIPMENT = {
     "qty": 2,
     "value": 36.0,
     "location": "P204-T3",
-    "manager": "Nguyễn Minh Huấn",
+    "manager": "",
     "status": "Không hoạt động",
     "parent_id": null,
     "note": "DA GDH Đại học 1, mức C"
@@ -1187,7 +1156,7 @@ const EQUIPMENT = {
     "qty": 2,
     "value": 3.68,
     "location": "P204-T3",
-    "manager": "Nguyễn Minh Huấn",
+    "manager": "",
     "status": "Không hoạt động",
     "parent_id": null,
     "note": "DA GDH Đại học 1, mức C"
@@ -1202,7 +1171,7 @@ const EQUIPMENT = {
     "qty": 1,
     "value": 5.311,
     "location": "P206-T3",
-    "manager": "Nguyễn Minh Huấn",
+    "manager": "",
     "status": "Không hoạt động",
     "parent_id": null,
     "note": ""
@@ -1232,7 +1201,7 @@ const EQUIPMENT = {
     "qty": 1,
     "value": 133.159643,
     "location": "P204-T3",
-    "manager": "Đinh Văn Ưu",
+    "manager": "",
     "status": "Không hoạt động",
     "parent_id": null,
     "note": "QD 2449, DA GDH Đại học 1, mức C1, hợp đồng C1.III.2/VNU-IFB C1.III"
@@ -1446,9 +1415,12 @@ function showEquipment(qrCode) {
           <span class="detail-label">Tình trạng</span>
           <span class="status-badge ${statusClass}">${eq.status}</span>
         </div>
-        <div class="detail-row" id="avail-row">
+        <div class="detail-row" id="avail-row" ${isInactive ? 'style="opacity:0.5"' : ''}>
           <span class="detail-label">Có sẵn</span>
-          <span id="avail-badge" class="avail-checking">⏳ Đang kiểm tra...</span>
+          ${isInactive
+            ? `<span class="avail-badge avail-inactive">⚫ Không khả dụng</span>`
+            : `<span id="avail-badge" class="avail-checking">⏳ Đang kiểm tra...</span>`
+          }
         </div>
         <div class="detail-row">
           <span class="detail-label">Thông số</span>
@@ -1472,7 +1444,7 @@ function showEquipment(qrCode) {
         </div>
         <div class="detail-row">
           <span class="detail-label">CB quản lý</span>
-          <span class="detail-value">${eq.manager}</span>
+          <span class="detail-value">${eq.manager || 'Chưa phân công'}</span>
         </div>
         ${eq.note ? `<div class="detail-row"><span class="detail-label">Ghi chú</span><span class="detail-value">${eq.note}</span></div>` : ''}
       </div>
@@ -1544,8 +1516,8 @@ function showEquipment(qrCode) {
     </button>
   `;
 
-  // Gọi API lấy trạng thái mượn real-time sau khi render xong DOM
-  fetchBorrowStatus(qrCode);
+  // Gọi API lấy trạng thái mượn real-time (chỉ cho thiết bị đang hoạt động)
+  if (!isInactive) fetchBorrowStatus(qrCode);
 }
 
 function showNotFound(query) {
@@ -1596,7 +1568,6 @@ function showAll(filter) {
         <span class="item-code">${item.code}</span>
         <span class="item-name">${item.name}</span>
         <span class="item-status ${statusClass}">${item.status}</span>
-        <span class="avail-dot loading" id="avail-dot-${item.code}" title="Đang kiểm tra...">●</span>
       </div>`;
     }
   }
@@ -1608,36 +1579,6 @@ function showAll(filter) {
   }
   
   document.getElementById('content').innerHTML = html;
-}
-
-/**
- * Gọi 1 lần duy nhất lấy trạng thái mượn tất cả thiết bị → cập nhật dots trong list view.
- */
-function loadAllStatuses() {
-  if (!WEB_APP_URL) return;
-  fetch(WEB_APP_URL + '?action=allStatus')
-    .then(r => r.json())
-    .then(statuses => {
-      for (const [code, eq] of Object.entries(EQUIPMENT)) {
-        const dot = document.getElementById('avail-dot-' + code);
-        if (!dot) continue;
-        const qty = (eq.qty) ? eq.qty : 1;
-        const borrowed = statuses[code] || 0;
-        const remaining = qty - borrowed;
-        dot.classList.remove('loading');
-        if (remaining >= qty) {
-          dot.textContent = '🟢'; dot.title = 'Sẵn sàng';
-        } else if (remaining > 0) {
-          dot.textContent = '🟡'; dot.title = `Còn ${remaining}/${qty} sẵn sàng`;
-        } else {
-          dot.textContent = '🔴'; dot.title = `Đang được mượn (${borrowed}/${qty})`;
-        }
-      }
-    })
-    .catch(() => {
-      // offline hoặc lỗi → ẩn dots
-      document.querySelectorAll('.avail-dot').forEach(d => d.style.display = 'none');
-    });
 }
 
 // URL params
@@ -1652,7 +1593,6 @@ if (qrId && EQUIPMENT[qrId]) {
   showNotFound(qrId);
 } else {
   showAll();
-  loadAllStatuses();
 }
 
 // Search handler
@@ -1661,49 +1601,6 @@ document.getElementById('searchInput').addEventListener('input', function(e) {
   clearTimeout(searchTimeout);
   const val = e.target.value.trim();
   searchTimeout = setTimeout(() => {
-    if (!val) { showAll(); loadAllStatuses(); return; }
+    if (!val) return showAll();
     const upper = val.toUpperCase();
-    if (EQUIPMENT[upper]) return showEquipment(upper);
-    if (!upper.startsWith('HMO-')) {
-      const withPrefix = 'HMO-' + upper;
-      for (const code of Object.keys(EQUIPMENT)) {
-        if (code.startsWith(withPrefix)) return showEquipment(code);
-      }
-    }
-    showAll(val);
-    loadAllStatuses();
-  }, 300);
-});
-
-// ===== PWA: Service Worker + Install Prompt =====
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
-}
-
-let deferredInstallPrompt = null;
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredInstallPrompt = e;
-  const banner = document.getElementById('install-banner');
-  if (banner) banner.style.display = 'flex';
-});
-
-document.getElementById('install-btn').addEventListener('click', () => {
-  if (!deferredInstallPrompt) return;
-  deferredInstallPrompt.prompt();
-  deferredInstallPrompt.userChoice.then(() => {
-    deferredInstallPrompt = null;
-    document.getElementById('install-banner').style.display = 'none';
-  });
-});
-
-document.getElementById('install-close').addEventListener('click', () => {
-  document.getElementById('install-banner').style.display = 'none';
-});
-
-window.addEventListener('appinstalled', () => {
-  document.getElementById('install-banner').style.display = 'none';
-});
-</script>
-</body>
-</html>
+    if (EQUIPMENT[up
