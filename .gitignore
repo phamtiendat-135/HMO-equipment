@@ -1,0 +1,13 @@
+# Office / LibreOffice temp & lock files
+~$*
+.~lock.*#
+
+# Temp files
+*.tmp
+
+# Local backups
+backups/
+
+# OS junk
+Thumbs.db
+.DS_Store

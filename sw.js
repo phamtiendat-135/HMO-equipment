@@ -3,7 +3,7 @@
  * Chiến lược: Cache-first cho tĩnh (app shell), Network-first cho API (borrow status)
  */
 
-const CACHE_NAME = 'hmo-equipment-v5';
+const CACHE_NAME = 'hmo-equipment-v6';
 const SHELL_ASSETS = [
   '/HMO-equipment/',
   '/HMO-equipment/index.html',
@@ -53,8 +53,11 @@ self.addEventListener('fetch', event => {
     caches.match(event.request).then(cached => {
       if (cached) return cached;
       return fetch(event.request).then(response => {
-        // Cache các response mới từ origin của app
-        if (url.hostname === self.location.hostname) {
+        // Chỉ cache request GET thành công từ origin của app
+        // (cache.put với method khác GET sẽ throw lỗi)
+        if (event.request.method === 'GET' &&
+            response.ok &&
+            url.hostname === self.location.hostname) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }

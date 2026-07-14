@@ -86,6 +86,15 @@ function setup() {
     .atHour(8)
     .create();
 
+  // Trigger 3b: Báo cáo hiệu quả sử dụng thiết bị cuối năm — ngày 31 tháng 12
+  // (trigger onMonthDay(31) chỉ kích hoạt vào tháng có 31 ngày; hàm yearlyReport
+  //  tự kiểm tra month === 11 trước khi chạy, tránh chạy ngoài tháng 12)
+  ScriptApp.newTrigger('yearlyReport')
+    .timeBased()
+    .onMonthDay(31)
+    .atHour(9)
+    .create();
+
   // Trigger 4: Khi có form response mới → dispatcher phân loại mượn/trả → gọi đúng hàm xử lý
   // Trigger này gắn trên Spreadsheet, bắt sự kiện form submit liên kết với Sheet
   ScriptApp.newTrigger('onFormSubmitDispatch')
@@ -93,11 +102,22 @@ function setup() {
     .onFormSubmit()
     .create();
 
+  // Đảm bảo cột Q và R tồn tại trong Log_Muon_Tra
+  try {
+    const ss = SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID);
+    const logSheet = ss.getSheetByName(CONFIG.SHEETS.LOG_MUON);
+    if (logSheet) {
+      ensureUsageHoursColumn_(logSheet); // cột Q
+      ensureRemindedColumn_(logSheet);   // cột R
+    }
+  } catch (e) { Logger.log('⚠️ setup: không thể thêm cột Q/R — ' + e.message); }
+
   Logger.log('✓ Đã thiết lập tất cả trigger tự động');
   Logger.log('  - Nhắc trả TB (→ người mượn): hàng ngày 7h');
   Logger.log('  - Kiểm tra quá hạn (→ admin): hàng ngày 8h');
   Logger.log('  - Kiểm tra bảo trì: thứ 2 hàng tuần 9h');
   Logger.log('  - Báo cáo tháng: ngày 1 hàng tháng 8h');
+  Logger.log('  - Báo cáo hiệu quả sử dụng năm: ngày 31/12 9h');
   Logger.log('  - Xử lý form mượn/trả: khi có form submit');
 }
 
@@ -172,54 +192,119 @@ function parseDate_(val) {
   return d;
 }
 
+// ==================== TÍNH GIỜ SỬ DỤNG ====================
+
+/**
+ * Tính số giờ sử dụng từ ngày mượn đến ngày trả.
+ * @returns {number|null} Số giờ (làm tròn 1 chữ số thập phân), hoặc null nếu không tính được.
+ */
+function calculateUsageHours_(borrowDate, returnDate) {
+  if (!borrowDate || !returnDate) return null;
+  const bDate = borrowDate instanceof Date ? borrowDate : new Date(borrowDate);
+  const rDate = returnDate instanceof Date ? returnDate : new Date(returnDate);
+  if (isNaN(bDate.getTime()) || isNaN(rDate.getTime())) return null;
+  const hours = (rDate - bDate) / (1000 * 3600);
+  return hours > 0 ? Math.round(hours * 10) / 10 : null;
+}
+
+/**
+ * Ghi giờ sử dụng vào cột Q của Log_Muon_Tra cho một dòng cụ thể.
+ * Cột Q (index 16, 1-indexed = 17): Giờ sử dụng (tự động tính)
+ */
+function writeUsageHours_(logSheet, rowNum, borrowDate, returnDate) {
+  const hours = calculateUsageHours_(borrowDate, returnDate);
+  if (hours !== null) {
+    const cell = logSheet.getRange(rowNum, 17); // cột Q
+    cell.setValue(hours);
+    cell.setNumberFormat('0.0');
+    cell.setNote('Giờ sử dụng = Ngày trả - Ngày mượn (tự động tính)');
+  }
+  return hours;
+}
+
+/**
+ * Đảm bảo cột Q trong Log_Muon_Tra có header "Giờ sử dụng (h)".
+ * Chạy tự động khi cần, an toàn để gọi nhiều lần.
+ */
+function ensureUsageHoursColumn_(logSheet) {
+  if (!logSheet || logSheet.getLastRow() < 1) return;
+  const headerCell = logSheet.getRange(1, 17); // Q1
+  if (!headerCell.getValue()) {
+    headerCell.setValue('Giờ sử dụng (h)');
+    headerCell.setFontWeight('bold')
+      .setBackground('#E8F5E9')
+      .setHorizontalAlignment('center')
+      .setNote('Tự động tính = Ngày trả thực tế - Ngày mượn\nDùng cho báo cáo hiệu quả sử dụng cuối năm');
+    logSheet.setColumnWidth(17, 110);
+    Logger.log('✓ Đã thêm header cột Q (Giờ sử dụng) vào Log_Muon_Tra');
+  }
+}
+
+/**
+ * Đảm bảo cột R trong Log_Muon_Tra có header "Đã nhắc trả".
+ * Dùng để tránh gửi lặp email nhắc trả.
+ */
+function ensureRemindedColumn_(logSheet) {
+  if (!logSheet || logSheet.getLastRow() < 1) return;
+  const headerCell = logSheet.getRange(1, 18); // R1
+  if (!headerCell.getValue()) {
+    headerCell.setValue('Đã nhắc trả');
+    headerCell.setFontWeight('bold')
+      .setBackground('#FFF9C4')
+      .setHorizontalAlignment('center')
+      .setNote('Tự động điền khi hệ thống gửi email nhắc trả thiết bị');
+    logSheet.setColumnWidth(18, 140);
+    Logger.log('✓ Đã thêm header cột R (Đã nhắc trả) vào Log_Muon_Tra');
+  }
+}
+
+
 function checkOverdueReturns() {
   const ss = SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID);
-  const borrowSheets = findBorrowSheets_(ss);
+  // ✅ FIX: Chỉ quét Log_Muon_Tra (nguồn chính thống), KHÔNG quét Form Responses.
+  // Lý do: Form Responses của form mượn KHÔNG có cột "Ngày trả thực tế",
+  // nên hệ thống coi mọi bản ghi trong đó là "chưa trả" → gửi email quá hạn sai.
+  const logSheet = ss.getSheetByName(CONFIG.SHEETS.LOG_MUON);
 
-  if (borrowSheets.length === 0) {
-    Logger.log('⚠️ checkOverdueReturns: không tìm thấy sheet nào chứa dữ liệu mượn/trả');
+  if (!logSheet || logSheet.getLastRow() < 2) {
+    Logger.log('⚠️ checkOverdueReturns: Log_Muon_Tra trống hoặc không tồn tại');
     return;
   }
 
+  const data = logSheet.getDataRange().getValues();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const overdueItems = [];
 
-  for (const sheet of borrowSheets) {
-    const data = sheet.getDataRange().getValues();
-    const headers = data[0];
+  // Cấu trúc cột Log_Muon_Tra:
+  //   A(0) Mã QR   B(1) Tên TB   C(2) Người mượn
+  //   G(6) Ngày mượn   H(7) Hạn trả   I(8) Ngày trả thực tế
+  //   P(15) Email người mượn
 
-    // Tìm cột bằng fuzzy matching — hoạt động với cả tên cột Log và tên câu hỏi Form
-    const colQR = findColIndex_(headers, ['mã qr', 'ma qr']);
-    const colTen = findColIndex_(headers, ['tên thiết bị', 'ten thiet bi']);
-    const colNguoi = findColIndex_(headers, ['người mượn', 'nguoi muon', 'họ và tên', 'ho va ten', 'họ tên']);
-    const colHanTra = findColIndex_(headers, ['dự kiến trả', 'du kien tra', 'hạn trả', 'han tra']);
-    const colTraTT = findColIndex_(headers, ['trả thực tế', 'tra thuc te', 'ngày trả thực tế']);
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const returnDate = row[8];  // cột I — Ngày trả thực tế
+    const dueDate    = row[7];  // cột H — Hạn trả
 
-    if (colQR < 0 || colHanTra < 0) continue;
+    // ✅ Chỉ xét dòng CHƯA TRẢ (cột I trống) VÀ có hạn trả
+    if (returnDate || !dueDate) continue;
 
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const hanTra = row[colHanTra];
-      const traTT = colTraTT >= 0 ? row[colTraTT] : '';
+    const due = parseDate_(dueDate);
+    if (!due) continue;
+    const daysOverdue = Math.floor((today - due) / (1000 * 60 * 60 * 24));
 
-      // Chỉ xét các dòng chưa trả và đã quá hạn
-      if (!traTT && hanTra) {
-        const dueDate = parseDate_(hanTra);
-        if (!dueDate) continue; // bỏ qua giá trị không parse được
-        const daysOverdue = Math.floor((today - dueDate) / (1000 * 60 * 60 * 24));
-
-        if (daysOverdue >= CONFIG.OVERDUE_DAYS) {
-          overdueItems.push({
-            qr: row[colQR] || 'N/A',
-            name: colTen >= 0 ? (row[colTen] || 'N/A') : 'N/A',
-            borrower: colNguoi >= 0 ? (row[colNguoi] || 'N/A') : 'N/A',
-            dueDate: Utilities.formatDate(dueDate, 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy'),
-            daysOverdue: daysOverdue,
-            sheet: sheet.getName()
-          });
-        }
-      }
+    if (daysOverdue >= CONFIG.OVERDUE_DAYS) {
+      const email = (row[15] || '').toString().trim(); // cột P
+      overdueItems.push({
+        qr: (row[0] || 'N/A').toString().trim(),
+        name: (row[1] || 'N/A').toString(),
+        borrower: (row[2] || 'N/A').toString(),
+        borrowDate: row[6] || null,
+        dueDate: Utilities.formatDate(due, 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy'),
+        daysOverdue: daysOverdue,
+        email: email,
+        sheet: CONFIG.SHEETS.LOG_MUON
+      });
     }
   }
 
@@ -228,22 +313,57 @@ function checkOverdueReturns() {
     return;
   }
 
-  // Gửi email
+  // 1. Gửi email cho từng NGƯỜI MƯỢN có email
+  let borrowerSent = 0;
+  overdueItems.forEach(item => {
+    if (!item.email) return;
+    const equipLink = CONFIG.LANDING_PAGE_URL + '?id=' + encodeURIComponent(item.qr);
+    const borrowDateStr = item.borrowDate
+      ? Utilities.formatDate(new Date(item.borrowDate), 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy')
+      : 'N/A';
+    const subjectB = `[KTTV&HDH] 🔴 QUÁ HẠN trả thiết bị: ${item.name} — đã quá ${item.daysOverdue} ngày`;
+    let bodyB = `Kính gửi ${item.borrower},\n\n`;
+    bodyB += `Hệ thống quản lý thiết bị Khoa KTTV&HDH thông báo:\n`;
+    bodyB += `Thiết bị bạn đang mượn đã QUÁ HẠN TRẢ ${item.daysOverdue} ngày.\n\n`;
+    bodyB += `${'─'.repeat(48)}\n`;
+    bodyB += `THÔNG TIN THIẾT BỊ QUÁ HẠN\n`;
+    bodyB += `${'─'.repeat(48)}\n`;
+    bodyB += `  Tên thiết bị  : ${item.name}\n`;
+    bodyB += `  Mã QR         : ${item.qr}\n`;
+    bodyB += `  Ngày mượn     : ${borrowDateStr}\n`;
+    bodyB += `  Hạn trả       : ${item.dueDate}\n`;
+    bodyB += `  Số ngày quá   : ${item.daysOverdue} ngày\n`;
+    bodyB += `${'─'.repeat(48)}\n\n`;
+    bodyB += `→ Vui lòng trả thiết bị NGAY hoặc liên hệ cán bộ phụ trách để gia hạn.\n\n`;
+    bodyB += `→ Làm thủ tục TRẢ trực tiếp tại:\n   ${equipLink}\n\n`;
+    bodyB += `${'─'.repeat(48)}\n`;
+    bodyB += `Hệ thống quản lý trang thiết bị\n`;
+    bodyB += `Khoa Khí tượng Thủy văn & Hải dương học\n`;
+    bodyB += `Trường ĐH Khoa học Tự nhiên — ĐHQGHN\n`;
+    bodyB += `Liên hệ: ${CONFIG.ADMIN_EMAIL}`;
+    try {
+      MailApp.sendEmail(item.email, subjectB, bodyB);
+      Logger.log(`✓ Gửi nhắc quá hạn → ${item.email} (${item.qr}, quá ${item.daysOverdue} ngày)`);
+      borrowerSent++;
+    } catch (err) {
+      Logger.log(`⚠️ Không gửi được cho ${item.email}: ${err.message}`);
+    }
+  });
+
+  // 2. Gửi email tóm tắt cho ADMIN
   const subject = `[KTTV&HDH] ⚠️ ${overdueItems.length} thiết bị quá hạn trả`;
   let body = `Kính gửi Phó Trưởng khoa,\n\n`;
   body += `Hệ thống phát hiện ${overdueItems.length} thiết bị quá hạn trả:\n\n`;
-
   overdueItems.forEach((item, idx) => {
     body += `${idx + 1}. ${item.qr} — ${item.name}\n`;
-    body += `   Người mượn: ${item.borrower}\n`;
+    body += `   Người mượn: ${item.borrower}${item.email ? ' (' + item.email + ')' : ' (không có email)'}\n`;
     body += `   Hạn trả: ${item.dueDate} (quá ${item.daysOverdue} ngày)\n\n`;
   });
-
-  body += `Vui lòng liên hệ người mượn để thu hồi thiết bị.\n\n`;
+  body += `Đã gửi email nhắc trực tiếp cho ${borrowerSent}/${overdueItems.length} người mượn.\n\n`;
   body += `— Hệ thống quản lý TB Khoa KTTV&HDH`;
 
   MailApp.sendEmail(CONFIG.ADMIN_EMAIL, subject, body);
-  Logger.log(`✓ Đã gửi email nhắc quá hạn: ${overdueItems.length} thiết bị`);
+  Logger.log(`✓ Đã gửi tóm tắt quá hạn cho admin; nhắc trực tiếp: ${borrowerSent} người`);
 }
 
 
@@ -291,8 +411,11 @@ function checkUpcomingReturns() {
     if (!due) continue;
     const daysUntilDue = Math.floor((due - today) / (1000 * 60 * 60 * 24));
 
-    // Chỉ gửi khi còn đúng REMIND_DAYS_BEFORE ngày (tránh gửi lặp)
-    if (daysUntilDue !== CONFIG.REMIND_DAYS_BEFORE) continue;
+    // Gửi khi còn <= REMIND_DAYS_BEFORE ngày (và chưa gửi lần nào)
+    if (daysUntilDue > CONFIG.REMIND_DAYS_BEFORE || daysUntilDue < 0) continue;
+    // Kiểm tra cột R (index 17) — "Đã nhắc" — tránh gửi lặp
+    const alreadyReminded = (data[i][17] || '').toString().trim();
+    if (alreadyReminded) continue;
 
     // === Tạo link trực tiếp đến trang thiết bị ===
     const equipLink = CONFIG.LANDING_PAGE_URL + '?id=' + encodeURIComponent(qrCode);
@@ -336,6 +459,8 @@ function checkUpcomingReturns() {
 
     try {
       MailApp.sendEmail(email, subject, body);
+      // Đánh dấu cột R (index 17) để tránh gửi lặp
+      logSheet.getRange(i + 1, 18).setValue('✓ ' + Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy HH:mm'));
       Logger.log(`✓ Nhắc trả: gửi cho ${email} — TB ${qrCode}, hạn ${dueDateStr}`);
       sentCount++;
     } catch (err) {
@@ -373,7 +498,8 @@ function checkMaintenanceSchedule() {
     const nextDate = row[colNextDate];
 
     if (nextDate) {
-      const nd = new Date(nextDate);
+      const nd = parseDate_(nextDate);
+      if (!nd) continue; // bỏ qua nếu ngày không hợp lệ
       const daysUntil = Math.floor((nd - today) / (1000 * 60 * 60 * 24));
 
       if (daysUntil > 0 && daysUntil <= CONFIG.MAINTENANCE_REMINDER_DAYS) {
@@ -465,7 +591,8 @@ function monthlyReport() {
   let returnCount = 0;
   const now = new Date();
   const firstOfMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const lastOfMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+  // 23:59:59 ngày cuối tháng — để không bỏ sót giao dịch trong ngày cuối
+  const lastOfMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
 
   if (logSheet && logSheet.getLastRow() > 1) {
     const logData = logSheet.getDataRange().getValues();
@@ -473,12 +600,12 @@ function monthlyReport() {
     const colReturnDate = logData[0].indexOf('Ngày trả thực tế');
 
     for (let i = 1; i < logData.length; i++) {
-      const bDate = logData[i][colBorrowDate];
-      if (bDate && new Date(bDate) >= firstOfMonth && new Date(bDate) <= lastOfMonth) {
+      const bDate = parseDate_(logData[i][colBorrowDate]);
+      if (bDate && bDate >= firstOfMonth && bDate <= lastOfMonth) {
         borrowCount++;
       }
-      const rDate = logData[i][colReturnDate];
-      if (rDate && new Date(rDate) >= firstOfMonth && new Date(rDate) <= lastOfMonth) {
+      const rDate = parseDate_(logData[i][colReturnDate]);
+      if (rDate && rDate >= firstOfMonth && rDate <= lastOfMonth) {
         returnCount++;
       }
     }
@@ -728,8 +855,8 @@ function onFormSubmitBorrow(e) {
         donVi,
         purpose,
         diaDiem,
-        ngayMuon ? new Date(ngayMuon) : new Date(),
-        dueDate ? new Date(dueDate) : '',
+        (ngayMuon && parseDate_(ngayMuon)) || new Date(),
+        (dueDate && parseDate_(dueDate)) || '',
         '',           // Ngày trả thực tế — chưa trả
         tinhTrang,
         '',           // Tình trạng khi trả — chưa trả
@@ -790,11 +917,8 @@ function onFormSubmitDispatch(e) {
       ? Object.keys(e.namedValues).map(k => k.toLowerCase())
       : [];
 
-    // Nhận diện form TRẢ: tên sheet chứa "trả"/"tra"/"return",
-    // HOẶC form có trường "ngày trả thực tế" mà KHÔNG có "dự kiến trả"
-    const isReturnBySheet = sheetName.includes('trả') ||
-                            sheetName.includes('tra') ||
-                            sheetName.includes('return');
+    // Nhận diện form TRẢ: ưu tiên NỘI DUNG form trước, tên sheet sau.
+    // Form MƯỢN có trường "dự kiến trả"/"hạn trả" → luôn là mượn.
     const hasReturnDateField = keys.some(k =>
       k.includes('ngày trả thực tế') || k.includes('ngay tra thuc te') ||
       k.includes('ngày trả') || k.includes('ngay tra'));
@@ -802,7 +926,14 @@ function onFormSubmitDispatch(e) {
       k.includes('dự kiến trả') || k.includes('du kien tra') ||
       k.includes('hạn trả') || k.includes('han tra'));
 
-    const isReturn = isReturnBySheet || (hasReturnDateField && !hasDueDateField);
+    // Tên sheet: match theo từ nguyên vẹn để tránh "tra" khớp nhầm "trang", "training"...
+    const isReturnBySheet = sheetName.includes('trả') ||
+                            sheetName.includes('return') ||
+                            /(^|[^a-zà-ỹ])tra([^a-zà-ỹ]|$)/.test(sheetName);
+
+    // Quy tắc: có "dự kiến trả" ⇒ form MƯỢN (bất kể tên sheet);
+    // ngược lại, là TRẢ nếu có "ngày trả" hoặc tên sheet chỉ rõ trả.
+    const isReturn = !hasDueDateField && (hasReturnDateField || isReturnBySheet);
 
     Logger.log(`onFormSubmitDispatch → sheet: "${sheetName}", isReturn: ${isReturn}`);
 
@@ -857,7 +988,25 @@ function onFormSubmitReturn(e) {
     return;
   }
 
-  const actualReturnDate = returnStr ? new Date(returnStr) : new Date();
+  // ✅ FIX: Luôn ghi timestamp đầy đủ (ngày + giờ:phút:giây) thay vì chỉ 00:00.
+  // Nếu form có date picker (chỉ trả về ngày, VD "2026-07-14"), ghép với giờ hiện tại.
+  // Nếu form không có trường ngày trả → dùng hoàn toàn thời điểm submit.
+  const now = new Date();
+  let actualReturnDate;
+  if (returnStr) {
+    const formDate = parseDate_(returnStr);
+    if (formDate && !isNaN(formDate.getTime())) {
+      // Giữ ngày từ form, ghép giờ:phút:giây hiện tại
+      actualReturnDate = new Date(
+        formDate.getFullYear(), formDate.getMonth(), formDate.getDate(),
+        now.getHours(), now.getMinutes(), now.getSeconds()
+      );
+    } else {
+      actualReturnDate = now;
+    }
+  } else {
+    actualReturnDate = now;
+  }
 
   // === CẬP NHẬT LOG_MUON_TRA ===
   const ss = SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID);
@@ -877,8 +1026,18 @@ function onFormSubmitReturn(e) {
       if (rowQR === qrCode && !rowReturnDate) {
         const sheetRow = i + 1; // Google Sheets dùng 1-indexed
 
-        logSheet.getRange(sheetRow, 9).setValue(actualReturnDate);        // cột I
+        // ✅ FIX: Ghi timestamp đầy đủ + format hiển thị ngày giờ (không chỉ ngày)
+        const returnCell = logSheet.getRange(sheetRow, 9); // cột I
+        returnCell.setValue(actualReturnDate);
+        returnCell.setNumberFormat('dd/MM/yyyy HH:mm');
         if (condition) logSheet.getRange(sheetRow, 11).setValue(condition); // cột K
+
+        // === TÍNH GIỜ SỬ DỤNG → ghi vào cột Q ===
+        const borrowDateVal = data[i][6]; // cột G — Ngày mượn
+        const hoursUsed = writeUsageHours_(logSheet, sheetRow, borrowDateVal, actualReturnDate);
+        if (hoursUsed !== null) {
+          Logger.log(`✓ Giờ sử dụng TB "${qrCode}": ${hoursUsed}h`);
+        }
 
         if (notes) {
           const existingNote = (data[i][13] || '').toString(); // cột N
@@ -1049,6 +1208,17 @@ function syncFormResponsesToLog() {
       fCell.setHorizontalAlignment('center').setFontWeight('bold')
            .setFontColor('#FF0000').setFontSize(14);
 
+      // Tính giờ sử dụng cho dòng đã có ngày trả (lịch sử)
+      const srcReturnDate = cHanTra >= 0 ? row[cHanTra] : null;
+      const srcBorrowDate = ngayMuon;
+      // Lưu ý: dữ liệu sync thường là ngày trả từ form responses (nếu có)
+      // Nếu có cột "Ngày trả thực tế" trong source, ưu tiên dùng
+      const cTraTT = findColIndex_(h, ['ngày trả thực tế', 'ngay tra thuc te', 'ngày trả', 'ngay tra actual']);
+      const srcActualReturn = cTraTT >= 0 ? row[cTraTT] : null;
+      if (srcActualReturn && srcBorrowDate) {
+        writeUsageHours_(logSheet, syncedRow, srcBorrowDate, srcActualReturn);
+      }
+
       existingKeys.add(key);
       syncCount++;
     }
@@ -1056,6 +1226,466 @@ function syncFormResponsesToLog() {
 
   Logger.log(`✓ Đồng bộ xong: ${syncCount} dòng mới được thêm vào Log_Muon_Tra`);
   SpreadsheetApp.getUi().alert(`Đồng bộ xong: ${syncCount} dòng mới được thêm vào Log_Muon_Tra`);
+}
+
+
+// ==================== 7. BÁO CÁO HIỆU QUẢ SỬ DỤNG THIẾT BỊ NĂM ====================
+
+/**
+ * Phân loại hiệu quả sử dụng dựa trên số lần mượn và tỷ lệ sử dụng (%).
+ * Tiêu chí:
+ *   🟢 Tích cực   : tỷ lệ ≥ 25% hoặc ≥ 10 lần mượn
+ *   🟡 Trung bình : 5% ≤ tỷ lệ < 25% hoặc 4-9 lần
+ *   🔴 Kém        : 0 < tỷ lệ < 5% hoặc 1-3 lần
+ *   ⚫ Không SD   : 0 lần mượn
+ */
+function classifyUsage_(times, utilizationPct) {
+  if (times === 0)                                    return '⚫ Không sử dụng';
+  if (utilizationPct >= 25 || times >= 10)            return '🟢 Tích cực';
+  if (utilizationPct >= 5  || times >= 4)             return '🟡 Trung bình';
+  return '🔴 Kém';
+}
+
+/**
+ * Backfill giờ sử dụng (cột Q) cho TẤT CẢ dòng đã trả trong Log_Muon_Tra.
+ * Chạy 1 lần sau khi deploy để điền lại dữ liệu lịch sử.
+ * An toàn để chạy nhiều lần (bỏ qua dòng đã có giờ).
+ */
+function backfillUsageHours() {
+  const ss = SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID);
+  const logSheet = ss.getSheetByName(CONFIG.SHEETS.LOG_MUON);
+  if (!logSheet || logSheet.getLastRow() < 2) {
+    Logger.log('backfillUsageHours: Log_Muon_Tra trống, bỏ qua.');
+    return;
+  }
+
+  ensureUsageHoursColumn_(logSheet);
+
+  const data = logSheet.getDataRange().getValues();
+  let filled = 0;
+  let skipped = 0;
+
+  for (let i = 1; i < data.length; i++) {
+    const borrowDate  = data[i][6];  // cột G
+    const returnDate  = data[i][8];  // cột I
+    const existingHrs = data[i][16]; // cột Q
+
+    // Bỏ qua: chưa trả hoặc đã có giờ
+    if (!returnDate) { skipped++; continue; }
+    if (existingHrs && !isNaN(existingHrs) && existingHrs > 0) { skipped++; continue; }
+
+    const hours = writeUsageHours_(logSheet, i + 1, borrowDate, returnDate);
+    if (hours !== null) filled++;
+    else skipped++;
+  }
+
+  const msg = `Backfill hoàn tất: ${filled} dòng đã tính giờ SD, ${skipped} dòng bỏ qua.`;
+  Logger.log('✓ ' + msg);
+  try {
+    SpreadsheetApp.getUi().alert('✅ ' + msg);
+  } catch (e) { /* chạy qua trigger */ }
+}
+
+
+/**
+ * Tạo/cập nhật sheet "Bao_Cao_Nam_YYYY" và gửi email HTML tổng kết.
+ *
+ * Chỉ số báo cáo (theo yêu cầu):
+ *   - Số lần mượn trong năm
+ *   - Tổng giờ sử dụng (từ cột Q Log_Muon_Tra)
+ *   - Tỷ lệ sử dụng (%) = tổng giờ / 2000h × 100%
+ *   - Phân loại hiệu quả (Tích cực / Trung bình / Kém / Không dùng)
+ *
+ * @param {number} [year] Năm cần báo cáo — mặc định: năm hiện tại
+ */
+function generateAnnualUsageReport(year) {
+  const targetYear        = year || new Date().getFullYear();
+  const WORK_HOURS_PER_YEAR = 2000; // 250 ngày làm việc × 8h
+
+  const ss = SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID);
+
+  // === Đảm bảo cột Q tồn tại ===
+  const logSheet = ss.getSheetByName(CONFIG.SHEETS.LOG_MUON);
+  if (logSheet) ensureUsageHoursColumn_(logSheet);
+
+  // === Đọc Master_Data → map thông tin thiết bị ===
+  const masterSheet = ss.getSheetByName(CONFIG.SHEETS.MASTER);
+  const masterData  = masterSheet.getDataRange().getValues();
+  const mH          = masterData[0];
+  const mColQR      = mH.indexOf('Mã QR');
+  const mColName    = mH.indexOf('Tên thiết bị');
+  const mColCat     = mH.indexOf('Nhóm (tên)');
+  const mColRoom    = mH.indexOf('Phòng');
+  const mColValue   = mH.indexOf('Nguyên giá (tr.đ)');
+  const mColStatus  = mH.indexOf('Tình trạng thực tế (01/2025)');
+
+  const masterMap = {};
+  const allQRs    = [];   // giữ thứ tự để tạo STT nhất quán
+  for (let i = 1; i < masterData.length; i++) {
+    const qr = (masterData[i][mColQR] || '').toString().trim();
+    if (!qr) continue;
+    masterMap[qr] = {
+      name  : (masterData[i][mColName]   || '').toString(),
+      cat   : (masterData[i][mColCat]    || 'Khác').toString(),
+      room  : (masterData[i][mColRoom]   || '').toString(),
+      value : parseFloat(masterData[i][mColValue]) || 0,
+      status: mColStatus >= 0 ? (masterData[i][mColStatus] || '').toString() : ''
+    };
+    allQRs.push(qr);
+  }
+
+  // === Tổng hợp thống kê từ Log_Muon_Tra ===
+  // stats[QR] = { times, totalHours, completedTimes }
+  const stats = {};
+
+  if (logSheet && logSheet.getLastRow() > 1) {
+    const logData = logSheet.getDataRange().getValues();
+
+    for (let i = 1; i < logData.length; i++) {
+      const qr = (logData[i][0] || '').toString().trim();
+      if (!qr) continue;
+
+      const borrowDate = logData[i][6]; // cột G
+      if (!borrowDate) continue;
+
+      const bDate = borrowDate instanceof Date ? borrowDate : new Date(borrowDate);
+      if (isNaN(bDate.getTime())) continue;
+
+      // Lọc theo năm (dựa trên ngày mượn)
+      if (bDate.getFullYear() !== targetYear) continue;
+
+      if (!stats[qr]) stats[qr] = { times: 0, totalHours: 0, completedTimes: 0 };
+      stats[qr].times++;
+
+      // Giờ sử dụng: ưu tiên cột Q, fallback tính lại từ G và I
+      const returnDate = logData[i][8]; // cột I
+      if (returnDate) {
+        let hours = logData[i][16]; // cột Q
+        if (!hours || isNaN(Number(hours)) || Number(hours) <= 0) {
+          hours = calculateUsageHours_(borrowDate, returnDate);
+        } else {
+          hours = Number(hours);
+        }
+        if (hours && hours > 0) {
+          stats[qr].totalHours += hours;
+          stats[qr].completedTimes++;
+        }
+      }
+    }
+  }
+
+  // === Xây dựng mảng reportRows ===
+  const reportRows = allQRs.map(qr => {
+    const m = masterMap[qr];
+    const s = stats[qr] || { times: 0, totalHours: 0, completedTimes: 0 };
+    const totalHours      = Math.round(s.totalHours * 10) / 10;
+    const avgHoursPerUse  = s.completedTimes > 0
+      ? Math.round(totalHours / s.completedTimes * 10) / 10 : 0;
+    const utilizationPct  = Math.round(totalHours / WORK_HOURS_PER_YEAR * 1000) / 10;
+    const classification  = classifyUsage_(s.times, utilizationPct);
+    return { qr, ...m, times: s.times, totalHours, avgHoursPerUse, utilizationPct, classification };
+  });
+
+  // Sắp xếp: phân loại tốt trước, trong cùng phân loại → giờ SD giảm dần
+  const sortOrder = { '🟢 Tích cực': 0, '🟡 Trung bình': 1, '🔴 Kém': 2, '⚫ Không sử dụng': 3 };
+  reportRows.sort((a, b) => {
+    const oa = (a.classification in sortOrder) ? sortOrder[a.classification] : 3;
+    const ob = (b.classification in sortOrder) ? sortOrder[b.classification] : 3;
+    const d = oa - ob;
+    return d !== 0 ? d : b.totalHours - a.totalHours;
+  });
+
+  // === Tạo/cập nhật sheet Bao_Cao_Nam_YYYY ===
+  const sheetName  = `Bao_Cao_Nam_${targetYear}`;
+  let reportSheet  = ss.getSheetByName(sheetName);
+  if (reportSheet) { reportSheet.clearContents(); reportSheet.clearFormats(); }
+  else             { reportSheet = ss.insertSheet(sheetName); }
+
+  const COL_HEADERS = [
+    'STT', 'Mã QR', 'Tên thiết bị', 'Nhóm TB', 'Phòng',
+    'Nguyên giá (tr.đ)', 'Số lần mượn', 'Tổng giờ SD (h)',
+    'Giờ TB/lần (h)', `Tỷ lệ SD (%)`, 'Phân loại hiệu quả'
+  ];
+  const N_COLS = COL_HEADERS.length;
+
+  // Tiêu đề
+  reportSheet.getRange(1, 1, 1, N_COLS).merge()
+    .setValue(`BÁO CÁO HIỆU QUẢ SỬ DỤNG TRANG THIẾT BỊ NĂM ${targetYear} — KHOA KTTV&HDH`)
+    .setFontWeight('bold').setFontSize(13).setHorizontalAlignment('center')
+    .setBackground('#1565C0').setFontColor('white').setWrap(false);
+  reportSheet.getRange(2, 1, 1, N_COLS).merge()
+    .setValue('Khoa Khí tượng Thủy văn & Hải dương học — ĐH Khoa học Tự nhiên, ĐHQGHN')
+    .setFontSize(10).setHorizontalAlignment('center').setFontColor('#555555');
+  reportSheet.getRange(3, 1, 1, N_COLS).merge()
+    .setValue(`Ngày xuất: ${Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy HH:mm')}  |  Cơ sở tính: ${WORK_HOURS_PER_YEAR}h/năm (250 ngày × 8h)`)
+    .setFontSize(9).setHorizontalAlignment('right')
+    .setFontColor('#888888').setFontStyle('italic');
+
+  // Header cột
+  const headerRange = reportSheet.getRange(4, 1, 1, N_COLS);
+  headerRange.setValues([COL_HEADERS])
+    .setFontWeight('bold').setBackground('#1E88E5').setFontColor('white')
+    .setHorizontalAlignment('center').setWrap(true);
+  reportSheet.setFrozenRows(4);
+
+  // Dữ liệu
+  if (reportRows.length > 0) {
+    const dataValues = reportRows.map((r, idx) => [
+      idx + 1, r.qr, r.name, r.cat, r.room,
+      r.value, r.times, r.totalHours, r.avgHoursPerUse, r.utilizationPct, r.classification
+    ]);
+    const dataRange = reportSheet.getRange(5, 1, dataValues.length, N_COLS);
+    dataRange.setValues(dataValues);
+
+    // Màu nền theo phân loại, format số
+    const BG_COLOR = {
+      '🟢 Tích cực': '#E8F5E9', '🟡 Trung bình': '#FFF9C4',
+      '🔴 Kém': '#FFEBEE', '⚫ Không sử dụng': '#F5F5F5'
+    };
+    for (let i = 0; i < dataValues.length; i++) {
+      const cls = dataValues[i][10];
+      reportSheet.getRange(5 + i, 1, 1, N_COLS)
+        .setBackground(BG_COLOR[cls] || '#FFFFFF');
+    }
+    reportSheet.getRange(5, 11, dataValues.length, 1)
+      .setFontWeight('bold').setHorizontalAlignment('center');
+    reportSheet.getRange(5, 6, dataValues.length, 1).setNumberFormat('#,##0.0');  // giá
+    reportSheet.getRange(5, 8, dataValues.length, 3).setNumberFormat('0.0');      // giờ, TB, tỷ lệ
+  }
+
+  // Tóm tắt cuối sheet
+  const countActive = reportRows.filter(r => r.classification === '🟢 Tích cực').length;
+  const countAvg    = reportRows.filter(r => r.classification === '🟡 Trung bình').length;
+  const countPoor   = reportRows.filter(r => r.classification === '🔴 Kém').length;
+  const countUnused = reportRows.filter(r => r.classification === '⚫ Không sử dụng').length;
+  const totalBorrows  = reportRows.reduce((s, r) => s + r.times, 0);
+  const totalHoursAll = Math.round(reportRows.reduce((s, r) => s + r.totalHours, 0) * 10) / 10;
+
+  const sumRow = 5 + reportRows.length + 2;
+  reportSheet.getRange(sumRow, 1, 1, N_COLS).merge()
+    .setValue('TỔNG KẾT').setFontWeight('bold').setBackground('#E3F2FD')
+    .setHorizontalAlignment('center');
+  const summaryData = [
+    ['🟢 Tích cực',     countActive,   'thiết bị', '', '', '', '', '', '', '', ''],
+    ['🟡 Trung bình',   countAvg,      'thiết bị', '', '', '', '', '', '', '', ''],
+    ['🔴 Kém',          countPoor,     'thiết bị', '', '', '', '', '', '', '', ''],
+    ['⚫ Không sử dụng', countUnused,  'thiết bị', '', '', '', '', '', '', '', ''],
+    ['Tổng lượt mượn',  totalBorrows,  'lượt',     '', '', '', '', '', '', '', ''],
+    ['Tổng giờ SD',     totalHoursAll, 'giờ',      '', '', '', '', '', '', '', '']
+  ];
+  reportSheet.getRange(sumRow + 1, 1, summaryData.length, N_COLS).setValues(summaryData);
+
+  // Độ rộng cột
+  const colWidths = [40, 130, 220, 100, 80, 120, 90, 110, 100, 90, 160];
+  colWidths.forEach((w, i) => reportSheet.setColumnWidth(i + 1, w));
+
+  Logger.log(`✓ Đã tạo sheet ${sheetName}: ${reportRows.length} thiết bị`);
+
+  // === GỬI EMAIL HTML ===
+  sendAnnualReportEmail_(targetYear, reportRows, totalBorrows, totalHoursAll,
+    { countActive, countAvg, countPoor, countUnused });
+
+  try {
+    SpreadsheetApp.getUi().alert(
+      `✅ Báo cáo năm ${targetYear} hoàn tất!\n` +
+      `• Sheet: "${sheetName}" đã được tạo/cập nhật\n` +
+      `• Email tóm tắt đã gửi đến: ${CONFIG.ADMIN_EMAIL}`
+    );
+  } catch (e) { /* trigger — không có UI */ }
+}
+
+
+/**
+ * Gửi email HTML tổng kết hiệu quả sử dụng thiết bị
+ */
+function sendAnnualReportEmail_(year, rows, totalBorrows, totalHours, counts) {
+  const subject = `[KTTV&HDH] 📊 Báo cáo hiệu quả sử dụng thiết bị năm ${year}`;
+
+  // Top 10 thiết bị sử dụng nhiều giờ nhất (trong số đã mượn ít nhất 1 lần)
+  const top10 = rows.filter(r => r.times > 0)
+    .sort((a, b) => b.totalHours - a.totalHours)
+    .slice(0, 10);
+
+  const top10Rows = top10.map((r, i) => {
+    const bg = i % 2 === 0 ? '#F8F9FA' : 'white';
+    const clsColor = r.classification.includes('Tích cực') ? '#2E7D32'
+      : r.classification.includes('Trung bình') ? '#F9A825' : '#C62828';
+    return `<tr style="background:${bg}">
+      <td style="padding:7px 10px;text-align:center;color:#888">${i + 1}</td>
+      <td style="padding:7px 10px;font-family:monospace;font-size:12px;color:#1565C0">${r.qr}</td>
+      <td style="padding:7px 10px">${r.name}</td>
+      <td style="padding:7px 10px;text-align:center">${r.times}</td>
+      <td style="padding:7px 10px;text-align:center;font-weight:700;color:#1565C0">${r.totalHours}h</td>
+      <td style="padding:7px 10px;text-align:center">${r.utilizationPct}%</td>
+      <td style="padding:7px 10px;text-align:center;font-weight:700;color:${clsColor}">${r.classification}</td>
+    </tr>`;
+  }).join('');
+
+  // Danh sách thiết bị không sử dụng
+  const unused = rows.filter(r => r.times === 0);
+  const unusedListHtml = unused.slice(0, 24).map(r =>
+    `<li style="margin:3px 0"><span style="font-family:monospace;color:#888;font-size:11px">${r.qr}</span> — ${r.name}</li>`
+  ).join('') + (unused.length > 24
+    ? `<li style="color:#aaa;font-style:italic">... và ${unused.length - 24} thiết bị khác</li>` : '');
+
+  const htmlBody = `
+<!DOCTYPE html><html><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f0f2f5;
+             font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:24px 0">
+<tr><td align="center">
+<table width="700" cellpadding="0" cellspacing="0"
+  style="background:white;border-radius:14px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.08)">
+
+  <!-- Header -->
+  <tr><td style="background:linear-gradient(135deg,#1565C0 0%,#1E88E5 100%);padding:28px 36px">
+    <p style="margin:0;color:rgba(255,255,255,.75);font-size:12px;letter-spacing:.5px;text-transform:uppercase">
+      Khoa Khí tượng Thủy văn &amp; Hải dương học — ĐHKHTN, ĐHQGHN</p>
+    <h1 style="margin:10px 0 6px;color:white;font-size:24px;font-weight:800">
+      📊 Báo cáo hiệu quả sử dụng thiết bị</h1>
+    <p style="margin:0;color:rgba(255,255,255,.9);font-size:17px;font-weight:600">Năm ${year}</p>
+  </td></tr>
+
+  <!-- 4 chỉ số tổng quan -->
+  <tr><td style="padding:28px 36px 0">
+    <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td style="background:#E8F5E9;border-radius:10px;padding:16px 10px;text-align:center">
+        <div style="font-size:34px;font-weight:900;color:#2E7D32;line-height:1">${counts.countActive}</div>
+        <div style="font-size:12px;color:#555;margin-top:5px">🟢 Tích cực</div>
+      </td>
+      <td width="12"></td>
+      <td style="background:#FFF9C4;border-radius:10px;padding:16px 10px;text-align:center">
+        <div style="font-size:34px;font-weight:900;color:#F9A825;line-height:1">${counts.countAvg}</div>
+        <div style="font-size:12px;color:#555;margin-top:5px">🟡 Trung bình</div>
+      </td>
+      <td width="12"></td>
+      <td style="background:#FFEBEE;border-radius:10px;padding:16px 10px;text-align:center">
+        <div style="font-size:34px;font-weight:900;color:#C62828;line-height:1">${counts.countPoor}</div>
+        <div style="font-size:12px;color:#555;margin-top:5px">🔴 Kém</div>
+      </td>
+      <td width="12"></td>
+      <td style="background:#F5F5F5;border-radius:10px;padding:16px 10px;text-align:center">
+        <div style="font-size:34px;font-weight:900;color:#757575;line-height:1">${counts.countUnused}</div>
+        <div style="font-size:12px;color:#555;margin-top:5px">⚫ Không dùng</div>
+      </td>
+    </tr>
+    </table>
+  </td></tr>
+
+  <!-- Tổng lượt & tổng giờ -->
+  <tr><td style="padding:14px 36px 0">
+    <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td style="background:#E3F2FD;border-radius:8px;padding:14px 18px">
+        <span style="font-size:13px;color:#555">Tổng lượt mượn trong năm: </span>
+        <strong style="font-size:20px;color:#1565C0">${totalBorrows} lượt</strong>
+      </td>
+      <td width="12"></td>
+      <td style="background:#E3F2FD;border-radius:8px;padding:14px 18px">
+        <span style="font-size:13px;color:#555">Tổng giờ sử dụng: </span>
+        <strong style="font-size:20px;color:#1565C0">${totalHours}h</strong>
+      </td>
+    </tr>
+    </table>
+  </td></tr>
+
+  <!-- Top 10 -->
+  ${top10.length > 0 ? `
+  <tr><td style="padding:24px 36px 0">
+    <h3 style="margin:0 0 12px;font-size:15px;color:#1565C0;font-weight:700">
+      🏆 Top ${top10.length} thiết bị sử dụng nhiều nhất</h3>
+    <table width="100%" cellpadding="0" cellspacing="0"
+      style="border-collapse:collapse;font-size:13px;border-radius:8px;overflow:hidden">
+      <tr style="background:#1E88E5;color:white">
+        <th style="padding:9px 10px;width:28px">#</th>
+        <th style="padding:9px 10px;text-align:left">Mã QR</th>
+        <th style="padding:9px 10px;text-align:left">Tên thiết bị</th>
+        <th style="padding:9px 10px">Lần mượn</th>
+        <th style="padding:9px 10px">Tổng giờ</th>
+        <th style="padding:9px 10px">Tỷ lệ SD</th>
+        <th style="padding:9px 10px">Phân loại</th>
+      </tr>
+      ${top10Rows}
+    </table>
+  </td></tr>` : ''}
+
+  <!-- Thiết bị không sử dụng -->
+  ${unused.length > 0 ? `
+  <tr><td style="padding:20px 36px 0">
+    <h3 style="margin:0 0 6px;font-size:15px;color:#C62828;font-weight:700">
+      ⚫ Thiết bị không sử dụng trong năm (${unused.length})</h3>
+    <p style="margin:0 0 10px;font-size:12px;color:#888">
+      Đề nghị xem xét: kiểm tra nguyên nhân, lên kế hoạch khai thác, hoặc đề xuất thanh lý nếu cần.</p>
+    <ul style="margin:0;padding-left:20px;font-size:13px;color:#333;
+               column-count:2;column-gap:24px">${unusedListHtml}</ul>
+  </td></tr>` : ''}
+
+  <!-- Tiêu chí phân loại -->
+  <tr><td style="padding:20px 36px 0">
+    <div style="background:#F8F9FA;border-radius:8px;padding:14px 18px;font-size:12px;color:#666;line-height:1.8">
+      <strong style="color:#333">Tiêu chí phân loại hiệu quả sử dụng:</strong><br>
+      🟢 <strong>Tích cực</strong>: Tỷ lệ SD ≥ 25% hoặc ≥ 10 lần mượn &nbsp;&nbsp;
+      🟡 <strong>Trung bình</strong>: 5% – 25% hoặc 4–9 lần &nbsp;&nbsp;
+      🔴 <strong>Kém</strong>: &lt;5% hoặc 1–3 lần &nbsp;&nbsp;
+      ⚫ <strong>Không SD</strong>: 0 lần mượn<br>
+      <span style="color:#aaa">Tỷ lệ sử dụng = Tổng giờ SD ÷ 2000h (250 ngày × 8h) × 100%</span>
+    </div>
+  </td></tr>
+
+  <!-- Footer -->
+  <tr><td style="background:#F8F9FA;padding:16px 36px;margin-top:24px;border-top:1px solid #EEE">
+    <p style="margin:0;font-size:11px;color:#BBB;text-align:center;line-height:1.6">
+      Báo cáo tự động từ Hệ thống quản lý trang thiết bị — Khoa KTTV&amp;HDH<br>
+      ĐH Khoa học Tự nhiên — ĐHQGHN &nbsp;|&nbsp; Liên hệ: ${CONFIG.ADMIN_EMAIL}
+    </p>
+  </td></tr>
+
+</table>
+</td></tr></table>
+</body></html>`;
+
+  // Plain text fallback
+  let plain = `BÁO CÁO HIỆU QUẢ SỬ DỤNG TRANG THIẾT BỊ NĂM ${year}\n`;
+  plain += `Khoa Khí tượng Thủy văn & Hải dương học — ĐHKHTN, ĐHQGHN\n`;
+  plain += `${'='.repeat(56)}\n\n`;
+  plain += `TỔNG QUAN:\n`;
+  plain += `  🟢 Tích cực      : ${counts.countActive} thiết bị\n`;
+  plain += `  🟡 Trung bình    : ${counts.countAvg} thiết bị\n`;
+  plain += `  🔴 Kém           : ${counts.countPoor} thiết bị\n`;
+  plain += `  ⚫ Không sử dụng : ${counts.countUnused} thiết bị\n\n`;
+  plain += `  Tổng lượt mượn  : ${totalBorrows} lượt\n`;
+  plain += `  Tổng giờ SD     : ${totalHours}h\n\n`;
+  if (top10.length > 0) {
+    plain += `TOP ${top10.length} SỬ DỤNG NHIỀU NHẤT:\n`;
+    top10.forEach((r, i) => {
+      plain += `  ${i + 1}. ${r.qr} — ${r.name}: ${r.times} lần, ${r.totalHours}h (${r.utilizationPct}%)\n`;
+    });
+    plain += '\n';
+  }
+  if (unused.length > 0) {
+    plain += `THIẾT BỊ KHÔNG SỬ DỤNG (${unused.length}):\n`;
+    unused.forEach(r => { plain += `  • ${r.qr} — ${r.name}\n`; });
+    plain += '\n';
+  }
+  plain += `${'='.repeat(56)}\n`;
+  plain += `Chi tiết xem trong Google Sheet: "Bao_Cao_Nam_${year}"\n`;
+  plain += `Báo cáo tự động — Hệ thống quản lý TB Khoa KTTV&HDH`;
+
+  MailApp.sendEmail(CONFIG.ADMIN_EMAIL, subject, plain, { htmlBody });
+  Logger.log(`✓ Đã gửi email báo cáo năm ${year} đến ${CONFIG.ADMIN_EMAIL}`);
+}
+
+
+/**
+ * Hàm wrapper cho trigger ngày 31/12 — chỉ thực sự chạy khi là tháng 12.
+ * (trigger onMonthDay(31) chỉ kích hoạt vào các tháng có đủ 31 ngày)
+ */
+function yearlyReport() {
+  if (new Date().getMonth() === 11) { // tháng 12 (0-indexed)
+    generateAnnualUsageReport();
+  }
 }
 
 
@@ -1305,9 +1935,8 @@ function checkBorrowStatus_(qrCode) {
       if (rowQR === qrCode && !returnDate) {
         borrower = (data[i][2] || '').toString().trim(); // cột C
         const dueDate = data[i][7];                      // cột H
-        if (dueDate) {
-          const due = new Date(dueDate);
-          due.setHours(0, 0, 0, 0);
+        const due = parseDate_(dueDate);
+        if (due) {
           dueDateStr  = Utilities.formatDate(due, 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy');
           daysOverdue = Math.max(0, Math.floor((today - due) / (1000 * 60 * 60 * 24)));
         }
@@ -1341,6 +1970,9 @@ function onOpen() {
     .addItem('Kiểm tra quá hạn trả', 'checkOverdueReturns')
     .addItem('Kiểm tra lịch bảo trì', 'checkMaintenanceSchedule')
     .addItem('Gửi báo cáo tháng', 'monthlyReport')
+    .addSeparator()
+    .addItem('📊 Tạo báo cáo hiệu quả sử dụng năm nay', 'generateAnnualUsageReport')
+    .addItem('🔢 Backfill giờ sử dụng (chạy 1 lần)', 'backfillUsageHours')
     .addSeparator()
     .addItem('Đồng bộ Form → Log_Muon_Tra', 'syncFormResponsesToLog')
     .addItem('Thiết lập trigger tự động', 'setup')
