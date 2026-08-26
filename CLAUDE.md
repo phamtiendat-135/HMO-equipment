@@ -143,6 +143,24 @@ Vice Dean (Pho Truong khoa) — overall management, approval
 2. Bộ môn Thủy văn và Tài nguyên nước
 3. Bộ môn Khoa học và Công nghệ Biển
 
+## Session Summary Rule (bắt buộc)
+
+Trước khi kết thúc MỌI phiên làm việc trong workspace này, tạo hoặc cập nhật `SESSION_SUMMARY_YYYY-MM-DD.md` theo ngày local hiện tại.
+
+- Chưa có file của hôm nay → tạo mới. Đã có → **nối thêm** một mục mới ghi rõ ngày giờ, KHÔNG ghi đè mục cũ.
+- Chỉ ghi sự thật của phiên hiện tại:
+  - công việc đã hoàn thành và các quyết định quan trọng
+  - file đã tạo hoặc thay đổi
+  - kiểm tra/test đã chạy và kết quả thực tế
+  - việc còn lại, vướng mắc, và các bước vận hành cần theo dõi
+- Ngắn gọn, đủ để phiên sau tiếp tục được.
+- Nói rõ khi KHÔNG có file nào thay đổi hoặc KHÔNG chạy test nào.
+- Cập nhật summary trước câu trả lời cuối cùng, kể cả khi người dùng không yêu cầu.
+- KHÔNG được khẳng định đã deploy, đã sửa Google Sheets, hay đã push GitHub trừ khi việc đó thực sự đã được xác minh trong phiên.
+- Summary là bộ nhớ dự án, không thay thế source code hay tài liệu chính thức.
+
+> Rule này đồng bộ với `.github/instructions/session-summary.instructions.md` (bản dành cho Copilot). Sửa một bên thì sửa cả bên kia.
+
 ## Changes Log (Session 23/05/2026)
 
 - Fixed: `onFormSubmitBorrow` — trigger, email cho mọi yêu cầu, đúng event object (Sheet-side)
