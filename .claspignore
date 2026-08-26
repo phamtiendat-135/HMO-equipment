@@ -1,0 +1,5 @@
+# Bỏ qua TẤT CẢ, chỉ whitelist file thuộc Apps Script.
+# Tránh push nhầm landing page (index.html, QR_*.html) và Create_Google_Forms.js.
+**/**
+!Google_Apps_Script.js
+!appsscript.json
