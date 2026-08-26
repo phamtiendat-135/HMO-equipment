@@ -177,3 +177,29 @@
 - curl production `?action=alllog` → 2 bản ghi đúng, có `equipName`/`unit`/`dueDate`/`isOverdue`.
 - curl `?action=alllog&limit=1` → đúng 1 bản ghi (limit hoạt động).
 - Regression `?action=history`, `?id=`, `?action=allStatus` → đều không vỡ.
+
+### Chốt phiên 26/08/2026 ~17:35
+
+**Xác minh cuối trên production (sau khi push `28d2526`):**
+- GitHub Pages ra bản mới sau ~30 giây: `showUsageLog` có mặt, `sw.js` = `hmo-equipment-v8`.
+- HTML live chứa `?action=alllog`; API live trả 2 bản ghi với đúng 11 trường
+  (`qrCode, equipName, borrower, unit, location, borrowDate, dueDate, returnDate,
+  usageHours, isActive, isOverdue`) — kiểm tra tự động xác nhận KHÔNG có trường email/ghi chú.
+
+**Trạng thái cuối phiên**
+- Apps Script: **version 9**, deployment `AKfycbwfXPse...`, URL không đổi. ✅
+- GitHub Pages: nút "🕘 Lịch sử sử dụng" (màn hình chi tiết TB) + nút "📋 Nhật ký sử dụng"
+  (màn hình danh sách), service worker v8. ✅
+- Git: `main` đồng bộ với `origin/main`, working tree sạch. Commit cuối `28d2526`. ✅
+- `index.html` ≡ `QR_Landing_Page.html`. ✅
+
+**Việc cho phiên sau**
+- Tuỳ chọn cho Nhật ký sử dụng (người dùng đã được đề xuất, CHƯA quyết):
+  bấm vào dòng nhật ký để nhảy sang thiết bị đó; bộ lọc theo phòng / đơn vị / trạng thái quá hạn.
+- Tồn đọng cũ chưa đụng: URL form `training`/`research` còn placeholder
+  (`FORM_ID_DAOTAO`, `FORM_ID_NCKH`); 20 thiết bị chưa có người quản lý trong JSON;
+  endpoint Web App vẫn `ANYONE_ANONYMOUS` (tên người mượn + địa điểm công khai với ai có URL —
+  giờ mức lộ RỘNG HƠN trước vì route `alllog` trả toàn bộ nhật ký trong một lần gọi,
+  không còn phải biết trước mã QR. Chấp nhận được ở Phase 1 nội bộ, nhưng nên xem lại sớm).
+- Bài học vận hành: khi patch file bằng script, ghi ra file tạm rồi `os.replace()`;
+  đừng `open(path,'w')` trực tiếp vì nó truncate trước khi biết write có thành công không.
