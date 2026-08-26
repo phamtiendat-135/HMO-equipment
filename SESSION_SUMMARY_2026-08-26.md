@@ -46,3 +46,71 @@
 - Xác minh route: mở `...exec?action=history&id=<QR>` trên trình duyệt, phải trả `{"qrCode":...,"history":[...]}`.
 - Chưa rõ các fix ngày 14/07 đã được dán lên Apps Script hay chưa — nếu chưa thì lần dán này mang theo, khi đó phải chạy `setup()` một lần.
 - Tồn đọng cũ: URL form training/research còn placeholder; 20 thiết bị chưa có người quản lý trong JSON.
+
+---
+
+## Mục 2 — 26/08/2026 16:53 — Deploy Apps Script bằng clasp (ĐÃ XÁC MINH TRÊN PRODUCTION)
+
+### Việc đã hoàn thành
+- Cài `@google/clasp` 3.4.0 (global, npm). Trước đó máy chưa có clasp, repo chưa có `.clasp.json`.
+- `clasp login` → đăng nhập `datpt@hus.edu.vn`.
+- Người dùng bật **Google Apps Script API** tại script.google.com/home/usersettings (push bị chặn cho tới khi bật; `clone`/`pull` thì đọc được).
+- Xác định đúng script project và **deploy lại Web App lên version 8**.
+
+### Quyết định quan trọng
+- **Không dùng scriptId do `clasp list-scripts` trả về.** Lệnh đó chỉ tìm thấy 1 script tên "Untitled project"
+  (`1OFJdxPMBWAFPYuh36ADV_NUhz16YPlnE8BUSnTYfYvq9YpWB76NogCyw`), pull ra thì đó là bản standalone của
+  `Create_Google_Forms.js` — KHÔNG phải script HMO. Push đè lên đó sẽ phá script cũ và deploy sai code.
+  Nguyên nhân: script HMO là **container-bound** trong Sheet nên không xuất hiện trong danh sách Drive.
+  scriptId đúng do người dùng cung cấp: `16wbn8ho1H4L3byNUQcX4NYvOoxiL6sFhBKs7tJv1_sAtHm-xf_ThifGS`.
+- **Dùng `clasp update-deployment` chứ không tạo deployment mới** → deployment ID giữ nguyên
+  `AKfycbwfXPse...` ⇒ URL `/exec` không đổi ⇒ `index.html` và `QR_Landing_Page.html` không phải sửa.
+- **`.claspignore` whitelist chỉ 2 file.** Repo có nhiều `.js`/`.html` KHÔNG thuộc Apps Script
+  (`index.html`, `QR_Landing_Page.html`, `QR_Labels_Print.html`, `Create_Google_Forms.js`, `sw.js`).
+  clasp push thay TOÀN BỘ nội dung project, nên nếu không chặn sẽ upload nhầm landing page lên Apps Script.
+- **KHÔNG cần chạy lại `setup()`.** Diff remote-vs-local chứng minh các fix ngày 14/07 đã có sẵn trên Google;
+  thay đổi lần này chỉ là route `history` + `getUsageHistory_`, không đụng tới định nghĩa trigger nào.
+  (Điều này giải đáp mục "chưa rõ fix 14/07 đã dán chưa" ở Mục 1.)
+- File trên Apps Script editor đổi tên `Code.gs` → `Google_Apps_Script.gs` (hệ quả của việc clasp thay toàn bộ
+  file set). Tên hàm không đổi nên trigger và deployment không ảnh hưởng; chỉ là thay đổi hiển thị.
+
+### File đã tạo / thay đổi
+- `.clasp.json` — MỚI, chứa scriptId đúng. **Chưa commit** (untracked).
+- `.claspignore` — MỚI, whitelist `Google_Apps_Script.js` + `appsscript.json`. **Chưa commit** (untracked).
+- `appsscript.json` — MỚI, copy nguyên văn từ remote để giữ `webapp.executeAs=USER_DEPLOYING`,
+  `webapp.access=ANYONE_ANONYMOUS`. **Chưa commit** (untracked).
+- `backups/Google_Apps_Script.REMOTE-before-deploy-2026-08-26.js` — bản remote trước khi ghi đè (84.508 byte).
+  Nằm trong `backups/` nên bị `.gitignore` bỏ qua, chỉ tồn tại ở máy local.
+- `Google_Apps_Script.js` — KHÔNG sửa nội dung, chỉ được push lên.
+
+### Kiểm tra đã chạy và kết quả THỰC TẾ
+- `diff` remote Code.js vs local `Google_Apps_Script.js` TRƯỚC khi push → lệch đúng 45 dòng, toàn bộ là
+  route `history` + `getUsageHistory_` + newline cuối file. Không có thay đổi nào chỉ tồn tại trên remote.
+- `clasp show-file-status` → tracked đúng 2 file; `index.html`, `QR_Landing_Page.html`,
+  `Create_Google_Forms.js`, `sw.js` đều untracked. Whitelist hoạt động.
+- `clasp push -f` → "Pushed 2 files".
+- `clasp create-version` → Created version 8. `clasp update-deployment ... -V 8` → "Redeployed ...@8"
+  (deployment cũ đang ở @7).
+- curl production `?action=history&id=HMO-OBS-5617` → `{"qrCode":"HMO-OBS-5617","history":[]}` — đúng shape.
+  (Trước deploy route này trả nhầm JSON thiết bị.)
+- Quét curl toàn bộ **74 mã QR**: đúng **1** thiết bị có lịch sử — `HMO-OBS-8693`, 2 bản ghi
+  (Phan Hoàng Nam / Hội An / 27-05-2026 → 13-06-2026, 408h và → 20-06-2026, 576h). 73 mã còn lại `[]`,
+  khớp với việc `Log_Muon_Tra` mới có bấy nhiêu dữ liệu. Payload KHÔNG chứa email hay ghi chú nội bộ (đúng thiết kế).
+- Regression: `?id=<QR>` vẫn trả JSON thiết bị; `?action=allStatus` vẫn trả `{}`. Không vỡ gì.
+- KHÔNG chạy unit test (dự án không có test suite). KHÔNG sửa Google Sheets. KHÔNG push GitHub.
+
+### Việc còn lại / cần theo dõi
+- **QUAN TRỌNG — frontend chưa lên:** `main` đang ahead 3 commit so với `origin/main`
+  (`f6d1981` nút Lịch sử, `3369d80` bump CACHE v7, `faab28a` docs). Backend đã chạy nhưng nút
+  "🕘 Lịch sử sử dụng" CHƯA có trên GitHub Pages cho tới khi push. Đây là việc gấp nhất.
+- Quyết định chưa xong: có commit `.clasp.json` / `appsscript.json` / `.claspignore` không.
+  Repo `github.com/phamtiendat-135/HMO-equipment` là public — commit `.clasp.json` là lộ scriptId
+  (không phải secret, không tự cấp quyền truy cập, nhưng cần chủ ý). Hiện đang để untracked.
+- Tồn đọng cũ chưa đụng tới: URL form `training`/`research` còn placeholder
+  (`FORM_ID_DAOTAO`, `FORM_ID_NCKH`); 20 thiết bị chưa có người quản lý trong JSON.
+- Ghi chú phụ: script standalone "Untitled project" trên Drive còn
+  `SHEET_ID = '1I1YzupgN5-sgV40lJ9Bg0vq5CCfQfN91'`, lệch với `1k3KYyN6...` trong repo.
+  Script đó chạy 1 lần rồi nên không ảnh hưởng — đừng chạy lại.
+- Từ nay deploy lại chỉ cần 3 lệnh:
+  `clasp push -f` → `clasp create-version "<mô tả>"` → `clasp update-deployment AKfycbwfXPse... -V <n>`.
+  Luôn dùng `update-deployment`, KHÔNG dùng `create-deployment` (sẽ sinh URL mới).
