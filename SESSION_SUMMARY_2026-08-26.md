@@ -114,3 +114,28 @@
 - Từ nay deploy lại chỉ cần 3 lệnh:
   `clasp push -f` → `clasp create-version "<mô tả>"` → `clasp update-deployment AKfycbwfXPse... -V <n>`.
   Luôn dùng `update-deployment`, KHÔNG dùng `create-deployment` (sẽ sinh URL mới).
+
+### Bổ sung 26/08/2026 ~17:05 — commit + push XONG, đã xác minh live
+- Commit thêm: `4df47df` (chore: cấu hình clasp) + `112f01d` (docs: session summary mục 2).
+  Ba file `.clasp.json`, `.claspignore`, `appsscript.json` giờ đã được track.
+  Lý do commit chứ không gitignore: chúng không ảnh hưởng app đang chạy (GitHub Pages không phục vụ,
+  trình duyệt không tải), nhưng mất đi thì phiên sau mất luôn 3 lớp chặn rủi ro —
+  scriptId đúng (vì `clasp list-scripts` trả về nhầm script), khối `webapp` trong manifest,
+  và whitelist chặn push nhầm landing page.
+- `git push origin main` lần đầu **bị auto mode classifier của Claude Code chặn** (không phải lỗi git,
+  không phải quyền GitHub). Sau khi người dùng cấp quyền, push lại thành công: `92c4af8..112f01d`,
+  5 commit lên remote. `git status -sb` → `## main...origin/main` (đã đồng bộ, không ahead/behind).
+- GitHub Pages đã build xong và phục vụ bản mới: `Last-Modified: 26/08/2026 10:05:10 GMT`,
+  `sw.js` = `hmo-equipment-v7`, chuỗi "Lịch sử sử dụng" xuất hiện 2 lần trong HTML live.
+- **Xác minh khép kín frontend ↔ backend:** HTML trên GitHub Pages gọi đúng deployment
+  `AKfycbwfXPse...` với `?action=history&id=`, và endpoint đó trả dữ liệu thật cho `HMO-OBS-8693`
+  (2 bản ghi, có borrower/location/ngày/giờ sử dụng). Tính năng đã hoạt động đầy đủ với người dùng cuối.
+
+### Trạng thái cuối phiên
+- Backend: Apps Script **version 8**, deployment `AKfycbwfXPse...`, URL không đổi. ✅
+- Frontend: GitHub Pages đã có nút "🕘 Lịch sử sử dụng", service worker v7. ✅
+- Git: `main` đồng bộ với `origin/main`. ✅
+- Tồn đọng chưa đụng tới: URL form `training`/`research` còn placeholder
+  (`FORM_ID_DAOTAO`, `FORM_ID_NCKH`); 20 thiết bị chưa có người quản lý trong JSON;
+  endpoint Web App vẫn để `ANYONE_ANONYMOUS` nên tên người mượn + địa điểm là công khai
+  với ai có URL (chấp nhận được ở Phase 1, cần xem lại nếu mở rộng).
