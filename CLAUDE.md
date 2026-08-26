@@ -191,16 +191,36 @@ Trước khi kết thúc MỌI phiên làm việc trong workspace này, tạo ho
   - `checkBorrowStatus_`: hạn trả dùng `parseDate_()`
 - Fixed (`sw.js`): thêm guard `method === 'GET' && response.ok` trước `cache.put` (tránh throw với POST); bump CACHE v5 → v6
 - Verified: index.html ≡ QR_Landing_Page.html (identical); JS landing page, manifest.json, Create_Google_Forms.js, QR_Labels_Print.html — OK, không cần sửa
-- Known issues còn lại: training/research form URL placeholder; 20 thiết bị chưa có người quản lý trong JSON; link phê duyệt qua email chưa có xác thực (chấp nhận được Phase 1); git local chưa init/index corrupt trong sandbox
-- ⚠️ Apps Script fixes phải paste lại vào Apps Script editor trên Google và chạy `setup()` lại 1 lần
+- Known issues còn lại: training/research form URL placeholder; 20 thiết bị chưa có người quản lý trong JSON; link phê duyệt qua email chưa có xác thực (chấp nhận được Phase 1)
+- ~~Apps Script fixes phải paste lại + chạy `setup()`~~ → ĐÃ XONG: diff 26/08 xác nhận các fix này đã có sẵn trên Google, không cần `setup()` lại
 
 ## Changes Log (Session 26/08/2026 — Lịch sử sử dụng thiết bị)
 
 - Added (`Google_Apps_Script.js`): route `?action=history&id=<QR>` trong `doGet()` + helper `getUsageHistory_(qrCode)` — đọc `Log_Muon_Tra`, trả lịch sử mượn/trả mới nhất trước (borrower, địa điểm, ngày mượn/trả, giờ sử dụng, `isActive`). Cố ý KHÔNG trả email (cột P) và ghi chú nội bộ (cột N).
 - Added (`index.html` + `QR_Landing_Page.html`): nút "🕘 Lịch sử sử dụng" + panel gập/mở, `escapeHtml()` cho mọi giá trị nội suy, trạng thái loading/empty/error.
 - Added: `.github/instructions/session-summary.instructions.md` — quy định tạo/cập nhật `SESSION_SUMMARY_YYYY-MM-DD.md` trước khi kết thúc session.
-- ⚠️ Route `history` chỉ hoạt động sau khi **deploy lại Web App thành version mới**. Nếu chưa deploy, bản cũ trả JSON thiết bị (không có key `history`) → UI hiện "Chưa có lượt sử dụng nào" thay vì báo lỗi.
+- ✅ Đã deploy **version 8** (26/08) và xác minh live: API trả đúng `{qrCode, history}`, GitHub Pages đã có nút, sw `v7`.
 - ⚠️ Endpoint Web App đang để "Anyone" — route này công khai tên người mượn + địa điểm cho bất kỳ ai có `WEB_APP_URL` (URL nằm trong HTML public). Chấp nhận được ở Phase 1 nội bộ; cần xem lại nếu mở rộng.
+
+## Deploy Apps Script (clasp)
+
+Script là **container-bound** trong Sheet master. Cấu hình đã có sẵn trong repo: `.clasp.json`, `.claspignore`, `appsscript.json`.
+
+```bash
+clasp push -f                                   # đẩy Google_Apps_Script.js lên
+clasp create-version "<mô tả>"                  # -> in ra số version mới
+clasp update-deployment AKfycbwfXPsePpUOqJp6F4-c58gCwzJPsCyBDFN3JMGWTHuO_F_HR4uMYl9r9s7UWfdGCmHI_Q -V <n>
+```
+
+Bốn điều dễ sai:
+
+1. **Luôn `update-deployment`, KHÔNG `create-deployment`** — cái sau sinh URL `/exec` mới, làm chết link trong `index.html`.
+2. **`clasp list-scripts` trả về NHẦM script** (bound script không hiện trong Drive). scriptId đúng đã nằm trong `.clasp.json`. Nên `clasp pull` đối chiếu trước khi push.
+3. **Đừng xoá `.claspignore`** — clasp push thay TOÀN BỘ file set, không có whitelist sẽ upload nhầm `index.html`, `QR_Landing_Page.html`, `QR_Labels_Print.html`, `Create_Google_Forms.js`, `sw.js` lên Apps Script.
+4. **Đừng sửa `appsscript.json`** — khối `webapp` (`USER_DEPLOYING` / `ANYONE_ANONYMOUS`) mất là đổi quyền truy cập web app.
+
+Chỉ chạy lại `setup()` khi **thay đổi định nghĩa trigger**; sửa logic thường thì không cần.
+Lần đầu trên máy mới: `npm i -g @google/clasp` → `clasp login` → bật Apps Script API tại script.google.com/home/usersettings (không bật thì push bị chặn dù pull vẫn chạy).
 
 ## Tech Stack
 
@@ -209,5 +229,6 @@ Trước khi kết thúc MỌI phiên làm việc trong workspace này, tạo ho
 - **Forms:** Google Forms with pre-filled URL linking
 - **QR Generation:** Inline SVG in HTML
 - **Hosting:** GitHub Pages (`phamtiendat-135.github.io/HMO-equipment/`)
-- **Repo:** `github.com/phamtiendat-135/HMO-equipment` (local chưa git init)
+- **Repo:** `github.com/phamtiendat-135/HMO-equipment` (đã init, `main` đồng bộ với remote)
+- **Deploy Apps Script:** clasp 3.4.0 — xem mục *Deploy Apps Script (clasp)* bên trên
 - **Language:** Vietnamese (all UI and documents)

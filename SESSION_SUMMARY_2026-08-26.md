@@ -139,3 +139,13 @@
   (`FORM_ID_DAOTAO`, `FORM_ID_NCKH`); 20 thiết bị chưa có người quản lý trong JSON;
   endpoint Web App vẫn để `ANYONE_ANONYMOUS` nên tên người mượn + địa điểm là công khai
   với ai có URL (chấp nhận được ở Phase 1, cần xem lại nếu mở rộng).
+
+### Bổ sung 26/08/2026 ~17:15 — cập nhật CLAUDE.md
+- Sửa 4 chỗ lỗi thời trong `CLAUDE.md`: bỏ "git local chưa init/index corrupt"; đánh dấu đã xong việc
+  "paste lại Apps Script + chạy `setup()`"; đổi cảnh báo "route history chỉ chạy sau khi deploy" thành
+  đã deploy v8 + xác minh live; sửa dòng Repo thành "đã init, `main` đồng bộ với remote".
+- Thêm mục mới **"Deploy Apps Script (clasp)"** — 3 lệnh deploy + 4 điều dễ sai
+  (luôn `update-deployment` chứ không `create-deployment`; `clasp list-scripts` trả nhầm script;
+  đừng xoá `.claspignore`; đừng sửa `appsscript.json`) + khi nào mới cần chạy lại `setup()`
+  + các bước lần đầu trên máy mới.
+- Chỉ sửa tài liệu, KHÔNG đụng code, KHÔNG deploy lại, KHÔNG chạy test.
