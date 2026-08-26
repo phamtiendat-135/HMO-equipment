@@ -61,6 +61,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 .action-btn.primary { background: #2F5496; color: white; border-color: #2F5496; grid-column: 1 / -1; flex-direction: row; justify-content: center; padding: 12px; font-size: 14px; }
 .action-btn.primary:hover { background: #1a3a6b; }
 .action-btn.disabled { opacity: 0.45; pointer-events: none; cursor: not-allowed; background: #f5f5f5; color: #999; border-color: #e0e0e0; }
+.history-panel { display: none; margin: 0 20px 16px; border: 1.5px solid #d9e2f3; border-radius: 10px; overflow: hidden; }
+.history-panel.open { display: block; }
+.history-title { padding: 12px 14px; background: #f0f4ff; color: #2F5496; font-size: 13px; font-weight: 600; }
+.history-loading, .history-empty, .history-error { padding: 16px 14px; color: #888; font-size: 12px; text-align: center; }
+.history-list { max-height: 320px; overflow-y: auto; }
+.history-entry { padding: 12px 14px; border-top: 1px solid #edf0f5; font-size: 12px; line-height: 1.5; }
+.history-entry strong { color: #333; }
+.history-entry .history-meta { color: #777; margin-top: 3px; }
+.history-entry .history-status { color: #2e7d32; font-weight: 600; }
+.history-entry .history-status.active { color: #e65100; }
 
 /* Availability badge (real-time borrow status) */
 .avail-checking { color: #bbb; font-size: 12px; font-style: italic; }
@@ -1389,6 +1399,53 @@ function fetchBorrowStatus(qrCode) {
     });
 }
 
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+function toggleUsageHistory(qrCode) {
+  const panel = document.getElementById('history-panel');
+  if (!panel) return;
+  if (panel.classList.contains('open')) {
+    panel.classList.remove('open');
+    return;
+  }
+
+  panel.classList.add('open');
+  const list = document.getElementById('history-list');
+  list.innerHTML = '<div class="history-loading">Đang tải lịch sử...</div>';
+  if (!WEB_APP_URL) {
+    list.innerHTML = '<div class="history-error">Chưa cấu hình kết nối dữ liệu lịch sử.</div>';
+    return;
+  }
+
+  fetch(WEB_APP_URL + '?action=history&id=' + encodeURIComponent(qrCode))
+    .then(response => {
+      if (!response.ok) throw new Error('History request failed');
+      return response.json();
+    })
+    .then(data => {
+      const entries = Array.isArray(data.history) ? data.history : [];
+      if (!entries.length) {
+        list.innerHTML = '<div class="history-empty">Chưa có lượt sử dụng nào được ghi nhận.</div>';
+        return;
+      }
+      list.innerHTML = entries.map(entry => {
+        const period = entry.borrowDate
+          ? entry.borrowDate + ' → ' + (entry.returnDate || 'Đang sử dụng')
+          : 'Chưa ghi nhận thời gian';
+        const duration = entry.usageHours == null ? '' : ' · ' + escapeHtml(entry.usageHours) + ' giờ';
+        const status = entry.isActive ? '<span class="history-status active">Đang sử dụng</span>' : '<span class="history-status">Đã trả</span>';
+        return `<div class="history-entry"><strong>${escapeHtml(entry.borrower)}</strong> · ${status}<div class="history-meta">Thời gian: ${escapeHtml(period)}${duration}</div><div class="history-meta">Địa điểm: ${escapeHtml(entry.location)}</div></div>`;
+      }).join('');
+    })
+    .catch(() => {
+      list.innerHTML = '<div class="history-error">Không thể tải lịch sử. Vui lòng thử lại.</div>';
+    });
+}
+
 function showEquipment(qrCode) {
   const eq = EQUIPMENT[qrCode];
   if (!eq) return showNotFound(qrCode);
@@ -1464,6 +1521,14 @@ function showEquipment(qrCode) {
         <a class="action-btn" href="${FORMS.report}${qrCode}" target="_blank">
           <span class="icon">⚠️</span>Báo hỏng
         </a>
+      </div>
+
+      <button class="action-btn primary" onclick="toggleUsageHistory('${qrCode}')" style="width:calc(100% - 40px);margin:0 20px 16px">
+        <span class="icon" style="margin-right:8px">🕘</span>Lịch sử sử dụng
+      </button>
+      <div class="history-panel" id="history-panel">
+        <div class="history-title">Lịch sử sử dụng thiết bị</div>
+        <div class="history-list" id="history-list"></div>
       </div>
 
       <div class="input-sections">

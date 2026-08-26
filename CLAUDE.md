@@ -176,6 +176,14 @@ Vice Dean (Pho Truong khoa) — overall management, approval
 - Known issues còn lại: training/research form URL placeholder; 20 thiết bị chưa có người quản lý trong JSON; link phê duyệt qua email chưa có xác thực (chấp nhận được Phase 1); git local chưa init/index corrupt trong sandbox
 - ⚠️ Apps Script fixes phải paste lại vào Apps Script editor trên Google và chạy `setup()` lại 1 lần
 
+## Changes Log (Session 26/08/2026 — Lịch sử sử dụng thiết bị)
+
+- Added (`Google_Apps_Script.js`): route `?action=history&id=<QR>` trong `doGet()` + helper `getUsageHistory_(qrCode)` — đọc `Log_Muon_Tra`, trả lịch sử mượn/trả mới nhất trước (borrower, địa điểm, ngày mượn/trả, giờ sử dụng, `isActive`). Cố ý KHÔNG trả email (cột P) và ghi chú nội bộ (cột N).
+- Added (`index.html` + `QR_Landing_Page.html`): nút "🕘 Lịch sử sử dụng" + panel gập/mở, `escapeHtml()` cho mọi giá trị nội suy, trạng thái loading/empty/error.
+- Added: `.github/instructions/session-summary.instructions.md` — quy định tạo/cập nhật `SESSION_SUMMARY_YYYY-MM-DD.md` trước khi kết thúc session.
+- ⚠️ Route `history` chỉ hoạt động sau khi **deploy lại Web App thành version mới**. Nếu chưa deploy, bản cũ trả JSON thiết bị (không có key `history`) → UI hiện "Chưa có lượt sử dụng nào" thay vì báo lỗi.
+- ⚠️ Endpoint Web App đang để "Anyone" — route này công khai tên người mượn + địa điểm cho bất kỳ ai có `WEB_APP_URL` (URL nằm trong HTML public). Chấp nhận được ở Phase 1 nội bộ; cần xem lại nếu mở rộng.
+
 ## Tech Stack
 
 - **Frontend:** Static HTML/CSS/JS (vanilla, no framework)

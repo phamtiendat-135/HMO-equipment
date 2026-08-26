@@ -1846,6 +1846,15 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
+  // Route: lịch sử sử dụng của một thiết bị (landing page gọi khi người dùng mở lịch sử)
+  if (action === 'history') {
+    const qrCode = (e.parameter.id || '').trim();
+    const history = qrCode ? getUsageHistory_(qrCode) : [];
+    return ContentService
+      .createTextOutput(JSON.stringify({ qrCode: qrCode, history: history }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
   // Route: tra cứu thiết bị theo mã QR (landing page gọi)
   const qrCode = e.parameter.id;
 
@@ -1864,6 +1873,40 @@ function doGet(e) {
   return HtmlService.createHtmlOutput(
     '<script>window.location.href = "https://phamtiendat-135.github.io/HMO-equipment/";</script>'
   );
+}
+
+/**
+ * Trả về lịch sử mượn/trả của một thiết bị từ Log_Muon_Tra.
+ * Chỉ trả các trường cần hiển thị trên landing page, không trả email hay ghi chú nội bộ.
+ */
+function getUsageHistory_(qrCode) {
+  try {
+    const ss = SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID);
+    const logSheet = ss.getSheetByName(CONFIG.SHEETS.LOG_MUON);
+    if (!logSheet || logSheet.getLastRow() < 2) return [];
+
+    const data = logSheet.getDataRange().getValues();
+    const history = [];
+    for (let i = data.length - 1; i >= 1; i--) {
+      const row = data[i];
+      if ((row[0] || '').toString().trim() !== qrCode) continue;
+
+      const borrowDate = parseDate_(row[6]);
+      const returnDate = parseDate_(row[8]);
+      history.push({
+        borrower: (row[2] || '').toString().trim() || 'Chưa ghi nhận',
+        location: (row[5] || '').toString().trim() || 'Chưa ghi nhận',
+        borrowDate: borrowDate ? Utilities.formatDate(borrowDate, 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy') : '',
+        returnDate: returnDate ? Utilities.formatDate(returnDate, 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy') : '',
+        usageHours: row[16] === '' || row[16] === null ? null : Number(row[16]),
+        isActive: !returnDate
+      });
+    }
+    return history;
+  } catch (err) {
+    Logger.log('getUsageHistory_ error: ' + err.message);
+    return [];
+  }
 }
 
 /**
