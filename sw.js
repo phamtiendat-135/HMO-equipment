@@ -3,7 +3,7 @@
  * Chiến lược: Cache-first cho tĩnh (app shell), Network-first cho API (borrow status)
  */
 
-const CACHE_NAME = 'hmo-equipment-v7';
+const CACHE_NAME = 'hmo-equipment-v8';
 const SHELL_ASSETS = [
   '/HMO-equipment/',
   '/HMO-equipment/index.html',

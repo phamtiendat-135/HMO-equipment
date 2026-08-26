@@ -149,3 +149,31 @@
   đừng xoá `.claspignore`; đừng sửa `appsscript.json`) + khi nào mới cần chạy lại `setup()`
   + các bước lần đầu trên máy mới.
 - Chỉ sửa tài liệu, KHÔNG đụng code, KHÔNG deploy lại, KHÔNG chạy test.
+
+### Bổ sung 26/08/2026 ~17:25 — Nhật ký sử dụng toàn Khoa (Apps Script v9)
+- Added (`Google_Apps_Script.js`): route `?action=alllog&limit=N` trong `doGet()` (mặc định 200, kẹp 1..1000)
+  + helper `getAllUsageLog_(limit)`. Trả mọi lượt mượn/trả của MỌI thiết bị, mới nhất trước, kèm
+  `equipName` (cột B), `unit` (cột D), `dueDate` (cột H) và cờ `isOverdue` tính server-side
+  (đang mượn + quá hạn trả). Cố ý KHÔNG trả email (cột P) và ghi chú nội bộ (cột N) — giống `history`.
+  Xử lý `row[16] === undefined` tường minh, khắc phục điểm LOW ghi ở Mục 1 (`Number(undefined)` = NaN).
+- Added (`index.html` + `QR_Landing_Page.html`): nút "📋 Nhật ký sử dụng" trên màn hình danh sách
+  (`showAll()`), hàm `showUsageLog()` render view riêng + nút "← Xem tất cả thiết bị" quay lại.
+  Tái sử dụng CSS `history-*`, thêm 2 rule `.history-status.overdue` và `.log-equip`.
+  `escapeHtml()` cho mọi giá trị nội suy.
+- Bump `sw.js` CACHE v7 → v8 để client nhận bản mới.
+- Deploy: `clasp push -f` → version 9 → `update-deployment ... -V 9`. URL không đổi.
+
+### Sự cố trong lúc làm (đã xử lý)
+- Script patch Python dùng escape surrogate `\ud83d\udccb` cho emoji → `UnicodeEncodeError` khi ghi.
+  Nhưng `io.open(p,'w')` đã **truncate `index.html` về 0 byte** trước khi write fail.
+  Khôi phục bằng `git restore index.html` (nhờ đã commit + push trước đó nên không mất gì),
+  rồi chuẩn hoá lại LF vì `git restore` trả về CRLF làm lệch với `QR_Landing_Page.html`.
+  Lần patch sau: dùng escape `\U0001F4CB` + ghi ra file `.new` rồi `os.replace()` thay vì ghi đè trực tiếp.
+
+### Kiểm tra đã chạy
+- `node --check Google_Apps_Script.js` → OK.
+- Tách khối `<script>` inline của `index.html` (1607 dòng) → `node --check` → OK.
+- `diff -q index.html QR_Landing_Page.html` → IDENTICAL.
+- curl production `?action=alllog` → 2 bản ghi đúng, có `equipName`/`unit`/`dueDate`/`isOverdue`.
+- curl `?action=alllog&limit=1` → đúng 1 bản ghi (limit hoạt động).
+- Regression `?action=history`, `?id=`, `?action=allStatus` → đều không vỡ.

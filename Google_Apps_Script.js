@@ -1855,6 +1855,14 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
+  // Route: nhật ký sử dụng toàn Khoa (mọi lượt mượn/trả của mọi thiết bị)
+  if (action === 'alllog') {
+    const limit = Math.min(Math.max(parseInt(e.parameter.limit, 10) || 200, 1), 1000);
+    return ContentService
+      .createTextOutput(JSON.stringify({ entries: getAllUsageLog_(limit) }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
   // Route: tra cứu thiết bị theo mã QR (landing page gọi)
   const qrCode = e.parameter.id;
 
@@ -1905,6 +1913,54 @@ function getUsageHistory_(qrCode) {
     return history;
   } catch (err) {
     Logger.log('getUsageHistory_ error: ' + err.message);
+    return [];
+  }
+}
+
+/**
+ * Trả về nhật ký sử dụng của TOÀN BỘ thiết bị từ Log_Muon_Tra, mới nhất trước.
+ * Giống getUsageHistory_ nhưng không lọc theo mã QR và có kèm tên thiết bị.
+ * Cố ý KHÔNG trả email (cột P) và ghi chú nội bộ (cột N).
+ */
+function getAllUsageLog_(limit) {
+  try {
+    const ss = SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID);
+    const logSheet = ss.getSheetByName(CONFIG.SHEETS.LOG_MUON);
+    if (!logSheet || logSheet.getLastRow() < 2) return [];
+
+    const data = logSheet.getDataRange().getValues();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const entries = [];
+
+    for (let i = data.length - 1; i >= 1 && entries.length < limit; i--) {
+      const row = data[i];
+      const qrCode = (row[0] || '').toString().trim();
+      if (!qrCode) continue;
+
+      const borrowDate = parseDate_(row[6]);
+      const dueDate = parseDate_(row[7]);
+      const returnDate = parseDate_(row[8]);
+      const isActive = !returnDate;
+      const hours = row[16];
+
+      entries.push({
+        qrCode: qrCode,
+        equipName: (row[1] || '').toString().trim(),
+        borrower: (row[2] || '').toString().trim() || 'Chưa ghi nhận',
+        unit: (row[3] || '').toString().trim(),
+        location: (row[5] || '').toString().trim() || 'Chưa ghi nhận',
+        borrowDate: borrowDate ? Utilities.formatDate(borrowDate, 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy') : '',
+        dueDate: dueDate ? Utilities.formatDate(dueDate, 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy') : '',
+        returnDate: returnDate ? Utilities.formatDate(returnDate, 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy') : '',
+        usageHours: (hours === '' || hours === null || hours === undefined) ? null : Number(hours),
+        isActive: isActive,
+        isOverdue: isActive && !!dueDate && dueDate < today
+      });
+    }
+    return entries;
+  } catch (err) {
+    Logger.log('getAllUsageLog_ error: ' + err.message);
     return [];
   }
 }

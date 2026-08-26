@@ -71,6 +71,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 .history-entry .history-meta { color: #777; margin-top: 3px; }
 .history-entry .history-status { color: #2e7d32; font-weight: 600; }
 .history-entry .history-status.active { color: #e65100; }
+.history-entry .history-status.overdue { color: #c62828; }
+.log-equip { display: block; color: #2F5496; font-weight: 600; margin-bottom: 2px; }
 
 /* Availability badge (real-time borrow status) */
 .avail-checking { color: #bbb; font-size: 12px; font-style: italic; }
@@ -1446,6 +1448,64 @@ function toggleUsageHistory(qrCode) {
     });
 }
 
+// Nhật ký sử dụng toàn Khoa — mọi lượt mượn/trả của mọi thiết bị, mới nhất trước.
+function showUsageLog() {
+  document.getElementById('content').innerHTML = `
+    <div class="history-panel open" style="margin:16px 20px">
+      <div class="history-title">📋 Nhật ký sử dụng — toàn Khoa</div>
+      <div class="history-list" id="log-list" style="max-height:none">
+        <div class="history-loading">Đang tải nhật ký...</div>
+      </div>
+    </div>
+    <button class="action-btn primary" onclick="showAll()" style="width:calc(100% - 40px);margin:0 20px 16px">
+      <span class="icon" style="margin-right:8px">←</span> Xem tất cả thiết bị
+    </button>
+  `;
+
+  const list = document.getElementById('log-list');
+  if (!WEB_APP_URL) {
+    list.innerHTML = '<div class="history-error">Chưa cấu hình kết nối dữ liệu.</div>';
+    return;
+  }
+
+  fetch(WEB_APP_URL + '?action=alllog')
+    .then(response => {
+      if (!response.ok) throw new Error('Usage log request failed');
+      return response.json();
+    })
+    .then(data => {
+      const entries = Array.isArray(data.entries) ? data.entries : [];
+      if (!entries.length) {
+        list.innerHTML = '<div class="history-empty">Chưa có lượt sử dụng nào được ghi nhận.</div>';
+        return;
+      }
+      list.innerHTML = entries.map(entry => {
+        const period = entry.borrowDate
+          ? entry.borrowDate + ' → ' + (entry.returnDate || 'Đang sử dụng')
+          : 'Chưa ghi nhận thời gian';
+        const duration = entry.usageHours == null ? '' : ' · ' + escapeHtml(entry.usageHours) + ' giờ';
+        const status = entry.isOverdue
+          ? '<span class="history-status overdue">Quá hạn</span>'
+          : (entry.isActive
+              ? '<span class="history-status active">Đang sử dụng</span>'
+              : '<span class="history-status">Đã trả</span>');
+        const unit = entry.unit ? ' · ' + escapeHtml(entry.unit) : '';
+        const due = (entry.isActive && entry.dueDate)
+          ? `<div class="history-meta">Hạn trả: ${escapeHtml(entry.dueDate)}</div>`
+          : '';
+        return `<div class="history-entry">
+          <span class="log-equip">${escapeHtml(entry.equipName || entry.qrCode)}</span>
+          <strong>${escapeHtml(entry.borrower)}</strong>${unit} · ${status}
+          <div class="history-meta">Thời gian: ${escapeHtml(period)}${duration}</div>${due}
+          <div class="history-meta">Địa điểm: ${escapeHtml(entry.location)}</div>
+        </div>`;
+      }).join('');
+    })
+    .catch(() => {
+      list.innerHTML = '<div class="history-error">Không thể tải nhật ký. Vui lòng thử lại.</div>';
+    });
+}
+
 function showEquipment(qrCode) {
   const eq = EQUIPMENT[qrCode];
   if (!eq) return showNotFound(qrCode);
@@ -1620,7 +1680,9 @@ function showAll(filter) {
     'T3': 'Server chung T3'
   };
   
-  let html = '<div class="item-list">';
+  let html = `<button class="action-btn primary" onclick="showUsageLog()" style="width:calc(100% - 40px);margin:16px 20px 8px">
+      <span class="icon" style="margin-right:8px">📋</span>Nhật ký sử dụng
+    </button><div class="item-list">`;
   const sortedRooms = Object.keys(grouped).sort((a, b) => {
     const ia = roomOrder.indexOf(a), ib = roomOrder.indexOf(b);
     return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
