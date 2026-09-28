@@ -53,3 +53,8 @@
 - Link GET làm thay đổi dữ liệu: bộ quét link email (vd. Outlook Safe Links) có thể tự "bấm". Có từ trước v10.
 - Khóa 15 phút là khóa CHUNG → người ngoài cố tình nhập sai có thể làm cán bộ tạm không xem được Nhật ký.
 - Mã truy cập đi qua query string `&key=` (HTTPS, nhưng có thể nằm trong log proxy).
+
+### Xác minh sau push (`4d1403f`)
+- GitHub Pages ra bản mới sau ~1 phút: `renderLogCodeForm` có trong HTML live, `sw.js` = v9.
+- Commit `4d1403f` lỡ gắn dòng `Co-Authored-By`, trái quy ước "attribution disabled" của người dùng.
+  Không sửa lịch sử (đã push); các commit sau không gắn nữa.
