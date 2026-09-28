@@ -46,7 +46,14 @@ const CONFIG = {
 
   // URL Apps Script Web App — dùng để tạo link phê duyệt 1-bấm trong email PTK
   // Lấy sau khi Deploy: Extensions → Apps Script → Deploy → Manage deployments → Copy URL
-  WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbwfXPsePpUOqJp6F4-c58gCwzJPsCyBDFN3JMGWTHuO_F_HR4uMYl9r9s7UWfdGCmHI_Q/exec' // ← dán URL vào đây sau khi deploy
+  WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbwfXPsePpUOqJp6F4-c58gCwzJPsCyBDFN3JMGWTHuO_F_HR4uMYl9r9s7UWfdGCmHI_Q/exec', // ← dán URL vào đây sau khi deploy
+
+  // Hạn dùng của link phê duyệt/từ chối trong email PTK (ngày)
+  APPROVAL_LINK_TTL_DAYS: 14,
+
+  // Chống dò mã truy cập Nhật ký: sai quá số lần này thì khóa tạm route alllog
+  LOG_MAX_FAILED_ATTEMPTS: 30,
+  LOG_LOCKOUT_SECONDS: 900
 };
 
 // ==================== SETUP (CHẠY 1 LẦN) ====================
@@ -748,8 +755,8 @@ function onFormSubmitBorrow(e) {
   // --- HTML email với nút bấm (chỉ khi cần phê duyệt và đã có WEB_APP_URL) ---
   let htmlBody = null;
   if (needsApproval && CONFIG.WEB_APP_URL) {
-    const approveLink = `${CONFIG.WEB_APP_URL}?action=approve&qr=${encodeURIComponent(qrCode)}`;
-    const rejectLink  = `${CONFIG.WEB_APP_URL}?action=reject&qr=${encodeURIComponent(qrCode)}`;
+    const approveLink = buildApprovalLink_('approve', qrCode);
+    const rejectLink  = buildApprovalLink_('reject', qrCode);
 
     htmlBody = `
 <!DOCTYPE html><html><head><meta charset="UTF-8"></head>
@@ -1824,6 +1831,103 @@ function handleApproval_(action, qrCode) {
  *   { ..., _borrowStatus: { available: false, borrower, dueDate, daysOverdue } } ← đang mượn
  *   { ..., _borrowStatus: { available: null } }                          ← lỗi đọc sheet
  */
+// ==================== BẢO MẬT: MÃ TRUY CẬP NHẬT KÝ + CHỮ KÝ LINK PHÊ DUYỆT ====================
+// Web App phải để ANYONE_ANONYMOUS (landing page gọi không đăng nhập), nên kiểm soát
+// truy cập nằm trong code. Bí mật lưu ở Script Properties, KHÔNG nằm trong repo hay HTML.
+
+const PROP_LOG_ACCESS_CODE = 'LOG_ACCESS_CODE';
+const PROP_APPROVAL_SECRET = 'APPROVAL_SECRET';
+const CACHE_LOG_FAILS = 'alllog_failed_attempts';
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+/** So sánh chuỗi thời gian hằng (không dừng sớm ở ký tự sai đầu tiên). */
+function safeEqual_(a, b) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+/** Secret ký link phê duyệt — tự tạo lần đầu, có lock để 2 lần submit đồng thời không tạo 2 secret. */
+function getApprovalSecret_() {
+  const props = PropertiesService.getScriptProperties();
+  const existing = props.getProperty(PROP_APPROVAL_SECRET);
+  if (existing) return existing;
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const again = props.getProperty(PROP_APPROVAL_SECRET);
+    if (again) return again;
+    const secret = Utilities.getUuid() + Utilities.getUuid();
+    props.setProperty(PROP_APPROVAL_SECRET, secret);
+    return secret;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function signApproval_(action, qrCode, issuedAt) {
+  const raw = Utilities.computeHmacSha256Signature(
+    action + '|' + qrCode + '|' + issuedAt, getApprovalSecret_());
+  return Utilities.base64EncodeWebSafe(raw).replace(/=+$/, '');
+}
+
+/** Link phê duyệt/từ chối có chữ ký gắn với đúng action + mã QR + thời điểm phát hành. */
+function buildApprovalLink_(action, qrCode) {
+  const issuedAt = String(Date.now());
+  return CONFIG.WEB_APP_URL +
+    '?action=' + action +
+    '&qr=' + encodeURIComponent(qrCode) +
+    '&t=' + issuedAt +
+    '&sig=' + signApproval_(action, qrCode, issuedAt);
+}
+
+function verifyApprovalLink_(action, qrCode, issuedAt, sig) {
+  if (!sig || !/^\d+$/.test(issuedAt || '')) return false;
+  const ageMs = Date.now() - Number(issuedAt);
+  if (ageMs < 0 || ageMs > CONFIG.APPROVAL_LINK_TTL_DAYS * MS_PER_DAY) return false;
+  return safeEqual_(signApproval_(action, qrCode, issuedAt), String(sig));
+}
+
+/**
+ * Kiểm tra mã truy cập Nhật ký. Trả về null nếu hợp lệ, hoặc mã lỗi:
+ * 'not_configured' | 'locked' | 'unauthorized'.
+ */
+function checkLogAccess_(code) {
+  const expected = PropertiesService.getScriptProperties().getProperty(PROP_LOG_ACCESS_CODE);
+  if (!expected) return 'not_configured';
+
+  const cache = CacheService.getScriptCache();
+  const fails = Number(cache.get(CACHE_LOG_FAILS) || 0);
+  if (fails >= CONFIG.LOG_MAX_FAILED_ATTEMPTS) return 'locked';
+
+  if (safeEqual_(expected, String(code || '').trim())) return null;
+
+  cache.put(CACHE_LOG_FAILS, String(fails + 1), CONFIG.LOG_LOCKOUT_SECONDS);
+  return 'unauthorized';
+}
+
+function buildUsageLogResponse_(code, limit) {
+  const denied = checkLogAccess_(code);
+  if (denied) return { ok: false, error: denied, entries: [] };
+  return { ok: true, entries: getAllUsageLog_(limit) };
+}
+
+/** Menu: tạo mã truy cập Nhật ký mới (8 chữ số). Mã cũ hết hiệu lực ngay. */
+function generateLogAccessCode() {
+  const digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, Utilities.getUuid());
+  const code = digest.slice(0, 8).map(b => ((b + 256) % 256) % 10).join('');
+
+  PropertiesService.getScriptProperties().setProperty(PROP_LOG_ACCESS_CODE, code);
+  CacheService.getScriptCache().remove(CACHE_LOG_FAILS);
+
+  const ui = SpreadsheetApp.getUi();
+  ui.alert('Mã truy cập Nhật ký sử dụng',
+    'Mã mới: ' + code + '\n\nMã cũ đã hết hiệu lực. Gửi mã này cho cán bộ Khoa cần xem nhật ký.',
+    ui.ButtonSet.OK);
+}
+
 function doGet(e) {
   // Route: phê duyệt / từ chối mượn thiết bị (PTK bấm link trong email)
   const action = e.parameter.action;
@@ -1833,6 +1937,14 @@ function doGet(e) {
       return HtmlService.createHtmlOutput(
         '<html><body style="font-family:sans-serif;text-align:center;padding:40px">' +
         '<h3>⚠️ Thiếu mã QR trong link. Vui lòng kiểm tra lại email.</h3></body></html>'
+      );
+    }
+    if (!verifyApprovalLink_(action, qr, e.parameter.t, e.parameter.sig)) {
+      return HtmlService.createHtmlOutput(
+        '<html><body style="font-family:sans-serif;text-align:center;padding:40px">' +
+        '<h3>⚠️ Link phê duyệt không hợp lệ hoặc đã hết hạn.</h3>' +
+        '<p style="color:#888">Vui lòng xử lý trực tiếp trong Google Sheet (cột M của Log_Muon_Tra).</p>' +
+        '</body></html>'
       );
     }
     return handleApproval_(action, qr);
@@ -1859,7 +1971,7 @@ function doGet(e) {
   if (action === 'alllog') {
     const limit = Math.min(Math.max(parseInt(e.parameter.limit, 10) || 200, 1), 1000);
     return ContentService
-      .createTextOutput(JSON.stringify({ entries: getAllUsageLog_(limit) }))
+      .createTextOutput(JSON.stringify(buildUsageLogResponse_(e.parameter.key, limit)))
       .setMimeType(ContentService.MimeType.JSON);
   }
 
@@ -2075,5 +2187,7 @@ function onOpen() {
     .addSeparator()
     .addItem('Đồng bộ Form → Log_Muon_Tra', 'syncFormResponsesToLog')
     .addItem('Thiết lập trigger tự động', 'setup')
+    .addSeparator()
+    .addItem('🔑 Tạo mã truy cập Nhật ký mới', 'generateLogAccessCode')
     .addToUi();
 }

@@ -73,6 +73,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 .history-entry .history-status.active { color: #e65100; }
 .history-entry .history-status.overdue { color: #c62828; }
 .log-equip { display: block; color: #2F5496; font-weight: 600; margin-bottom: 2px; }
+.log-code-form { padding: 16px 14px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; color: #555; }
+.log-code-form input { padding: 10px 12px; border: 1.5px solid #d9e2f3; border-radius: 8px; font-size: 16px; letter-spacing: 2px; }
+.log-code-form .log-code-msg { color: #c62828; font-size: 12px; }
+.log-lock-btn { background: none; border: none; color: #888; font-size: 11px; padding: 0 14px 10px; cursor: pointer; text-decoration: underline; }
 
 /* Availability badge (real-time borrow status) */
 .avail-checking { color: #bbb; font-size: 12px; font-style: italic; }
@@ -1449,61 +1453,119 @@ function toggleUsageHistory(qrCode) {
 }
 
 // Nhật ký sử dụng toàn Khoa — mọi lượt mượn/trả của mọi thiết bị, mới nhất trước.
+// Cần mã truy cập (PTK tạo trong Sheet: menu Quản lý TB → Tạo mã truy cập Nhật ký mới).
+// Mã chỉ lưu trên máy người dùng, không nằm trong HTML public.
+const LOG_CODE_STORAGE_KEY = 'hmo_log_access_code';
+const LOG_ERROR_MESSAGES = {
+  locked: 'Nhập sai quá nhiều lần, Nhật ký tạm khóa 15 phút. Vui lòng thử lại sau.',
+  not_configured: 'Nhật ký chưa được mở. Liên hệ Phó Trưởng khoa để nhận mã truy cập.'
+};
+
+function readLogCode() {
+  try { return localStorage.getItem(LOG_CODE_STORAGE_KEY) || ''; } catch (e) { return ''; }
+}
+function saveLogCode(code) {
+  try { localStorage.setItem(LOG_CODE_STORAGE_KEY, code); } catch (e) { /* không lưu được thì lần sau hỏi lại */ }
+}
+function clearLogCode() {
+  try { localStorage.removeItem(LOG_CODE_STORAGE_KEY); } catch (e) { /* bỏ qua */ }
+}
+
 function showUsageLog() {
   document.getElementById('content').innerHTML = `
     <div class="history-panel open" style="margin:16px 20px">
       <div class="history-title">📋 Nhật ký sử dụng — toàn Khoa</div>
-      <div class="history-list" id="log-list" style="max-height:none">
-        <div class="history-loading">Đang tải nhật ký...</div>
-      </div>
+      <div class="history-list" id="log-list" style="max-height:none"></div>
     </div>
     <button class="action-btn primary" onclick="showAll()" style="width:calc(100% - 40px);margin:0 20px 16px">
       <span class="icon" style="margin-right:8px">←</span> Xem tất cả thiết bị
     </button>
   `;
-
-  const list = document.getElementById('log-list');
   if (!WEB_APP_URL) {
-    list.innerHTML = '<div class="history-error">Chưa cấu hình kết nối dữ liệu.</div>';
+    document.getElementById('log-list').innerHTML = '<div class="history-error">Chưa cấu hình kết nối dữ liệu.</div>';
     return;
   }
+  const code = readLogCode();
+  if (code) loadUsageLog(code);
+  else renderLogCodeForm('');
+}
 
-  fetch(WEB_APP_URL + '?action=alllog')
+function renderLogCodeForm(message) {
+  const list = document.getElementById('log-list');
+  list.innerHTML = `
+    <form class="log-code-form" id="log-code-form">
+      <label for="log-code-input">Nhập mã truy cập Nhật ký (8 chữ số):</label>
+      <input id="log-code-input" type="password" inputmode="numeric" autocomplete="off" maxlength="16" required>
+      ${message ? `<div class="log-code-msg">${escapeHtml(message)}</div>` : ''}
+      <button class="action-btn primary" type="submit">Xem nhật ký</button>
+    </form>`;
+  document.getElementById('log-code-form').addEventListener('submit', event => {
+    event.preventDefault();
+    const code = document.getElementById('log-code-input').value.trim();
+    if (code) loadUsageLog(code);
+  });
+  document.getElementById('log-code-input').focus();
+}
+
+function loadUsageLog(code) {
+  const list = document.getElementById('log-list');
+  list.innerHTML = '<div class="history-loading">Đang tải nhật ký...</div>';
+
+  fetch(WEB_APP_URL + '?action=alllog&key=' + encodeURIComponent(code))
     .then(response => {
       if (!response.ok) throw new Error('Usage log request failed');
       return response.json();
     })
     .then(data => {
-      const entries = Array.isArray(data.entries) ? data.entries : [];
-      if (!entries.length) {
-        list.innerHTML = '<div class="history-empty">Chưa có lượt sử dụng nào được ghi nhận.</div>';
+      if (data.ok !== true) {
+        if (data.error === 'unauthorized') {
+          clearLogCode();
+          renderLogCodeForm('Mã truy cập không đúng hoặc đã được đổi. Vui lòng nhập lại.');
+          return;
+        }
+        list.innerHTML = `<div class="history-error">${escapeHtml(LOG_ERROR_MESSAGES[data.error] || 'Không thể tải nhật ký.')}</div>`;
         return;
       }
-      list.innerHTML = entries.map(entry => {
-        const period = entry.borrowDate
-          ? entry.borrowDate + ' → ' + (entry.returnDate || 'Đang sử dụng')
-          : 'Chưa ghi nhận thời gian';
-        const duration = entry.usageHours == null ? '' : ' · ' + escapeHtml(entry.usageHours) + ' giờ';
-        const status = entry.isOverdue
-          ? '<span class="history-status overdue">Quá hạn</span>'
-          : (entry.isActive
-              ? '<span class="history-status active">Đang sử dụng</span>'
-              : '<span class="history-status">Đã trả</span>');
-        const unit = entry.unit ? ' · ' + escapeHtml(entry.unit) : '';
-        const due = (entry.isActive && entry.dueDate)
-          ? `<div class="history-meta">Hạn trả: ${escapeHtml(entry.dueDate)}</div>`
-          : '';
-        return `<div class="history-entry">
-          <span class="log-equip">${escapeHtml(entry.equipName || entry.qrCode)}</span>
-          <strong>${escapeHtml(entry.borrower)}</strong>${unit} · ${status}
-          <div class="history-meta">Thời gian: ${escapeHtml(period)}${duration}</div>${due}
-          <div class="history-meta">Địa điểm: ${escapeHtml(entry.location)}</div>
-        </div>`;
-      }).join('');
+      saveLogCode(code);
+      renderUsageLogEntries(list, Array.isArray(data.entries) ? data.entries : []);
     })
     .catch(() => {
       list.innerHTML = '<div class="history-error">Không thể tải nhật ký. Vui lòng thử lại.</div>';
     });
+}
+
+function lockUsageLog() {
+  clearLogCode();
+  renderLogCodeForm('');
+}
+
+function renderUsageLogEntries(list, entries) {
+  const lockBtn = '<button class="log-lock-btn" onclick="lockUsageLog()">🔒 Khóa nhật ký trên máy này</button>';
+  if (!entries.length) {
+    list.innerHTML = '<div class="history-empty">Chưa có lượt sử dụng nào được ghi nhận.</div>' + lockBtn;
+    return;
+  }
+  list.innerHTML = lockBtn + entries.map(entry => {
+    const period = entry.borrowDate
+      ? entry.borrowDate + ' → ' + (entry.returnDate || 'Đang sử dụng')
+      : 'Chưa ghi nhận thời gian';
+    const duration = entry.usageHours == null ? '' : ' · ' + escapeHtml(entry.usageHours) + ' giờ';
+    const status = entry.isOverdue
+      ? '<span class="history-status overdue">Quá hạn</span>'
+      : (entry.isActive
+          ? '<span class="history-status active">Đang sử dụng</span>'
+          : '<span class="history-status">Đã trả</span>');
+    const unit = entry.unit ? ' · ' + escapeHtml(entry.unit) : '';
+    const due = (entry.isActive && entry.dueDate)
+      ? `<div class="history-meta">Hạn trả: ${escapeHtml(entry.dueDate)}</div>`
+      : '';
+    return `<div class="history-entry">
+      <span class="log-equip">${escapeHtml(entry.equipName || entry.qrCode)}</span>
+      <strong>${escapeHtml(entry.borrower)}</strong>${unit} · ${status}
+      <div class="history-meta">Thời gian: ${escapeHtml(period)}${duration}</div>${due}
+      <div class="history-meta">Địa điểm: ${escapeHtml(entry.location)}</div>
+    </div>`;
+  }).join('');
 }
 
 function showEquipment(qrCode) {
