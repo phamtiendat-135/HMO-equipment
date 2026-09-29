@@ -58,3 +58,32 @@
 - GitHub Pages ra bản mới sau ~1 phút: `renderLogCodeForm` có trong HTML live, `sw.js` = v9.
 - Commit `4d1403f` lỡ gắn dòng `Co-Authored-By`, trái quy ước "attribution disabled" của người dùng.
   Không sửa lịch sử (đã push); các commit sau không gắn nữa.
+
+## Mục 2 (~23:00) — Review toàn bộ trước vận hành chính thức
+
+### Kết luận
+- **Chưa sẵn sàng vận hành chính thức hoặc in tem hàng loạt.** Báo cáo chi tiết: `PRE_DEPLOY_REVIEW_2026-09-28.md`.
+- Không sửa application code, không push GitHub, không deploy Apps Script, không sửa Sheet, không submit Form/email và không gọi approve/reject thật.
+- Người dùng đã cho phép riêng việc tải bản Sheet để audit và GET API production chỉ đọc.
+
+### Kiểm tra đã hoàn thành
+- Đối chiếu Apps Script local, remote HEAD và deployment v10: cùng SHA-256; bốn tài nguyên GitHub Pages live trùng local, HTTP 200.
+- Audit 74 thiết bị; 54/54 PNG QR đúng URL/mã in và giải mã được ở kích thước gốc lẫn 80 px.
+- Phát hiện `QR_Labels_Print.html` sai DOM: 18 card ngoài grid, 19 card không là con trực tiếp của grid, 8 tên mồ côi; P204/P207 bị sai phân nhóm và layout live bị vỡ.
+- Audit Google Sheets live 10 tab: 74 QR duy nhất; master có 30 Bình thường, 21 Tốt, 3 Kém, 20 Không hoạt động; `Thong_Ke` là số tĩnh và không khớp; 16 cán bộ đã cập nhật trong Sheet chưa có ở frontend; không có protected range; General access Restricted.
+- Forms live điền sẵn QR đúng nhưng form mượn còn bốn bộ môn cũ. HTTP không cookie: mượn/bảo trì/báo hỏng 401, trả 200.
+- API read-only hoạt động; `alllog` chưa có mã trả `not_configured`; lookup đang công khai cả trường ghi chú/giải trình; lịch sử từng thiết bị vẫn công khai theo quyết định cũ.
+- Xem sáu trigger live và execution gần đây; Completed không chứng minh nghiệp vụ hoàn tất vì code có bắt/nuốt exception.
+
+### Bộ audit được tạo
+- `audits/2026-09-28/reproduce.cjs`: 21/21 kịch bản/đối chứng backend xác nhận, gồm sai dispatch, sai giao dịch approval/return, mất/trùng/race log, thiếu validation, formula/HTML injection, ngày/báo cáo và PIN lockout.
+- `audits/2026-09-28/frontend_audit.cjs`: 10/10 kịch bản/đối chứng, gồm XSS URL, inherited key, offline bị coi rỗng, placeholder báo thành công giả, dữ liệu manager bị bỏ qua, service worker xóa cache ngoài dự án và DOM tem.
+- `audits/2026-09-28/data_qr_audit.py`: đọc XLSX/QR, không save workbook.
+- `audits/2026-09-28/live_check.mjs`: GET read-only static/Form/API, không submit hoặc mutate.
+- `audits/2026-09-28/README.md`: phạm vi và cách chạy; nhấn mạnh pass của audit là tái hiện lỗi, không phải readiness pass.
+
+### Ưu tiên tiếp theo
+1. Vá XSS, formula/HTML injection và giảm trường API public.
+2. Thiết kế LoanID/trạng thái, sửa dispatcher bốn Form, validation, approval/return, khóa/chống trùng và retry email.
+3. Đối soát/chuẩn hóa Sheet và Forms, đồng bộ frontend từ một nguồn, dựng lại trang tem.
+4. Regression + E2E staging; in/quét tem và test mobile/PWA trên thiết bị thật trước phát hành.
