@@ -88,13 +88,18 @@ QR Label on device
 | `checkOverdueReturns()` | Daily 8am | Quét tất cả sheet (Log + Form Responses) tìm TB quá hạn, gửi email |
 | `checkMaintenanceSchedule()` | Weekly Monday 9am | Emails about upcoming/overdue maintenance |
 | `monthlyReport()` | 1st of month 8am | Sends monthly summary report |
-| `onFormSubmitBorrow(e)` | On form submit | Gửi email cho MỌI yêu cầu mượn (🟢 thông báo hoặc 🔴 cần phê duyệt) + ghi vào Log_Muon_Tra |
+| `onFormSubmitDispatch(e)` | On form submit | Nhận diện 4 form theo bộ câu hỏi (`FORM_SIGNATURES`) → mượn / trả / bảo trì / báo hỏng; form lạ → báo admin, không xử lý; lỗi → ném ra (execution Failed) |
+| `onFormSubmitBorrow(e)` | qua dispatcher | Kiểm tra (QR có trong Master, không Hỏng/Không hoạt động, còn số lượng, ngày hợp lệ) → khóa → ghi Log (có LoanID) → gửi mail. Không hợp lệ → tự động từ chối |
+| `onFormSubmitReturn(e)` | qua dispatcher | Đóng đúng khoản (1 khoản / khớp email / khớp tên); không chắc chắn hoặc ngày sai → KHÔNG đóng, báo admin |
+| `onFormSubmitMaintenance(e)` / `onFormSubmitDamage(e)` | qua dispatcher | Ghi `Log_Bao_Tri` / `Log_Bao_Hong`, báo admin |
+| `resendPendingApprovals()` | Manual (menu) | Gửi lại email phê duyệt cho mọi yêu cầu còn chờ (link mới) |
+| `confirmApprovalFromPage()` | google.script.run | Bước 2 phê duyệt: kiểm lại chữ ký, chỉ ghi khi còn CHỜ DUYỆT |
 | `syncFormResponsesToLog()` | Manual (menu) | Đồng bộ dữ liệu cũ từ Form Responses → Log_Muon_Tra |
 | `findBorrowSheets_()` | Helper | Tự động tìm sheet chứa dữ liệu mượn/trả (fuzzy column matching) |
 | `findColIndex_()` | Helper | Fuzzy matching tên cột (hỗ trợ cả tên Form và tên Log) |
 | `lookupEquipment(qrCode)` | API call | Returns equipment data by QR code |
-| `doGet(e)` | Web App endpoint | JSON API for QR lookups |
-| `onOpen()` | Sheet open | Menu "Quản lý TB" với 5 chức năng |
+| `doGet(e)` | Web App endpoint | `?id=` (chỉ trường công khai), `history` (tên che, không địa điểm), `alllog` (cần mã), `allStatus`, `approve/reject` (chỉ hiện trang xác nhận) |
+| `onOpen()` | Sheet open | Menu "Quản lý TB" (gồm gửi lại email phê duyệt, tạo mã truy cập Nhật ký) |
 
 ## Approval Workflow
 
@@ -202,6 +207,19 @@ Trước khi kết thúc MỌI phiên làm việc trong workspace này, tạo ho
 - ✅ Đã deploy **version 8** (26/08) và xác minh live: API trả đúng `{qrCode, history}`, GitHub Pages đã có nút, sw `v7`.
 - ⚠️ Endpoint Web App đang để "Anyone" — route này công khai tên người mượn + địa điểm cho bất kỳ ai có `WEB_APP_URL` (URL nằm trong HTML public). Chấp nhận được ở Phase 1 nội bộ; cần xem lại nếu mở rộng.
 
+## Changes Log (Session 29/09/2026 — Sửa lỗi theo PRE_DEPLOY_REVIEW_2026-09-28.md, Apps Script v11)
+
+- **Trạng thái giao dịch** suy ra một chỗ (`loanStatus_`): chờ duyệt / đã duyệt / từ chối / đã trả. Chờ duyệt **giữ chỗ**; bị từ chối nhả ngay, không nhắc quá hạn.
+- `Log_Muon_Tra` thêm cột **S Mã giao dịch, T Nguồn phản hồi mượn, U Nguồn phản hồi trả** — tự nâng cấu trúc ở lần ghi đầu (cờ `LOG_SCHEMA_VERSION=2` trong Script Properties), gán LoanID cho dòng cũ, cập nhật công thức cột O bỏ qua dòng từ chối/chờ duyệt.
+- Link phê duyệt ký theo **LoanID**, dùng 1 lần, mở ra **trang xác nhận** (bấm nút mới ghi). Link trước v11 không còn hiệu lực → menu "Gửi lại email phê duyệt đang chờ".
+- Dữ liệu người dùng ghi vào Sheet qua `asText_` (chống chèn công thức); HTML email/trang duyệt escape qua `escapeHtml_`.
+- API công khai lọc trường (`PUBLIC_EQUIPMENT_FIELDS`); lịch sử từng thiết bị **che tên** (`maskName_`) và bỏ địa điểm; lỗi đọc dữ liệu trả `ok:false` thay vì "rảnh/rỗng".
+- Báo cáo năm: tỷ lệ = giờ được mượn (cắt theo kỳ, tính cả khoản chưa trả) / giờ lịch của kỳ × số lượng; chạy ngày 1/1 cho năm trước (qua `monthlyReport`), `yearlyReport` thành no-op.
+- Frontend: vá XSS `?id=`, `hasEquipment()` (chặn khóa kế thừa), `fetchJson` timeout 15s, lỗi ≠ rỗng, cán bộ quản lý lấy từ API, Đào tạo/NCKH không báo thành công giả. `sw.js` v10: chỉ xóa cache `hmo-equipment-*`, chỉ fallback HTML cho điều hướng.
+- `QR_Labels_Print.html` dựng lại cấu trúc (54 tem, đúng lưới/khu vực). `update_managers.py` cập nhật cả 2 file, escape JSON.
+- Test: `node tests/backend_regression.cjs` và `node tests/frontend_regression.cjs [jsdom]` — **chạy trước mỗi lần deploy**.
+- Rủi ro còn chấp nhận: khóa 15 phút của mã Nhật ký là khóa chung; nhận diện form theo tên câu hỏi (đổi tên câu hỏi trên Form phải cập nhật `FORM_SIGNATURES`).
+
 ## Deploy Apps Script (clasp)
 
 Script là **container-bound** trong Sheet master. Cấu hình đã có sẵn trong repo: `.clasp.json`, `.claspignore`, `appsscript.json`.
@@ -220,6 +238,7 @@ Bốn điều dễ sai:
 4. **Đừng sửa `appsscript.json`** — khối `webapp` (`USER_DEPLOYING` / `ANYONE_ANONYMOUS`) mất là đổi quyền truy cập web app.
 
 Chỉ chạy lại `setup()` khi **thay đổi định nghĩa trigger**; sửa logic thường thì không cần.
+**Trigger chạy theo code HEAD ngay sau `clasp push`**, còn Web App chạy theo version đã deploy → luôn chạy test trước, và làm push → create-version → update-deployment liền một mạch.
 Lần đầu trên máy mới: `npm i -g @google/clasp` → `clasp login` → bật Apps Script API tại script.google.com/home/usersettings (không bật thì push bị chặn dù pull vẫn chạy).
 
 ## Tech Stack

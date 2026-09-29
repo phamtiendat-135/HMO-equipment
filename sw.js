@@ -3,7 +3,8 @@
  * Chiến lược: Cache-first cho tĩnh (app shell), Network-first cho API (borrow status)
  */
 
-const CACHE_NAME = 'hmo-equipment-v9';
+const CACHE_PREFIX = 'hmo-equipment-';
+const CACHE_NAME = CACHE_PREFIX + 'v10';
 const SHELL_ASSETS = [
   '/HMO-equipment/',
   '/HMO-equipment/index.html',
@@ -21,12 +22,12 @@ self.addEventListener('install', event => {
   );
 });
 
-// ===== Activate: xóa cache cũ =====
+// ===== Activate: xóa cache cũ CỦA DỰ ÁN NÀY (không đụng cache của app khác cùng origin github.io) =====
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
-        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+        keys.filter(k => k.startsWith(CACHE_PREFIX) && k !== CACHE_NAME).map(k => caches.delete(k))
       )
     ).then(() => self.clients.claim())
   );
@@ -41,7 +42,7 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       fetch(event.request)
         .catch(() => new Response(
-          JSON.stringify({ error: 'offline', available: null, borrowedCount: 0 }),
+          JSON.stringify({ ok: false, error: 'offline' }),
           { headers: { 'Content-Type': 'application/json' } }
         ))
     );
@@ -63,6 +64,10 @@ self.addEventListener('fetch', event => {
         }
         return response;
       });
-    }).catch(() => caches.match('/HMO-equipment/index.html'))
+    }).catch(error => {
+      // Chỉ trả trang chủ khi MỞ TRANG lúc mất mạng; ảnh/manifest lỗi thì để lỗi, không trả HTML thay thế
+      if (event.request.mode === 'navigate') return caches.match('/HMO-equipment/index.html');
+      throw error;
+    })
   );
 });
