@@ -53,3 +53,4 @@
 
 ## Kết thúc phiên 30/09
 - Việc cho phiên sau: đổi Locale/Múi giờ của Sheet (bắt buộc, chưa xác nhận đã làm); bổ sung model cho 20 tem còn thiếu nếu người dùng cung cấp; quyết định có làm cứng đọc ngày (v12) không; các việc hoàn thiện (xoá dòng TEST, lựa chọn bộ môn, khoá cột O/S–U, email Can_Bo_QL, cộng tác viên + tắt chỉnh sửa sau khi gửi, in thử tem).
+- Người dùng báo đã làm xong các việc thủ công (Locale/Múi giờ, dọn dòng TEST, bộ môn, khoá cột, email Can_Bo_QL, quyền form, in thử tem). Chỉ là người dùng tự báo, em chưa kiểm tra lại được từ phía code. Còn mở: model cho 20 tem thiếu, và quyết định có làm v12 (đọc ngày trực tiếp từ ô) không.
