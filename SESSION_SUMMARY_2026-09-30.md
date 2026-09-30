@@ -50,3 +50,6 @@
 - `QR_Labels_Print.html`: dưới mỗi ảnh QR in thêm **mã thiết bị** (54/54) và **model** (34/54, lấy từ trường Thông số kỹ thuật). Mã ở bên phải được chuyển xuống dưới ảnh. 20 thiết bị không có model trong dữ liệu (HPC 7302/7303/7897/7874–7880, OBS 8694/8690, LAB 8691, OTH 6530/6532, NET 7306–7308/7758, INF 7899) nên chỉ in mã.
 - Test: `node tests/frontend_regression.cjs <jsdom>` → 19/19 pass. Đã chụp màn hình bằng Edge headless, hiển thị đúng.
 - Đã commit và push lên GitHub (xem git log).
+
+## Kết thúc phiên 30/09
+- Việc cho phiên sau: đổi Locale/Múi giờ của Sheet (bắt buộc, chưa xác nhận đã làm); bổ sung model cho 20 tem còn thiếu nếu người dùng cung cấp; quyết định có làm cứng đọc ngày (v12) không; các việc hoàn thiện (xoá dòng TEST, lựa chọn bộ môn, khoá cột O/S–U, email Can_Bo_QL, cộng tác viên + tắt chỉnh sửa sau khi gửi, in thử tem).
