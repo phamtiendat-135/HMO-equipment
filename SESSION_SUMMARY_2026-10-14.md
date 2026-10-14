@@ -12,3 +12,4 @@
 - Không đổi trigger, nên không cần chạy `setup()`.
 - CLAUDE.md: thêm Changes Log 14/10.
 - Cần theo dõi: lần gửi form mượn thật đầu tiên, kiểm tra cột G/H đúng ngày.
+- Test giao diện: lần chạy đầu lỗi vì jsdom trong scratchpad bị dọn mất một phần. Đã cài lại → **19/19 pass**. Phần này không đổi code giao diện.
