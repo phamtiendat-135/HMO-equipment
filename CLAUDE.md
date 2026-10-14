@@ -220,6 +220,12 @@ Trước khi kết thúc MỌI phiên làm việc trong workspace này, tạo ho
 - Test: `node tests/backend_regression.cjs` và `node tests/frontend_regression.cjs [jsdom]` — **chạy trước mỗi lần deploy**.
 - Rủi ro còn chấp nhận: khóa 15 phút của mã Nhật ký là khóa chung; nhận diện form theo tên câu hỏi (đổi tên câu hỏi trên Form phải cập nhật `FORM_SIGNATURES`).
 
+## Changes Log (Session 14/10/2026 — Apps Script v12: đọc ngày từ ô)
+
+- Ngày trên 4 form (mượn, hạn trả, ngày trả, ngày bảo trì/hiệu chuẩn, thời điểm phát hiện hỏng) đọc từ **giá trị Date trong ô** của tab Form Responses (`formCellValues_` + `formDateFinder_`), quy về múi giờ của Sheet (`wallClockDate_`). Không còn phụ thuộc Ngôn ngữ của Sheet (locale Mỹ từng làm `e.namedValues` thành M/D/YYYY → đọc sai ngày). Không đọc được ô thì dùng chữ dd/MM/yyyy như cũ.
+- Test: `tests/backend_regression.cjs` 46 test (thêm 6 test ngày; 5 test mới fail trên code cũ).
+- Vẫn nên để Sheet: Ngôn ngữ Việt Nam, Múi giờ GMT+07:00 (dấu thời gian trong cột T và hiển thị).
+
 ## Deploy Apps Script (clasp)
 
 Script là **container-bound** trong Sheet master. Cấu hình đã có sẵn trong repo: `.clasp.json`, `.claspignore`, `appsscript.json`.

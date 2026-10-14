@@ -66,7 +66,7 @@ function pad2(n) { return String(n).padStart(2, '0'); }
 function fakeFormatDate(d, _tz, pattern) {
   return pattern.replace('yyyy', d.getFullYear()).replace('yy', String(d.getFullYear()).slice(2))
     .replace('MM', pad2(d.getMonth() + 1)).replace('dd', pad2(d.getDate()))
-    .replace('HH', pad2(d.getHours())).replace('mm', pad2(d.getMinutes()));
+    .replace('HH', pad2(d.getHours())).replace('mm', pad2(d.getMinutes())).replace('ss', pad2(d.getSeconds()));
 }
 
 function harness(logRows = [], opts = {}) {
@@ -497,6 +497,74 @@ test('Nhật ký: không mã / sai mã → không lộ dữ liệu', () => {
   const out = JSON.parse(h.ctx.doGet({ parameter: { action: 'alllog', key: '0' } }).text);
   assert.equal(out.ok, false);
   assert.equal(out.entries.length, 0);
+});
+
+// ====================== Ngày đọc từ ô, không phụ thuộc Ngôn ngữ của Sheet ======================
+/**
+ * Event như trigger thật: namedValues là CHỮ theo locale của Sheet (ở đây giả lập locale Mỹ M/D/YYYY),
+ * còn ô trong tab Form Responses là Date thật.
+ */
+function formEventWithCells(fields, cells, sheetName = 'Form Responses 1') {
+  const e = formEvent(fields, sheetName);
+  const headers = ['Timestamp'].concat(Object.keys(fields));
+  const values = [new Date(2026, 9, 14, 9, 30, 0)].concat(Object.keys(fields).map(k => (k in cells ? cells[k] : fields[k])));
+  const sheet = {
+    getName: () => sheetName,
+    getRange: (r, c, nr, nc) => ({ getValues: () => [headers.slice(c - 1, c - 1 + nc)] }),
+    getParent: () => ({ getSpreadsheetTimeZone: () => 'America/Los_Angeles' })
+  };
+  e.range = Object.assign(e.range, { getSheet: () => sheet, getColumn: () => 1,
+    getNumColumns: () => headers.length, getValues: () => [values] });
+  return e;
+}
+const sameDay = (d, y, m, day) => d instanceof Date && d.getFullYear() === y && d.getMonth() === m && d.getDate() === day;
+
+test('Ngày: Sheet locale Mỹ ("10/5/2026") — mượn vẫn lấy đúng 05/10 từ ô Date', () => {
+  const h = harness();
+  h.ctx.onFormSubmitBorrow(formEventWithCells(
+    borrowFields({ 'Mã QR thiết bị': 'HMO-LAB-0002', 'Ngày mượn': '10/5/2026', 'Ngày dự kiến trả': '10/12/2026' }),
+    { 'Ngày mượn': new Date(2026, 9, 5), 'Ngày dự kiến trả': new Date(2026, 9, 12) }));
+  const r = lastRow(h);
+  assert.ok(sameDay(r[6], 2026, 9, 5), 'ngày mượn phải là 05/10/2026, nhận ' + r[6]);
+  assert.ok(sameDay(r[7], 2026, 9, 12), 'hạn trả phải là 12/10/2026, nhận ' + r[7]);
+  assert.equal(r[12], '', 'TB dưới ngưỡng, ngày hợp lệ → không bị từ chối');
+});
+test('Ngày: chữ "9/30/2026" (locale Mỹ) không làm từ chối nhầm khi ô là Date', () => {
+  const h = harness();
+  h.ctx.onFormSubmitBorrow(formEventWithCells(
+    borrowFields({ 'Mã QR thiết bị': 'HMO-LAB-0002', 'Ngày mượn': '9/30/2026', 'Ngày dự kiến trả': '10/2/2026' }),
+    { 'Ngày mượn': new Date(2026, 8, 30), 'Ngày dự kiến trả': new Date(2026, 9, 2) }));
+  assert.ok(!/từ chối/i.test(lastRow(h)[12]), lastRow(h)[12]);
+  assert.ok(sameDay(lastRow(h)[7], 2026, 9, 2));
+});
+test('Ngày: trả thiết bị lấy ngày trả từ ô Date', () => {
+  const h = harness([legacyLoan('Nguyễn Văn A', '✅ Đã phê duyệt', 'a@example.invalid')]);
+  h.ctx.onFormSubmitReturn(formEventWithCells(returnFields({ 'Ngày trả': '9/26/2026' }),
+    { 'Ngày trả': new Date(2026, 8, 26) }, 'Form Responses 2'));
+  assert.ok(sameDay(h.log.rows[1][8], 2026, 8, 26), 'ngày trả phải là 26/09/2026, nhận ' + h.log.rows[1][8]);
+});
+test('Ngày: bảo trì ghi Date từ ô, email hiện dd/MM/yyyy', () => {
+  const h = harness();
+  h.ctx.onFormSubmitDispatch(formEventWithCells({ 'Mã QR thiết bị': QR, 'Loại công việc': 'Hiệu chuẩn',
+    'Ngày thực hiện': '10/3/2026', 'Ngày hiệu chuẩn tiếp theo': '4/3/2027', 'Kết quả': 'Đạt' },
+    { 'Ngày thực hiện': new Date(2026, 9, 3), 'Ngày hiệu chuẩn tiếp theo': new Date(2027, 3, 3) }, 'Form Responses 3'));
+  const r = h.sheets.Log_Bao_Tri.rows[1];
+  assert.ok(sameDay(r[3], 2026, 9, 3) && sameDay(r[4], 2027, 3, 3), r[3] + ' / ' + r[4]);
+  assert.ok(h.mail.some(m => /03\/10\/2026/.test(m[2]) && /03\/04\/2027/.test(m[2])));
+});
+test('Ngày: báo hỏng giữ cả giờ phát hiện khi ô là Date', () => {
+  const h = harness();
+  h.ctx.onFormSubmitDispatch(formEventWithCells({ 'Mã QR thiết bị': QR, 'Người phát hiện': 'B',
+    'Thời điểm phát hiện': '10/14/2026 8:15:00', 'Mức độ hỏng': 'Nhẹ', 'Mô tả sự cố': 'x' },
+    { 'Thời điểm phát hiện': new Date(2026, 9, 14, 8, 15) }, 'Form Responses 4'));
+  const when = h.sheets.Log_Bao_Hong.rows[1][3];
+  assert.ok(sameDay(when, 2026, 9, 14) && when.getHours() === 8 && when.getMinutes() === 15, String(when));
+});
+test('Ngày: không đọc được ô → vẫn đọc chữ dd/MM/yyyy như cũ', () => {
+  const h = harness();
+  h.ctx.onFormSubmitBorrow(formEvent(borrowFields({ 'Mã QR thiết bị': 'HMO-LAB-0002',
+    'Ngày mượn': '05/10/2026', 'Ngày dự kiến trả': '12/10/2026' })));
+  assert.ok(sameDay(lastRow(h)[6], 2026, 9, 5) && sameDay(lastRow(h)[7], 2026, 9, 12));
 });
 
 // ---------- Kết quả ----------

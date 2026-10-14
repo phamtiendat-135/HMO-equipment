@@ -343,16 +343,68 @@ function ensureLogSchema_(sheet) {
  * "Tên đơn vị thực hiện (nếu thuê ngoài)").
  */
 function namedValueFinder_(namedValues) {
-  const entries = Object.keys(namedValues || {}).map(key => [normalizeText_(key), namedValues[key]]);
+  const findRaw = rawValueFinder_(namedValues);
   return function find(keywords, exact) {
+    const value = findRaw(keywords, exact);
+    return value != null ? String(value).trim() : '';
+  };
+}
+
+/** Như namedValueFinder_ nhưng trả giá trị gốc (Date giữ nguyên), null nếu không có. */
+function rawValueFinder_(namedValues) {
+  const entries = Object.keys(namedValues || {}).map(key => [normalizeText_(key), namedValues[key]]);
+  return function findRaw(keywords, exact) {
     for (const kw of keywords.map(normalizeText_)) {
       for (const [key, value] of entries) {
-        if (exact ? key === kw : key.includes(kw)) {
-          return (value && value[0] != null) ? String(value[0]).trim() : '';
-        }
+        if (exact ? key === kw : key.includes(kw)) return value ? value[0] : null;
       }
     }
-    return '';
+    return null;
+  };
+}
+
+/**
+ * Giá trị THẬT trong các ô của dòng phản hồi, dạng { "tên câu hỏi": [giá trị] } như namedValues.
+ * Câu hỏi ngày là Date thật → không phụ thuộc Ngôn ngữ của Sheet (e.namedValues chỉ là chữ,
+ * Sheet để locale Mỹ thì "05/10/2026" là 10/5). Không đọc được → {} (dùng chữ như cũ).
+ */
+function formCellValues_(e) {
+  try {
+    const sheet = e.range.getSheet();
+    const firstCol = e.range.getColumn();
+    const width = e.range.getNumColumns();
+    const headers = sheet.getRange(1, firstCol, 1, width).getValues()[0];
+    const values = e.range.getValues()[0];
+    const timeZone = sheet.getParent().getSpreadsheetTimeZone();
+    const out = {};
+    headers.forEach((header, i) => {
+      if (!header) return;
+      const v = values[i];
+      out[header] = [v instanceof Date ? wallClockDate_(v, timeZone) : v];
+    });
+    return out;
+  } catch (err) {
+    Logger.log('formCellValues_: không đọc được ô phản hồi, dùng namedValues — ' + err.message);
+    return {};
+  }
+}
+
+/** Date của ô (hiểu theo múi giờ của Sheet) → Date có cùng ngày giờ trên lịch theo múi giờ script. */
+function wallClockDate_(date, timeZone) {
+  const p = Utilities.formatDate(date, timeZone, 'yyyy-MM-dd-HH-mm-ss').split('-').map(Number);
+  return new Date(p[0], p[1] - 1, p[2], p[3], p[4], p[5]);
+}
+
+/**
+ * Đọc câu hỏi ngày: ưu tiên Date trong ô, ô không phải Date mới đọc chữ (dd/MM/yyyy).
+ * Trả ngày (00:00) hoặc null nếu trống / không hợp lệ.
+ */
+function formDateFinder_(namedValues, cellValues) {
+  const findCell = rawValueFinder_(cellValues);
+  const findText = namedValueFinder_(namedValues);
+  return function findDate(keywords) {
+    const cell = findCell(keywords);
+    return cell instanceof Date ? parseDate_(cell) : parseDate_(findText(keywords));
   };
 }
 
@@ -930,7 +982,7 @@ function monthlyReport() {
  */
 function onFormSubmitBorrow(e) {
   if (!e || !e.namedValues) throw new Error('onFormSubmitBorrow: event không hợp lệ');
-  const req = readBorrowRequest_(e.namedValues);
+  const req = readBorrowRequest_(e.namedValues, formCellValues_(e));
   if (!req.qrCode) throw new Error('Phản hồi mượn thiếu mã QR');
 
   const ss = SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID);
@@ -939,8 +991,9 @@ function onFormSubmitBorrow(e) {
   notifyLoanRequest_(loan);
 }
 
-function readBorrowRequest_(namedValues) {
+function readBorrowRequest_(namedValues, cellValues) {
   const find = namedValueFinder_(namedValues);
+  const findDate = formDateFinder_(namedValues, cellValues);
   return {
     qrCode: find(['mã qr', 'qr code', 'mã thiết bị']).toUpperCase(),
     borrower: find(['họ và tên', 'người mượn', 'họ tên']),
@@ -948,7 +1001,9 @@ function readBorrowRequest_(namedValues) {
     purpose: find(['mục đích', 'lý do']),
     location: find(['địa điểm']),
     borrowDateRaw: find(['ngày mượn']),
+    borrowDate: findDate(['ngày mượn']),
     dueDateRaw: find(['ngày dự kiến trả', 'dự kiến trả', 'hạn trả']),
+    dueDate: findDate(['ngày dự kiến trả', 'dự kiến trả', 'hạn trả']),
     condition: find(['tình trạng']),
     accessories: find(['phụ kiện']),
     note: find(['ghi chú', 'lưu ý']),
@@ -977,8 +1032,8 @@ function recordLoanRequest_(ss, req, sourceId) {
     const master = getMasterRecord_(ss, req.qrCode);
     const openCount = data.filter((r, i) =>
       i > 0 && String(r[LOG_COL.QR]).trim() === req.qrCode && holdsStock_(r)).length;
-    const borrowDate = parseDate_(req.borrowDateRaw) || startOfToday_();
-    const dueDate = parseDate_(req.dueDateRaw);
+    const borrowDate = req.borrowDate || startOfToday_();
+    const dueDate = req.dueDate;
     const rejectReason = validateLoanRequest_(master, openCount, borrowDate, dueDate, req.dueDateRaw);
     const needsApproval = !rejectReason && master.value >= CONFIG.APPROVAL_THRESHOLD;
 
@@ -1217,7 +1272,7 @@ function onFormSubmitDispatch(e) {
  */
 function onFormSubmitReturn(e) {
   if (!e || !e.namedValues) throw new Error('onFormSubmitReturn: event không hợp lệ');
-  const req = readReturnRequest_(e.namedValues);
+  const req = readReturnRequest_(e.namedValues, formCellValues_(e));
   if (!req.qrCode) throw new Error('Phản hồi trả thiếu mã QR');
 
   const ss = SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID);
@@ -1226,14 +1281,16 @@ function onFormSubmitReturn(e) {
   sendReturnEmail_(ss, result);
 }
 
-function readReturnRequest_(namedValues) {
+function readReturnRequest_(namedValues, cellValues) {
   const find = namedValueFinder_(namedValues);
+  const findDate = formDateFinder_(namedValues, cellValues);
   return {
     qrCode: find(['mã qr', 'qr code', 'mã thiết bị']).toUpperCase(),
     returner: find(['họ và tên', 'người trả', 'họ tên']),
     condition: find(['tình trạng thiết bị khi trả', 'tình trạng khi trả', 'tình trạng']),
     notes: find(['ghi chú', 'mô tả tình trạng', 'lưu ý']),
     returnDateRaw: find(['ngày trả thực tế', 'ngày trả']),
+    returnDate: findDate(['ngày trả thực tế', 'ngày trả']),
     email: find(['email', 'thư điện tử'])
   };
 }
@@ -1265,7 +1322,7 @@ function pickLoanToClose_(data, req) {
 
 function recordReturn_(ss, req, sourceId) {
   const now = new Date();
-  const formDate = parseDate_(req.returnDateRaw);
+  const formDate = req.returnDate;
   const returnDate = formDate
     ? new Date(formDate.getFullYear(), formDate.getMonth(), formDate.getDate(),
                now.getHours(), now.getMinutes(), now.getSeconds())
@@ -1388,12 +1445,9 @@ function appendUniqueRow_(sheet, sourceCol, sourceId, row) {
   }
 }
 
-function dateOrText_(raw) {
-  return parseDate_(raw) || asText_(raw);
-}
-
 function onFormSubmitMaintenance(e) {
   const find = namedValueFinder_(e.namedValues);
+  const findDate = formDateFinder_(e.namedValues, formCellValues_(e));
   const qrCode = find(['mã qr', 'mã thiết bị']).toUpperCase();
   if (!qrCode) throw new Error('Phản hồi bảo trì thiếu mã QR');
 
@@ -1409,15 +1463,20 @@ function onFormSubmitMaintenance(e) {
   const unitName = find(['tên đơn vị thực hiện']);
   const costRaw = find(['chi phí']);
   const cost = parseFloat(costRaw.replace(',', '.'));
+  const doneKeys = ['ngày thực hiện'];
+  const nextKeys = ['ngày hiệu chuẩn', 'bảo trì tiếp theo'];
+  const doneDate = findDate(doneKeys);
+  const nextDate = findDate(nextKeys);
   const record = {
-    type: find(['loại công việc']), doneDate: find(['ngày thực hiện']),
-    nextDate: find(['ngày hiệu chuẩn', 'bảo trì tiếp theo']), content: find(['nội dung']),
+    type: find(['loại công việc']),
+    doneDate: doneDate ? formatDateVN_(doneDate) : find(doneKeys),
+    nextDate: nextDate ? formatDateVN_(nextDate) : find(nextKeys), content: find(['nội dung']),
     result: find(['kết quả']), performer: find(['người thực hiện']),
     attachment: find(['tài liệu', 'link']), note: find(['ghi chú'])
   };
   const row = [
     asText_(qrCode), asText_(master ? master.name : find(['tên thiết bị'])), asText_(record.type),
-    dateOrText_(record.doneDate), dateOrText_(record.nextDate),
+    doneDate || asText_(record.doneDate), nextDate || asText_(record.nextDate),
     asText_(unitName ? unitType + ' — ' + unitName : unitType),
     isNaN(cost) ? asText_(costRaw) : cost, asText_(record.content), asText_(record.result),
     asText_(record.performer), '', asText_(record.attachment), asText_(record.note), sourceIdOf_(e)
@@ -1436,6 +1495,7 @@ function onFormSubmitMaintenance(e) {
 
 function onFormSubmitDamage(e) {
   const find = namedValueFinder_(e.namedValues);
+  const whenCell = rawValueFinder_(formCellValues_(e))(['thời điểm phát hiện']);
   const qrCode = find(['mã qr', 'mã thiết bị']).toUpperCase();
   if (!qrCode) throw new Error('Phản hồi báo hỏng thiếu mã QR');
 
@@ -1449,13 +1509,14 @@ function onFormSubmitDamage(e) {
 
   const master = getMasterRecord_(ss, qrCode);
   const report = {
-    reporter: find(['người phát hiện']), when: find(['thời điểm phát hiện']),
+    reporter: find(['người phát hiện']),
+    when: whenCell instanceof Date ? formatDateVN_(whenCell, 'dd/MM/yyyy HH:mm') : find(['thời điểm phát hiện']),
     severity: find(['mức độ hỏng']), description: find(['mô tả sự cố']),
     context: find(['hoàn cảnh']), photo: find(['link ảnh']), email: find(['email'])
   };
   const row = [
     asText_(qrCode), asText_(master ? master.name : find(['tên thiết bị'])), asText_(report.reporter),
-    asText_(report.when), asText_(report.severity), asText_(report.description),
+    whenCell instanceof Date ? whenCell : asText_(report.when), asText_(report.severity), asText_(report.description),
     asText_(report.context), asText_(report.photo), asText_(report.email), 'Mới — chờ kiểm tra', sourceIdOf_(e)
   ];
   const rowNum = appendUniqueRow_(sheet, DAMAGE_SOURCE_COL, sourceIdOf_(e), row);
