@@ -25,3 +25,7 @@
 - Đổi tiêu đề P206 thành "Thiết bị định vị GPS". Cập nhật số đếm và tổng giá trị (13,8 tỷ). Khi in: nền trắng, giữ màu nhãn nhóm.
 - Xuất PDF bằng Edge headless: lần đầu chạy được (5 trang, 13/2/5/8/9 tem; ảnh trang 1–2 hiển thị đúng). Các lần sau bị treo (timeout), nên đã dừng các tiến trình headless và **xoá PDF** (bản đó còn nền xám). Người dùng in trực tiếp từ HTML.
 - `QR_Labels_Print.html` (54 tem) giữ nguyên.
+
+## Áp phích QR A4 cho phòng thí nghiệm
+- Tạo `QR_Poster_Landing_A4.html`: một trang A4, mã QR dạng vector (segno, mức sửa lỗi H, cạnh 130 mm) trỏ tới `https://phamtiendat-135.github.io/HMO-equipment/`. Có 3 bước hướng dẫn, dòng "Phòng: ……" để viết tay, chân trang ghi người hỗ trợ.
+- Kiểm tra: giải mã (zxing-cpp) cả ảnh PNG từ segno và ảnh chụp trang render bằng Edge headless → đúng URL. Ảnh chụp cho thấy vừa khổ A4 (lần đầu chân trang bị tràn, đã thu nhỏ QR 145→130 mm).

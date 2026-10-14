@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Áp phích QR tra cứu thiết bị (A4)</title>
+<style>
+@page { size: A4 portrait; margin: 0; }
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { font-family: Arial, Helvetica, sans-serif; color: #1a1a1a; background: #e9ecef; }
+.page { width: 210mm; height: 297mm; margin: 10mm auto; background: #fff; display: flex; flex-direction: column;
+         box-shadow: 0 2px 12px rgba(0,0,0,.15); overflow: hidden; }
+.band { background: #1a3a6b; color: #fff; text-align: center; padding: 9mm 10mm 8mm; }
+.band .org { font-size: 11pt; white-space: nowrap; opacity: .9; letter-spacing: .3px; }
+.band h1 { font-size: 30pt; line-height: 1.15; margin-top: 3mm; font-weight: 700; }
+.main { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 7mm 14mm 0; }
+.qr { width: 130mm; height: 130mm; display: block; }
+.url { margin-top: 3mm; font-family: Consolas, 'Courier New', monospace; font-size: 12pt; color: #444; }
+.steps { display: flex; gap: 6mm; margin-top: 7mm; width: 100%; }
+.step { flex: 1; border: 1.2mm solid #1a3a6b; border-radius: 4mm; padding: 4mm 4mm 5mm; text-align: center; }
+.step .n { display: inline-block; width: 10mm; height: 10mm; line-height: 10mm; border-radius: 50%;
+            background: #1a3a6b; color: #fff; font-weight: 800; font-size: 15pt; }
+.step p { margin-top: 2.5mm; font-size: 12.5pt; line-height: 1.35; }
+.step b { color: #1a3a6b; }
+.code { font-family: Consolas, 'Courier New', monospace; font-weight: 700; white-space: nowrap; }
+.room { margin-top: 7mm; font-size: 14pt; color: #333; width: 100%; text-align: center; }
+.room span { display: inline-block; min-width: 70mm; border-bottom: .5mm dotted #777; }
+.foot { border-top: .6mm solid #1a3a6b; margin: 0 14mm; padding: 4mm 0 7mm; text-align: center;
+         font-size: 10.5pt; color: #555; line-height: 1.5; }
+@media print {
+  body { background: #fff !important; }
+  .page { margin: 0; box-shadow: none; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="band">
+    <div class="org">KHOA KHÍ TƯỢNG THỦY VĂN VÀ HẢI DƯƠNG HỌC — TRƯỜNG ĐHKHTN, ĐHQGHN</div>
+    <h1>QUÉT MÃ ĐỂ TRA CỨU<br>&amp; MƯỢN THIẾT BỊ</h1>
+  </div>
+  <div class="main">
+    <svg class="qr" role="img" aria-label="Mã QR mở trang tra cứu thiết bị" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 49 49" class="segno"><path fill="#fff" d="M0 0h49v49h-49z"/><path class="qrline" stroke="#000" d="M4 4.5h7m1 0h1m1 0h1m1 0h1m3 0h2m3 0h1m1 0h5m2 0h2m2 0h7m-41 1h1m5 0h1m2 0h2m1 0h2m1 0h2m2 0h1m3 0h1m2 0h2m1 0h1m1 0h2m1 0h1m5 0h1m-41 1h1m1 0h3m1 0h1m2 0h2m1 0h1m1 0h1m2 0h1m1 0h2m1 0h5m1 0h1m5 0h1m1 0h3m1 0h1m-41 1h1m1 0h3m1 0h1m1 0h2m3 0h3m1 0h1m2 0h1m2 0h7m4 0h1m1 0h3m1 0h1m-41 1h1m1 0h3m1 0h1m2 0h4m3 0h1m1 0h2m1 0h1m1 0h2m1 0h2m3 0h2m1 0h1m1 0h3m1 0h1m-41 1h1m5 0h1m5 0h2m1 0h1m1 0h1m1 0h3m1 0h3m1 0h1m1 0h1m1 0h2m1 0h1m5 0h1m-41 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-29 1h1m3 0h2m1 0h1m1 0h1m1 0h2m2 0h1m1 0h1m1 0h2m-31 1h1m1 0h3m1 0h1m1 0h1m2 0h1m1 0h1m1 0h2m1 0h3m2 0h5m3 0h1m3 0h1m2 0h1m-40 1h2m1 0h1m3 0h2m1 0h1m6 0h2m3 0h3m2 0h1m3 0h2m3 0h4m-40 1h1m1 0h2m1 0h1m3 0h1m1 0h2m1 0h1m1 0h1m1 0h5m1 0h2m1 0h2m4 0h2m2 0h3m-40 1h3m1 0h1m1 0h2m1 0h1m2 0h1m2 0h2m1 0h1m3 0h1m3 0h3m2 0h2m2 0h1m-37 1h3m2 0h3m2 0h1m1 0h1m1 0h1m1 0h1m1 0h1m2 0h1m3 0h2m2 0h1m1 0h2m1 0h1m2 0h1m1 0h2m-40 1h1m1 0h1m1 0h1m2 0h1m3 0h2m1 0h1m1 0h2m1 0h3m1 0h4m1 0h1m1 0h3m1 0h1m2 0h3m-41 1h2m4 0h3m1 0h2m1 0h5m7 0h2m4 0h2m1 0h1m1 0h1m3 0h1m-41 1h6m2 0h2m2 0h1m6 0h2m2 0h2m1 0h2m1 0h2m1 0h1m1 0h1m4 0h2m-41 1h1m1 0h1m2 0h6m2 0h1m1 0h1m1 0h2m3 0h5m2 0h1m1 0h2m1 0h2m4 0h1m-41 1h2m1 0h1m1 0h1m1 0h2m1 0h4m3 0h1m2 0h5m1 0h1m1 0h1m1 0h1m3 0h1m3 0h3m-36 1h2m2 0h3m3 0h1m1 0h4m1 0h1m1 0h1m1 0h1m2 0h1m3 0h1m2 0h1m2 0h2m-40 1h2m5 0h3m2 0h2m1 0h1m1 0h3m1 0h2m1 0h1m1 0h1m4 0h1m2 0h1m-35 1h3m2 0h1m1 0h2m5 0h2m1 0h1m3 0h2m1 0h1m1 0h2m2 0h1m2 0h1m1 0h1m2 0h2m-41 1h3m7 0h2m2 0h2m3 0h2m1 0h2m1 0h1m2 0h1m5 0h2m2 0h3m-39 1h1m3 0h1m3 0h2m1 0h1m2 0h2m8 0h1m1 0h1m1 0h1m4 0h1m3 0h2m-41 1h1m2 0h3m4 0h3m6 0h7m1 0h3m3 0h1m2 0h1m2 0h1m-39 1h1m1 0h9m2 0h4m1 0h4m2 0h1m3 0h1m2 0h3m2 0h1m2 0h1m-37 1h1m2 0h1m1 0h1m2 0h4m3 0h1m1 0h1m1 0h3m2 0h2m3 0h1m1 0h1m3 0h2m-40 1h1m1 0h1m2 0h1m3 0h1m1 0h1m2 0h1m2 0h1m1 0h2m4 0h1m2 0h1m3 0h1m1 0h1m2 0h3m-39 1h1m2 0h1m1 0h2m1 0h1m2 0h2m1 0h2m1 0h1m2 0h3m1 0h5m1 0h3m1 0h1m-36 1h6m1 0h1m2 0h2m9 0h1m4 0h3m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m-39 1h3m3 0h5m1 0h3m1 0h2m1 0h2m4 0h4m1 0h1m1 0h1m5 0h2m-41 1h1m5 0h2m7 0h1m2 0h1m3 0h1m1 0h1m2 0h2m1 0h1m4 0h2m1 0h3m-40 1h1m2 0h2m1 0h1m5 0h1m6 0h1m4 0h2m1 0h4m1 0h3m-36 1h1m2 0h4m2 0h1m1 0h1m4 0h2m1 0h6m1 0h4m2 0h5m2 0h2m-33 1h2m3 0h3m1 0h2m1 0h1m4 0h2m1 0h5m3 0h5m-41 1h7m2 0h1m3 0h6m5 0h1m1 0h1m3 0h1m1 0h1m1 0h1m1 0h5m-41 1h1m5 0h1m1 0h2m4 0h2m1 0h3m5 0h1m1 0h4m1 0h1m3 0h1m-37 1h1m1 0h3m1 0h1m1 0h2m2 0h4m1 0h1m1 0h1m3 0h1m1 0h2m3 0h1m1 0h5m-37 1h1m1 0h3m1 0h1m2 0h1m7 0h1m3 0h1m3 0h2m1 0h3m2 0h1m2 0h1m3 0h1m-41 1h1m1 0h3m1 0h1m1 0h1m6 0h1m5 0h1m1 0h1m2 0h1m3 0h2m3 0h2m1 0h1m1 0h1m-41 1h1m5 0h1m2 0h1m2 0h2m5 0h2m1 0h2m1 0h3m1 0h2m1 0h2m1 0h1m1 0h1m1 0h1m-40 1h7m2 0h2m1 0h2m2 0h1m2 0h3m3 0h1m1 0h3m2 0h5m2 0h2"/></svg>
+
+    <div class="url">phamtiendat-135.github.io/HMO-equipment</div>
+    <div class="steps">
+      <div class="step"><span class="n">1</span><p>Mở <b>camera</b> điện thoại, quét mã QR ở trên</p></div>
+      <div class="step"><span class="n">2</span><p>Gõ <b>mã thiết bị</b> in trên tem (VD <span class="code">HMO-OBS-8693</span>) hoặc tên thiết bị</p></div>
+      <div class="step"><span class="n">3</span><p>Chọn <b>Mượn · Trả · Báo hỏng · Bảo trì</b> và điền form</p></div>
+    </div>
+    <div class="room">Phòng: <span>&nbsp;</span></div>
+  </div>
+  <div class="foot">
+    Không cần đăng nhập. Tem QR nhỏ trên từng thiết bị mở thẳng trang của thiết bị đó.<br>
+    Hỗ trợ: TS. Phạm Tiến Đạt — Phó Trưởng khoa · datpt@hus.edu.vn
+  </div>
+</div>
+</body>
+</html>
