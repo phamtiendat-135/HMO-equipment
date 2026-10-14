@@ -13,3 +13,4 @@
 - CLAUDE.md: thêm Changes Log 14/10.
 - Cần theo dõi: lần gửi form mượn thật đầu tiên, kiểm tra cột G/H đúng ngày.
 - Test giao diện: lần chạy đầu lỗi vì jsdom trong scratchpad bị dọn mất một phần. Đã cài lại → **19/19 pass**. Phần này không đổi code giao diện.
+- Hỏi đáp: đổi thông tin thiết bị sau khi in tem có phải in lại không. Mỗi mã QR chỉ chứa `https://phamtiendat-135.github.io/HMO-equipment/?id=<mã>` (theo audits/2026-09-28/data_qr_audit.py). Chỉ phải in lại khi đổi mã thiết bị hoặc đổi địa chỉ trang. Đổi chữ in trên tem (tên/model/phòng/năm) thì in lại tem đó nếu muốn chữ khớp. Không đổi file nào.
