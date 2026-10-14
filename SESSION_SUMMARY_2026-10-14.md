@@ -14,3 +14,14 @@
 - Cần theo dõi: lần gửi form mượn thật đầu tiên, kiểm tra cột G/H đúng ngày.
 - Test giao diện: lần chạy đầu lỗi vì jsdom trong scratchpad bị dọn mất một phần. Đã cài lại → **19/19 pass**. Phần này không đổi code giao diện.
 - Hỏi đáp: đổi thông tin thiết bị sau khi in tem có phải in lại không. Mỗi mã QR chỉ chứa `https://phamtiendat-135.github.io/HMO-equipment/?id=<mã>` (theo audits/2026-09-28/data_qr_audit.py). Chỉ phải in lại khi đổi mã thiết bị hoặc đổi địa chỉ trang. Đổi chữ in trên tem (tên/model/phòng/năm) thì in lại tem đó nếu muốn chữ khớp. Không đổi file nào.
+
+## Tem in đợt 1 (in ngày 15/10)
+- Tạo `QR_Labels_Print_Dot1.html` từ `QR_Labels_Print.html` (script tạm trong scratchpad `make_print_batch.py`, không đưa vào repo).
+- Gồm **37 tem**: P204 13, P206 2 (GPS 8688, 8689), P207 5, P401 8, phòng server T3 9.
+- Đã bỏ 17 tem:
+  - thiết bị cũ tình trạng "Kém": HPC 7302, 7303, 7897;
+  - hệ thống tính toán P206: HPC 7908, 7910–7914, INF 7898, 7899, NET 7306–7308, 7909, SW 8698, 8699.
+- Trong 54 tem gốc không có tem nào ở tình trạng Hỏng / Không hoạt động.
+- Đổi tiêu đề P206 thành "Thiết bị định vị GPS". Cập nhật số đếm và tổng giá trị (13,8 tỷ). Khi in: nền trắng, giữ màu nhãn nhóm.
+- Xuất PDF bằng Edge headless: lần đầu chạy được (5 trang, 13/2/5/8/9 tem; ảnh trang 1–2 hiển thị đúng). Các lần sau bị treo (timeout), nên đã dừng các tiến trình headless và **xoá PDF** (bản đó còn nền xám). Người dùng in trực tiếp từ HTML.
+- `QR_Labels_Print.html` (54 tem) giữ nguyên.
