@@ -29,3 +29,5 @@
 ## Áp phích QR A4 cho phòng thí nghiệm
 - Tạo `QR_Poster_Landing_A4.html`: một trang A4, mã QR dạng vector (segno, mức sửa lỗi H, cạnh 130 mm) trỏ tới `https://phamtiendat-135.github.io/HMO-equipment/`. Có 3 bước hướng dẫn, dòng "Phòng: ……" để viết tay, chân trang ghi người hỗ trợ.
 - Kiểm tra: giải mã (zxing-cpp) cả ảnh PNG từ segno và ảnh chụp trang render bằng Edge headless → đúng URL. Ảnh chụp cho thấy vừa khổ A4 (lần đầu chân trang bị tràn, đã thu nhỏ QR 145→130 mm).
+
+- Chốt phiên: đã xác nhận `main` = `origin/main` (0c31ba5), cả 2 file in đã có trên GitHub. Ngày 15/10 in ở máy cơ quan sau khi chạy `git pull`.
