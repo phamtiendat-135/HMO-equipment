@@ -61,6 +61,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 .action-btn.primary { background: #2F5496; color: white; border-color: #2F5496; grid-column: 1 / -1; flex-direction: row; justify-content: center; padding: 12px; font-size: 14px; }
 .action-btn.primary:hover { background: #1a3a6b; }
 .action-btn.disabled { opacity: 0.45; pointer-events: none; cursor: not-allowed; background: #f5f5f5; color: #999; border-color: #e0e0e0; }
+.actions > .action-btn:last-child:nth-child(odd) { grid-column: 1 / -1; }
 .history-panel { display: none; margin: 0 20px 16px; border: 1.5px solid #d9e2f3; border-radius: 10px; overflow: hidden; }
 .history-panel.open { display: block; }
 .history-title { padding: 12px 14px; background: #f0f4ff; color: #2F5496; font-size: 13px; font-weight: 600; }
@@ -1269,9 +1270,13 @@ const FORMS = {
   return: 'https://docs.google.com/forms/d/e/1FAIpQLSeYhsLtYYCYC1tAxMu472BITIBXqA-Mch6T8fZUttelpFH41g/viewform?usp=pp_url&entry.1569370753=',
   maintain: 'https://docs.google.com/forms/d/e/1FAIpQLSc0mJj0Q_DXoUewdFE3yWi9wUgL3Qrw2jQKmfPKZGUb2jU6cw/viewform?usp=pp_url&entry.1832659835=',
   report: 'https://docs.google.com/forms/d/e/1FAIpQLSfuqZ1GzbTnboOz5In7fvYcRK8b2GIluDk3_UYbEBAbH5b6eQ/viewform?usp=pp_url&entry.2054726393=',
+  // Sử dụng tại chỗ (không cần duyệt) — dán URL in ra từ createOnsiteFormOnly() trong Create_Google_Forms.js
+  onsite: 'https://docs.google.com/forms/d/e/FORM_ID_TAICHO/viewform?usp=pp_url&entry.FIELD_QR=',
   training: 'https://docs.google.com/forms/d/e/FORM_ID_DAOTAO/viewform?usp=pp_url&entry.FIELD_QR=',
   research: 'https://docs.google.com/forms/d/e/FORM_ID_NCKH/viewform?usp=pp_url&entry.FIELD_QR='
 };
+// Chưa có form tại chỗ → giữ 1 nút "Đăng ký mượn/Sử dụng" như cũ
+const ONSITE_READY = !FORMS.onsite.includes('FORM_ID');
 
 // === WEB APP URL — hiển thị trạng thái mượn real-time ===
 // Sau khi Deploy Apps Script Web App, paste URL vào đây rồi push lên GitHub.
@@ -1309,10 +1314,12 @@ const LOAN_STATUS_LABELS = {
   pending: '<span class="history-status active">Chờ duyệt</span>',
   approved: '<span class="history-status active">Đang sử dụng</span>',
   returned: '<span class="history-status">Đã trả</span>',
-  rejected: '<span class="history-status overdue">Từ chối</span>'
+  rejected: '<span class="history-status overdue">Từ chối</span>',
+  onsite: '<span class="history-status">Tại chỗ</span>'
 };
 function loanStatusLabel(entry) {
   if (entry.isOverdue) return '<span class="history-status overdue">Quá hạn</span>';
+  if (entry.status === 'onsite' && entry.isActive) return '<span class="history-status active">Đang dùng tại chỗ</span>';
   return LOAN_STATUS_LABELS[entry.status] || (entry.isActive ? LOAN_STATUS_LABELS.approved : LOAN_STATUS_LABELS.returned);
 }
 
@@ -1376,8 +1383,8 @@ function submitInput(sectionId, qrCode, type) {
  * Nếu WEB_APP_URL chưa cấu hình hoặc bị lỗi mạng → ẩn badge, không báo lỗi cho người dùng.
  */
 function fetchBorrowStatus(qrCode) {
-  const badge     = document.getElementById('avail-badge');
-  const borrowBtn = document.getElementById('borrow-btn');
+  const badge      = document.getElementById('avail-badge');
+  const borrowBtns = ['borrow-btn', 'onsite-btn'].map(id => document.getElementById(id)).filter(Boolean);
 
   if (!WEB_APP_URL) {
     if (badge) badge.style.display = 'none';
@@ -1415,9 +1422,10 @@ function fetchBorrowStatus(qrCode) {
         // Hết — disable nút
         let text = '';
         if (qty === 1) {
-          text = bs.status === 'pending' ? '🟠 Đang giữ chỗ (chờ duyệt)' : '🔴 Đang được mượn';
+          text = bs.status === 'pending' ? '🟠 Đang giữ chỗ (chờ duyệt)'
+            : bs.status === 'onsite' ? '🔵 Đang sử dụng tại chỗ' : '🔴 Đang được mượn';
           if (bs.borrower) text += ' — ' + bs.borrower;
-          if (bs.dueDate)  text += ' (hạn: ' + bs.dueDate + ')';
+          if (bs.dueDate)  text += (bs.status === 'onsite' ? ' (đến ' : ' (hạn: ') + bs.dueDate + ')';
           if (bs.daysOverdue > 0) {
             badge.className = 'avail-badge avail-overdue';
             text += ' ⚠️ Quá ' + bs.daysOverdue + ' ngày';
@@ -1430,13 +1438,14 @@ function fetchBorrowStatus(qrCode) {
         }
         badge.textContent = text;
 
-        if (borrowBtn && !borrowBtn.classList.contains('disabled')) {
-          borrowBtn.classList.add('disabled');
-          borrowBtn.removeAttribute('href');
-          borrowBtn.setAttribute('title', qty === 1
-            ? 'Thiết bị đang được mượn — không thể đăng ký'
-            : 'Không còn thiết bị sẵn sàng để mượn');
-        }
+        borrowBtns.forEach(btn => {
+          if (btn.classList.contains('disabled')) return;
+          btn.classList.add('disabled');
+          btn.removeAttribute('href');
+          btn.setAttribute('title', qty === 1
+            ? 'Thiết bị đang được sử dụng — không thể đăng ký'
+            : 'Không còn thiết bị sẵn sàng');
+        });
       }
     })
     .catch(() => {
@@ -1614,9 +1623,12 @@ function showEquipment(qrCode) {
       Tình trạng hiện tại: <strong>${eq.status}</strong>. Vui lòng liên hệ CB quản lý để biết thêm.
     </div>` : '';
   
-  const borrowBtn = isInactive
-    ? `<span class="action-btn disabled"><span class="icon">📋</span>Đăng ký mượn/Sử dụng</span>`
-    : `<a class="action-btn" id="borrow-btn" href="${FORMS.borrow}${qrCode}" target="_blank"><span class="icon">📋</span>Đăng ký mượn/Sử dụng</a>`;
+  const usageButtons = ONSITE_READY
+    ? [['borrow-btn', FORMS.borrow, '📦', 'Mượn mang đi'], ['onsite-btn', FORMS.onsite, '🔬', 'Sử dụng tại chỗ']]
+    : [['borrow-btn', FORMS.borrow, '📋', 'Đăng ký mượn/Sử dụng']];
+  const borrowBtn = usageButtons.map(([id, formUrl, icon, label]) => isInactive
+    ? `<span class="action-btn disabled"><span class="icon">${icon}</span>${label}</span>`
+    : `<a class="action-btn" id="${id}" href="${formUrl}${qrCode}" target="_blank"><span class="icon">${icon}</span>${label}</a>`).join('');
   
   document.getElementById('content').innerHTML = `
     <div class="equip-card">

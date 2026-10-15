@@ -15,9 +15,9 @@ async function test(name, fn) {
 const tick = (ms = 30) => new Promise(r => setTimeout(r, ms));
 
 /** Mở trang với URL + API giả. api(url) trả object JSON, hoặc ném lỗi để giả mất mạng. */
-function openPage(search = '', api = () => ({})) {
+function openPage(search = '', api = () => ({}), html = HTML) {
   const calls = [];
-  const dom = new JSDOM(HTML, {
+  const dom = new JSDOM(html, {
     runScripts: 'dangerously',
     url: 'https://example.test/HMO-equipment/' + search,
     beforeParse(w) {
@@ -130,6 +130,48 @@ function openPage(search = '', api = () => ({})) {
     assert.equal(p.d.querySelector('#manager-value b'), null);
   });
 
+  // ---------------- Mượn mang đi / Sử dụng tại chỗ ----------------
+  const ONSITE_URL = 'https://docs.google.com/forms/d/e/ONSITE123/viewform?usp=pp_url&entry.777=';
+  const HTML_ONSITE = HTML.replace(/onsite: '[^']*'/, `onsite: '${ONSITE_URL}'`);
+  const free = () => ({ _borrowStatus: { available: true, borrowedCount: 0 } });
+  await test('Tại chỗ: chưa có form → giữ 1 nút "Đăng ký mượn/Sử dụng" như cũ', async () => {
+    const p = openPage('?id=HMO-OBS-8693', free);
+    await tick();
+    assert.ok(p.d.getElementById('borrow-btn'));
+    assert.equal(p.d.getElementById('onsite-btn'), null);
+    assert.match(p.d.getElementById('borrow-btn').textContent, /Đăng ký mượn\/Sử dụng/);
+  });
+  await test('Tại chỗ: có form → 2 nút "Mượn mang đi" + "Sử dụng tại chỗ", điền sẵn mã QR', async () => {
+    assert.notEqual(HTML_ONSITE, HTML, 'thay được URL form tại chỗ');
+    const p = openPage('?id=HMO-OBS-8693', free, HTML_ONSITE);
+    await tick();
+    assert.match(p.d.getElementById('borrow-btn').textContent, /Mượn mang đi/);
+    const onsite = p.d.getElementById('onsite-btn');
+    assert.match(onsite.textContent, /Sử dụng tại chỗ/);
+    assert.equal(onsite.getAttribute('href'), ONSITE_URL + 'HMO-OBS-8693');
+  });
+  await test('Tại chỗ: thiết bị đang dùng tại chỗ → badge xanh, khóa cả 2 nút', async () => {
+    const p = openPage('?id=HMO-HPC-7879', () => ({ _borrowStatus:
+      { available: false, borrowedCount: 1, borrower: 'Phan H. N.', dueDate: '16:30 15/10', daysOverdue: 0, status: 'onsite' } }), HTML_ONSITE);
+    await tick();
+    assert.match(p.d.getElementById('avail-badge').textContent, /Đang sử dụng tại chỗ — Phan H\. N\. \(đến 16:30 15\/10\)/);
+    assert.ok(p.d.getElementById('borrow-btn').classList.contains('disabled'));
+    assert.ok(p.d.getElementById('onsite-btn').classList.contains('disabled'));
+  });
+  await test('Tại chỗ: thiết bị Hỏng → cả 2 nút đều bị khóa', async () => {
+    const p = openPage('?id=HMO-HPC-7748', free, HTML_ONSITE);
+    await tick();
+    const labels = [...p.d.querySelectorAll('.actions .action-btn.disabled')].map(b => b.textContent);
+    assert.ok(labels.some(t => /Mượn mang đi/.test(t)) && labels.some(t => /Sử dụng tại chỗ/.test(t)), labels.join('|'));
+  });
+  await test('Lịch sử: nhãn "Đang dùng tại chỗ" / "Tại chỗ"', async () => {
+    const html = await historyPage({ ok: true, history: [
+      { borrower: 'A', borrowDate: '15/10/2026', returnDate: '15/10/2026', usageHours: 2, status: 'onsite', isActive: true },
+      { borrower: 'B', borrowDate: '14/10/2026', returnDate: '14/10/2026', usageHours: 3, status: 'onsite', isActive: false }] });
+    assert.match(html, /Đang dùng tại chỗ/);
+    assert.match(html, />Tại chỗ</);
+  });
+
   // ---------------- Đào tạo / NCKH chưa kết nối ----------------
   await test('Đào tạo/NCKH chưa có form: KHÔNG báo "Đã ghi nhận", giữ nội dung đã nhập', async () => {
     const p = openPage('?id=HMO-OBS-8693', () => ({ _borrowStatus: { available: true, borrowedCount: 0 } }));
@@ -165,7 +207,7 @@ function openPage(search = '', api = () => ({})) {
     const ctx = vm.createContext({
       self: { addEventListener: (t, f) => { handlers[t] = f; }, skipWaiting() {}, clients: { claim: () => Promise.resolve() },
         location: { hostname: 'example.test' } },
-      caches: { keys: () => Promise.resolve(['hmo-equipment-v9', 'hmo-equipment-v10', 'other-app-v1']),
+      caches: { keys: () => Promise.resolve(['hmo-equipment-v10', 'hmo-equipment-v11', 'other-app-v1']),
         delete: k => { deleted.push(k); return Promise.resolve(true); } },
       URL, Response: class {}, JSON, Promise, fetch: () => Promise.reject(new Error('x'))
     });
@@ -173,7 +215,7 @@ function openPage(search = '', api = () => ({})) {
     let waited;
     handlers.activate({ waitUntil: p => { waited = p; } });
     await waited;
-    assert.deepEqual(deleted, ['hmo-equipment-v9']);
+    assert.deepEqual(deleted, ['hmo-equipment-v10']);
   });
   await test('Service worker: tài nguyên không phải trang lỗi → không trả HTML thay thế', async () => {
     const handlers = {};

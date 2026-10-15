@@ -567,6 +567,252 @@ test('Ngày: không đọc được ô → vẫn đọc chữ dd/MM/yyyy như c�
   assert.ok(sameDay(lastRow(h)[6], 2026, 9, 5) && sameDay(lastRow(h)[7], 2026, 9, 12));
 });
 
+// ====================== Sử dụng tại chỗ: không cần duyệt, tự đóng ======================
+const onsiteFields = (over = {}) => Object.assign({
+  'Mã QR thiết bị': QR, 'Tên thiết bị': 'Máy đo chất lượng nước', 'Họ và tên người sử dụng': 'Nguyễn Văn A',
+  'Đơn vị / Nhóm nghiên cứu': 'BM Thủy văn', 'Mục đích sử dụng': 'Thí nghiệm', 'Số giờ sử dụng (dự kiến)': '3',
+  'Email Address': 'a@example.invalid'
+}, over);
+const onsiteEvent = over => formEvent(onsiteFields(over), 'Form Responses 5');
+
+test('Tại chỗ: form được nhận diện riêng, không lẫn với form mượn', () => {
+  const h = harness();
+  assert.equal(h.ctx.classifyFormEvent_(onsiteEvent().namedValues), 'onsite');
+  assert.equal(h.ctx.classifyFormEvent_(formEvent(borrowFields()).namedValues), 'borrow');
+});
+test('Tại chỗ: TB ≥ 100 triệu KHÔNG cần duyệt, tự đóng sau số giờ khai báo, báo PTK', () => {
+  const h = harness([], { props: { APPROVAL_SECRET: 's' } });
+  const before = Date.now();
+  h.ctx.onFormSubmitDispatch(onsiteEvent());
+  const r = lastRow(h);
+  assert.match(r[12], /Sử dụng tại chỗ — không cần duyệt/);
+  assert.ok(!/Chờ phê duyệt/.test(r[12]));
+  assert.ok(r[6] instanceof Date && r[6].getTime() >= before, 'bắt đầu = lúc khai báo');
+  assert.equal(r[8].getTime() - r[6].getTime(), 3 * 3600000, 'kết thúc = bắt đầu + 3 giờ');
+  assert.equal(r[16], 3);
+  assert.equal(r[5], 'Tại chỗ — P204-T3');
+  assert.equal(h.mail.length, 1);
+  assert.equal(h.mail[0][0], 'datpt@hus.edu.vn');
+  assert.match(h.mail[0][1], /Sử dụng tại chỗ/);
+  assert.ok(!/loan=/.test(h.mail[0][2]) && !/loan=|PHÊ DUYỆT/.test(h.mail[0][3].htmlBody), 'không có link phê duyệt');
+  assert.match(h.mail[0][3].htmlBody, /TẠI CHỖ · KHÔNG CẦN DUYỆT[\s\S]*Thời gian sử dụng[\s\S]*3 giờ/);
+});
+test('Tại chỗ: trong giờ khai báo vẫn giữ chỗ — mượn mang đi bị từ chối, badge "onsite"', () => {
+  const h = harness();
+  h.ctx.onFormSubmitOnsite(onsiteEvent());
+  const bs = h.ctx.checkBorrowStatus_(QR);
+  assert.equal(bs.available, false);
+  assert.equal(bs.status, 'onsite');
+  assert.match(bs.dueDate, /^\d\d:\d\d \d\d\/\d\d$/);
+  h.ctx.onFormSubmitBorrow(formEvent(borrowFields()));
+  assert.match(lastRow(h)[12], /hết \(1\/1\)/);
+  const hist = JSON.parse(h.ctx.doGet({ parameter: { action: 'history', id: QR } }).text).history;
+  assert.equal(hist[0].status, 'onsite');
+  assert.equal(hist[0].isActive, true);
+});
+test('Tại chỗ: hết giờ → nhả chỗ, KHÔNG nhắc quá hạn / nhắc trả', () => {
+  const h = harness();
+  h.ctx.onFormSubmitOnsite(onsiteEvent());
+  const r = lastRow(h);
+  r[6] = new Date(Date.now() - 10 * 86400000);
+  r[7] = r[8] = new Date(r[6].getTime() + 3 * 3600000);
+  assert.equal(h.ctx.checkBorrowStatus_(QR).available, true);
+  h.ctx.checkOverdueReturns();
+  h.ctx.checkUpcomingReturns();
+  assert.equal(h.mail.length, 1, 'chỉ có email thông báo lúc khai báo');
+  const e = h.ctx.getAllUsageLog_(10)[0];
+  assert.equal(e.status, 'onsite');
+  assert.equal(e.isActive, false);
+  assert.equal(e.isOverdue, false);
+});
+test('Tại chỗ: số giờ không hợp lệ / TB hỏng → tự động từ chối, không giữ chỗ', () => {
+  const h = harness();
+  for (const hours of ['0', '30', 'abc']) {
+    h.ctx.onFormSubmitOnsite(onsiteEvent({ 'Số giờ sử dụng (dự kiến)': hours }));
+    assert.match(lastRow(h)[12], /Tự động từ chối — Số giờ sử dụng/, hours);
+    assert.equal(lastRow(h)[8], '', 'không tự đóng khoản bị từ chối');
+  }
+  assert.equal(h.ctx.checkBorrowStatus_(QR).available, true);
+  h.ctx.onFormSubmitOnsite(onsiteEvent({ 'Mã QR thiết bị': 'HMO-PC-0001' }));
+  assert.match(lastRow(h)[12], /tình trạng "Hỏng"/);
+  assert.ok(h.mail.some(m => /Khai báo sử dụng tại chỗ bị từ chối tự động/.test(m[1])));
+});
+test('Tại chỗ: TB đang được mượn mang đi → từ chối khai báo', () => {
+  const h = harness([legacyLoan('B', '✅ Đã phê duyệt')]);
+  h.ctx.onFormSubmitOnsite(onsiteEvent());
+  assert.match(lastRow(h)[12], /hết \(1\/1\)/);
+});
+test('Tại chỗ: quét "Xác nhận trả" khi đang dùng tại chỗ → không đóng gì, báo rõ lý do', () => {
+  const h = harness();
+  h.ctx.onFormSubmitOnsite(onsiteEvent());
+  const end = lastRow(h)[8];
+  h.ctx.onFormSubmitReturn(formEvent(returnFields({ 'Ngày trả': fakeFormatDate(new Date(), '', 'dd/MM/yyyy') }), 'Form Responses 2'));
+  assert.equal(lastRow(h)[8], end);
+  assert.ok(h.mail.some(m => /tự đóng khi hết giờ/.test(m[2])));
+});
+test('Tại chỗ: chạy lại cùng phản hồi → chỉ 1 dòng, 1 email', () => {
+  const h = harness();
+  const e = onsiteEvent();
+  h.ctx.onFormSubmitOnsite(e);
+  h.ctx.onFormSubmitOnsite(e);
+  assert.equal(h.log.rows.length, 2);
+  assert.equal(h.mail.length, 1);
+});
+test('Báo cáo tháng: tách lượt mượn mang đi và lượt tại chỗ (có giờ)', () => {
+  const now = new Date();
+  const inLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 10, 9);
+  const borrow = legacyLoan('A', '✅ Đã phê duyệt');
+  borrow[6] = inLastMonth; borrow[8] = new Date(now.getFullYear(), now.getMonth() - 1, 12);
+  const onsite = legacyLoan('B', '🔬 Sử dụng tại chỗ — không cần duyệt');
+  onsite[6] = inLastMonth; onsite[8] = new Date(inLastMonth.getTime() + 2.5 * 3600000); onsite[16] = 2.5;
+  const h = harness([borrow, onsite]);
+  h.ctx.generateAnnualUsageReport = () => {};
+  h.ctx.monthlyReport();
+  const body = h.mail[0][2];
+  assert.match(body, /Lượt mượn mang đi: 1\n/);
+  assert.match(body, /Lượt trả: 1\n/);
+  assert.match(body, /Lượt sử dụng tại chỗ: 1 \(2\.5 giờ\)/);
+});
+test('Báo cáo năm: khai báo tại chỗ tính đúng số giờ (giữ giờ bắt đầu)', () => {
+  const r = legacyLoan('A', '🔬 Sử dụng tại chỗ — không cần duyệt');
+  r[6] = new Date(2025, 2, 3, 14, 0); r[8] = new Date(2025, 2, 3, 17, 0);
+  const rep = annual([r], 2025);
+  assert.equal(rep.times, 1);
+  assert.equal(rep.totalHours, 3);
+});
+
+// ====================== Email kết quả phê duyệt gửi người mượn ======================
+function decide(action, name) {
+  const h = harness([], { props: { APPROVAL_SECRET: 's' } });
+  h.ctx.onFormSubmitBorrow(formEvent(borrowFields(name ? { 'Họ và tên người mượn': name } : {})));
+  const p = params(run(h, `buildApprovalLink_('${action}', '${lastRow(h)[18]}')`));
+  h.ctx.confirmApprovalFromPage(p.action, p.loan, p.t, p.sig);
+  return h.mail.find(m => m[0] === 'a@example.invalid');
+}
+test('Email duyệt: có hạn trả (tiêu đề + nội dung), tên in đậm, xưng "thầy/cô", nút thêm vào lịch', () => {
+  const m = decide('approve');
+  assert.match(m[1], /Đã duyệt mượn .* — hạn trả 25\/09\/2026/);
+  const html = m[3].htmlBody;
+  assert.ok(html.includes('Kính gửi thầy/cô <strong>Nguyễn Văn A</strong>'), 'tên in đậm');
+  assert.match(html, /Hạn trả thiết bị[\s\S]*25\/09\/2026/);
+  assert.match(html, /20\/09\/2026/, 'có ngày mượn');
+  assert.match(html, /calendar\.google\.com[^"]*dates=20260925\/20260926/);
+  assert.match(m[2], /HẠN TRẢ\s*: (Thứ|Chủ).*25\/09\/2026/, 'bản chữ thường cũng có hạn trả');
+  for (const text of [m[2], html]) assert.ok(!/\bbạn\b/i.test(text), 'không còn xưng "bạn"');
+});
+test('Email từ chối: không có ô hạn trả / nút lịch, vẫn xưng "thầy/cô"', () => {
+  const m = decide('reject');
+  assert.match(m[1], /bị TỪ CHỐI/);
+  const html = m[3].htmlBody;
+  assert.ok(!/Hạn trả thiết bị|calendar\.google/.test(html));
+  assert.match(html, /KHÔNG ĐƯỢC DUYỆT/);
+  assert.match(html, /thầy\/cô <strong>/);
+});
+test('Email duyệt: tên người mượn chứa HTML bị escape', () => {
+  const html = decide('approve', '<img src=x onerror=alert(1)>')[3].htmlBody;
+  assert.ok(!html.includes('<img src=x') && html.includes('&lt;img'));
+});
+function approveWithGuide(guide, opts = {}) {
+  const h = harness([], { props: { APPROVAL_SECRET: 's' } });
+  if (opts.defaultUrl) run(h, `CONFIG.GUIDE_DEFAULT_URL = ${JSON.stringify(opts.defaultUrl)}`);
+  if (guide !== undefined) {
+    h.sheets.Master_Data.rows[0].push('Link hướng dẫn sử dụng');
+    h.sheets.Master_Data.rows[1].push(guide);
+  }
+  h.ctx.onFormSubmitBorrow(formEvent(borrowFields()));
+  if (opts.masterBreaksLater) h.sheets.Master_Data.getDataRange = () => { throw new Error('Sheet lỗi'); };
+  const p = params(run(h, `buildApprovalLink_('approve', '${lastRow(h)[18]}')`));
+  h.ctx.confirmApprovalFromPage(p.action, p.loan, p.t, p.sig);
+  return h.mail.find(m => m[0] === 'a@example.invalid');
+}
+test('Email duyệt: chưa có cột / ô trống → nút "Hướng dẫn sử dụng" mờ + "(đang cập nhật)"', () => {
+  for (const guide of [undefined, '']) {
+    const m = approveWithGuide(guide);
+    assert.match(m[3].htmlBody, /📘 Hướng dẫn sử dụng<\/div>\s*<div[^>]*>\(đang cập nhật\)/);
+    assert.match(m[2], /Hướng dẫn sử dụng: \(đang cập nhật\)/);
+  }
+});
+test('Email duyệt: có link Google Site → nút bấm được, không còn "(đang cập nhật)"', () => {
+  const url = 'https://sites.google.com/hus.edu.vn/hmo-thiet-bi/horiba-u52';
+  const m = approveWithGuide(url);
+  assert.ok(m[3].htmlBody.includes(`href="${url}"`));
+  assert.ok(!/đang cập nhật/.test(m[3].htmlBody));
+  assert.match(m[2], new RegExp('Hướng dẫn sử dụng: ' + url.replace(/[./]/g, '\\$&')));
+});
+test('Email duyệt: link không phải https (javascript:, chữ) bị bỏ qua; trang chung được dùng khi thiếu link riêng', () => {
+  assert.match(approveWithGuide('javascript:alert(1)')[3].htmlBody, /\(đang cập nhật\)/);
+  const m = approveWithGuide('', { defaultUrl: 'https://sites.google.com/hus.edu.vn/hmo-thiet-bi' });
+  assert.ok(m[3].htmlBody.includes('href="https://sites.google.com/hus.edu.vn/hmo-thiet-bi"'));
+});
+test('Email duyệt: tra link hướng dẫn lỗi → vẫn gửi email (nút "đang cập nhật")', () => {
+  const m = approveWithGuide('https://x.example/guide', { masterBreaksLater: true });
+  assert.ok(m, 'email vẫn được gửi');
+  assert.match(m[3].htmlBody, /\(đang cập nhật\)/);
+});
+test('Email từ chối: không có nút hướng dẫn', () => {
+  assert.ok(!/Hướng dẫn sử dụng/.test(decide('reject')[3].htmlBody));
+});
+test('Menu: tạo cột Link hướng dẫn 1 lần, chạy lại không tạo trùng', () => {
+  const h = harness();
+  h.ctx.ensureGuideColumn();
+  h.ctx.ensureGuideColumn();
+  const header = h.sheets.Master_Data.rows[0];
+  assert.equal(header.filter(x => x === 'Link hướng dẫn sử dụng').length, 1);
+  assert.equal(header[header.length - 1], 'Link hướng dẫn sử dụng');
+});
+test('Email nhắc trả / quá hạn xưng "thầy/cô", không còn "bạn"', () => {
+  const overdue = harness([legacyLoan('A', '✅ Đã phê duyệt', 'a@example.invalid')]);
+  overdue.ctx.checkOverdueReturns();
+  const soon = legacyLoan('A', '✅ Đã phê duyệt', 'a@example.invalid');
+  soon[7] = new Date(Date.now() + 86400000);
+  const upcoming = harness([soon]);
+  upcoming.ctx.checkUpcomingReturns();
+  for (const h of [overdue, upcoming]) {
+    const m = h.mail.find(x => x[0] === 'a@example.invalid');
+    assert.ok(m && /Kính gửi thầy\/cô A/.test(m[2]) && !/\bbạn\b/i.test(m[2]), m && m[2]);
+  }
+});
+
+// ====================== Email đồng bộ: cùng khung có logo, escape dữ liệu ======================
+test('Email đồng bộ: xin duyệt, thông báo, tại chỗ, từ chối tự động, nhắc trả, quá hạn đều có HTML + logo, escape tên', () => {
+  const bad = '<b onmouseover=x>Tên</b>';
+  const logo = 'https://phamtiendat-135.github.io/HMO-equipment/HMO_logo.jpg';
+  const check = (h, label, min) => {
+    assert.ok(h.mail.length >= min, label + ': thiếu email');
+    for (const m of h.mail) {
+      const html = m[3] && m[3].htmlBody;
+      assert.ok(html, `${label}: "${m[1]}" không có HTML`);
+      assert.ok(html.includes(`src="${logo}"`), `${label}: thiếu logo`);
+      assert.ok(!html.includes(bad) && html.includes('&lt;b onmouseover'), `${label}: tên không được escape`);
+    }
+  };
+  let h = harness([], { props: { APPROVAL_SECRET: 's' } });
+  h.ctx.onFormSubmitBorrow(formEvent(borrowFields({ 'Họ và tên người mượn': bad })));
+  check(h, 'xin duyệt', 1);
+  h = harness();
+  h.ctx.onFormSubmitBorrow(formEvent(borrowFields({ 'Họ và tên người mượn': bad, 'Mã QR thiết bị': 'HMO-LAB-0002' })));
+  assert.match(h.mail[0][3].htmlBody, /THÔNG BÁO — KHÔNG CẦN DUYỆT/);
+  check(h, 'thông báo dưới ngưỡng', 1);
+  h = harness();
+  h.ctx.onFormSubmitOnsite(onsiteEvent({ 'Họ và tên người sử dụng': bad }));
+  check(h, 'tại chỗ', 1);
+  h = harness();
+  h.ctx.onFormSubmitBorrow(formEvent(borrowFields({ 'Họ và tên người mượn': bad, 'Mã QR thiết bị': 'HMO-PC-0001' })));
+  check(h, 'từ chối tự động', 2);
+  assert.match(h.mail[1][3].htmlBody, /Kính gửi thầy\/cô <strong>/, 'bản gửi người mượn có lời chào');
+  assert.match(h.mail[1][2], /^Kính gửi thầy\/cô /);
+  h = harness([legacyLoan(bad, '✅ Đã phê duyệt', 'a@example.invalid')]);
+  h.ctx.checkOverdueReturns();
+  check(h, 'quá hạn (người mượn + tổng hợp PTK)', 2);
+  assert.ok(h.mail.some(m => /THIẾT BỊ QUÁ HẠN/.test(m[3].htmlBody) && m[0] === 'datpt@hus.edu.vn'));
+  const soon = legacyLoan(bad, '✅ Đã phê duyệt', 'a@example.invalid');
+  soon[7] = new Date(Date.now() + 86400000);
+  h = harness([soon]);
+  h.ctx.checkUpcomingReturns();
+  check(h, 'nhắc trả', 1);
+  assert.match(h.mail[0][3].htmlBody, /SẮP ĐẾN HẠN TRẢ/);
+});
+
 // ---------- Kết quả ----------
 let failed = 0;
 for (const [ok, name, err] of results) {

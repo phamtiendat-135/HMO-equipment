@@ -30,7 +30,7 @@ QR Label on device
 | `index.html` | Bản deploy của landing page (GitHub Pages) — đã wire-up PWA | ✅ 4 form chính có URL thật; ⚠️ training/research còn placeholder (~line 1251) |
 | `QR_Landing_Page.html` | Mobile-friendly lookup page — scan QR → xem info + nút hành động (đồng bộ với index.html) | ✅ 4 form chính có URL thật; ⚠️ training/research còn placeholder (~line 1251) |
 | `manifest.json` | PWA manifest — name, icons 192/512, standalone, theme_color #1a3a6b | ✅ Cấu hình sẵn |
-| `sw.js` | Service worker — cache-first app shell, network-first script.google.com API (CACHE v6, có GET-guard) | ✅ Hoạt động |
+| `sw.js` | Service worker — cache-first app shell, network-first script.google.com API (CACHE v11, có GET-guard) | ✅ Hoạt động |
 | `icons/icon-192.png`, `icons/icon-512.png` | PWA icons | ✅ Có sẵn |
 | `Kich_ban_video_HMO_Eq.docx` | Kịch bản video hướng dẫn (caption + storyboard, gồm đoạn cài đặt app 3 nền tảng) | ✅ Hoàn thành |
 | `Slide_intro_outro_HMO_Eq.pptx` | Slide intro/outro 9:16 cho video | ✅ Hoàn thành |
@@ -88,8 +88,9 @@ QR Label on device
 | `checkOverdueReturns()` | Daily 8am | Quét tất cả sheet (Log + Form Responses) tìm TB quá hạn, gửi email |
 | `checkMaintenanceSchedule()` | Weekly Monday 9am | Emails about upcoming/overdue maintenance |
 | `monthlyReport()` | 1st of month 8am | Sends monthly summary report |
-| `onFormSubmitDispatch(e)` | On form submit | Nhận diện 4 form theo bộ câu hỏi (`FORM_SIGNATURES`) → mượn / trả / bảo trì / báo hỏng; form lạ → báo admin, không xử lý; lỗi → ném ra (execution Failed) |
+| `onFormSubmitDispatch(e)` | On form submit | Nhận diện 5 form theo bộ câu hỏi (`FORM_SIGNATURES`) → mượn / tại chỗ / trả / bảo trì / báo hỏng; form lạ → báo admin, không xử lý; lỗi → ném ra (execution Failed) |
 | `onFormSubmitBorrow(e)` | qua dispatcher | Kiểm tra (QR có trong Master, không Hỏng/Không hoạt động, còn số lượng, ngày hợp lệ) → khóa → ghi Log (có LoanID) → gửi mail. Không hợp lệ → tự động từ chối |
+| `onFormSubmitOnsite(e)` | qua dispatcher | Sử dụng tại chỗ: cùng kiểm tra như mượn + số giờ (≤ `ONSITE_MAX_HOURS`), KHÔNG cần duyệt, tự đóng (cột I = lúc gửi + số giờ, giữ chỗ tới lúc đó), email thông báo PTK |
 | `onFormSubmitReturn(e)` | qua dispatcher | Đóng đúng khoản (1 khoản / khớp email / khớp tên); không chắc chắn hoặc ngày sai → KHÔNG đóng, báo admin |
 | `onFormSubmitMaintenance(e)` / `onFormSubmitDamage(e)` | qua dispatcher | Ghi `Log_Bao_Tri` / `Log_Bao_Hong`, báo admin |
 | `resendPendingApprovals()` | Manual (menu) | Gửi lại email phê duyệt cho mọi yêu cầu còn chờ (link mới) |
@@ -225,6 +226,18 @@ Trước khi kết thúc MỌI phiên làm việc trong workspace này, tạo ho
 - Ngày trên 4 form (mượn, hạn trả, ngày trả, ngày bảo trì/hiệu chuẩn, thời điểm phát hiện hỏng) đọc từ **giá trị Date trong ô** của tab Form Responses (`formCellValues_` + `formDateFinder_`), quy về múi giờ của Sheet (`wallClockDate_`). Không còn phụ thuộc Ngôn ngữ của Sheet (locale Mỹ từng làm `e.namedValues` thành M/D/YYYY → đọc sai ngày). Không đọc được ô thì dùng chữ dd/MM/yyyy như cũ.
 - Test: `tests/backend_regression.cjs` 46 test (thêm 6 test ngày; 5 test mới fail trên code cũ).
 - Vẫn nên để Sheet: Ngôn ngữ Việt Nam, Múi giờ GMT+07:00 (dấu thời gian trong cột T và hiển thị).
+
+## Changes Log (Session 15/10/2026 — Mượn mang đi / Sử dụng tại chỗ)
+
+- Thêm hình thức **Sử dụng tại chỗ** (không cần phê duyệt, không cần quét trả) bên cạnh **Mượn mang đi** (giữ nguyên luồng duyệt ≥ 100 tr).
+- Form riêng tạo bằng `createOnsiteFormOnly()` (`Create_Google_Forms.js`); chữ ký nhận diện: câu hỏi "Họ và tên người sử dụng", "Số giờ sử dụng (dự kiến)".
+- Log: dòng tại chỗ có cột M = `🔬 Sử dụng tại chỗ — không cần duyệt` (`isOnsite_`), cột I = giờ kết thúc, cột Q = số giờ khai báo. Không thêm cột, không đổi schema. API trả status `onsite`.
+- Landing page: `FORMS.onsite` còn placeholder `FORM_ID_TAICHO` → vẫn 1 nút như cũ; có URL thật → 2 nút "📦 Mượn mang đi" / "🔬 Sử dụng tại chỗ". `sw.js` v11.
+- Báo cáo tháng tách lượt mượn mang đi / tại chỗ (có giờ); báo cáo năm giữ giờ bắt đầu thật (không cắt về 00:00).
+- Email kết quả phê duyệt gửi người mượn: HTML (`buildDecisionEmail_`) — hạn trả trong tiêu đề + ô nổi bật, tên in đậm, nút "Thêm vào lịch" (Google Calendar). Mọi email gửi người mượn xưng "thầy/cô" (không dùng "bạn").
+- Nút "📘 Hướng dẫn sử dụng" trong email đã duyệt: link lấy từ cột **"Link hướng dẫn sử dụng"** của Master_Data (tạo bằng menu "📘 Tạo cột Link hướng dẫn…" → `ensureGuideColumn()`), chỉ nhận `https://`; thiếu thì dùng `CONFIG.GUIDE_DEFAULT_URL`; cả hai trống → nút mờ + "(đang cập nhật)". Thêm link vào Sheet là có hiệu lực ngay, không cần deploy.
+- Header email có logo HMO (`CONFIG.LOGO_URL` → `HMO_logo.jpg` trên GitHub Pages). **Không xoá/đổi tên `HMO_logo.jpg` trong repo** — email sẽ mất logo.
+- Khung email HTML dùng chung (`emailLayout_` + `emailBlock_`, `emailPill_`, `emailHighlight_`, `emailNotice_`, `emailDetails_`, `emailButton_`…, tông màu `EMAIL_TONE`). Đã áp dụng cho: kết quả phê duyệt, xin duyệt / thông báo mượn (PTK), tại chỗ, từ chối tự động, nhắc trả, quá hạn (người mượn + tổng hợp PTK). Mỗi email vẫn gửi kèm bản chữ thường. **Chưa** đổi: trả TB, bảo trì, báo hỏng, báo cáo tháng/năm, lỗi hệ thống.
 
 ## Deploy Apps Script (clasp)
 

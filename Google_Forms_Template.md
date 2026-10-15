@@ -31,6 +31,28 @@ và cập nhật vào file `QR_Landing_Page.html` (phần `FORMS`).
 
 ---
 
+## Form 1b: KHAI BÁO SỬ DỤNG TẠI CHỖ (không cần phê duyệt)
+
+Tạo bằng hàm `createOnsiteFormOnly()` trong `Create_Google_Forms.js` (chạy 1 lần), rồi dán URL in ra vào `FORMS.onsite` của `index.html` + `QR_Landing_Page.html`.
+
+**Tiêu đề form:** Khai báo sử dụng thiết bị tại chỗ — Khoa KTTV&HDH  
+**Mô tả:** Dùng khi sử dụng thiết bị ngay tại phòng, không mang ra ngoài. Không cần phê duyệt, không cần xác nhận trả.
+
+| # | Tên trường | Loại | Bắt buộc | Ghi chú |
+|---|-----------|------|----------|---------|
+| 1 | Mã QR thiết bị | Short answer | Có | Điền sẵn từ landing page |
+| 2 | Họ và tên người sử dụng | Short answer | Có | ⚠️ Tên câu hỏi dùng để nhận diện form — không đổi |
+| 3 | Đơn vị / Nhóm nghiên cứu | Dropdown | Có | Như Form 1 |
+| 4 | Mục đích sử dụng | Paragraph | Có | |
+| 5 | Số giờ sử dụng (dự kiến) | Short answer | Có | Số từ 0.5 đến 24. ⚠️ Tên câu hỏi dùng để nhận diện form — không đổi |
+| 6 | Ghi chú | Paragraph | Không | |
+
+Email người khai báo: bật "Collect emails".
+
+**Xử lý tự động:** bắt đầu = lúc gửi; khoản tự đóng sau số giờ khai báo (ghi luôn ngày trả + giờ sử dụng). Trong thời gian đó thiết bị vẫn được giữ chỗ (người khác không mượn được). PTK nhận email thông báo, không có link duyệt. Tự động từ chối nếu mã QR lạ, thiết bị Hỏng/Không hoạt động, đang được mượn hết, hoặc số giờ không hợp lệ.
+
+---
+
 ## Form 2: XÁC NHẬN TRẢ THIẾT BỊ
 
 **Tiêu đề form:** Xác nhận trả thiết bị — Khoa KTTV&HDH  

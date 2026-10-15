@@ -201,6 +201,110 @@ function createBorrowForm(ss) {
 }
 
 
+// ==================== FORM 1b: SỬ DỤNG TẠI CHỖ ====================
+
+/**
+ * Chạy MỘT LẦN để thêm form "Khai báo sử dụng tại chỗ" vào hệ thống đang chạy
+ * (không tạo lại 4 form cũ). Copy dòng "onsite: '...'" trong Logs vào FORMS của index.html.
+ * Không cần chạy lại setup(): trigger onFormSubmitDispatch gắn trên Sheet, bắt cả form mới.
+ */
+function createOnsiteFormOnly() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const form = createOnsiteForm(ss);
+  Logger.log('\n--- COPY DÒNG DƯỚI VÀO const FORMS trong index.html + QR_Landing_Page.html ---\n');
+  Logger.log('  onsite: \'' + form.prefilled + '\',');
+  Logger.log('\nSửa form: ' + form.editUrl);
+
+  try {
+    MailApp.sendEmail(ADMIN_EMAIL, '[KTTV&HDH] ✅ Đã tạo form Khai báo sử dụng tại chỗ',
+      'Form: ' + form.publishedUrl + '\nSửa: ' + form.editUrl + '\n\n' +
+      'Pre-filled URL (dán vào FORMS.onsite trong index.html + QR_Landing_Page.html):\n' +
+      form.prefilled + '\n\n— Script tạo tự động bởi Hệ thống DATAI');
+  } catch (e) {
+    Logger.log('⚠️ Không gửi được email: ' + e.message + ' — URL đã in ở trên.');
+  }
+}
+
+/**
+ * Form ngắn cho cán bộ dùng thiết bị NGAY TẠI PHÒNG: không phê duyệt, không quét trả.
+ * Tên câu hỏi "Họ và tên người sử dụng" và "Số giờ sử dụng" là chữ ký nhận diện form
+ * (FORM_SIGNATURES.onsite trong Google_Apps_Script.js) — đổi tên thì sửa cả hai bên.
+ */
+function createOnsiteForm(ss) {
+  Logger.log('▶ Tạo Form: Khai báo sử dụng tại chỗ...');
+
+  const form = FormApp.create('Khai báo sử dụng thiết bị tại chỗ — Khoa KTTV&HDH');
+  form.setDescription(
+    'Dùng khi sử dụng thiết bị NGAY TẠI PHÒNG, không mang ra ngoài.\n' +
+    'Không cần phê duyệt, không cần xác nhận trả — hệ thống tự kết thúc sau số giờ khai báo.\n' +
+    'Nếu cần mang thiết bị ra khỏi phòng, dùng form "Mượn mang đi".\n\n' +
+    'Liên hệ: datpt@hus.edu.vn | Khoa KTTV&HDH — ĐHKHTN, ĐHQGHN'
+  );
+  form.setConfirmationMessage('Đã ghi nhận khai báo sử dụng tại chỗ. Dùng xong không cần xác nhận trả.');
+  form.setAllowResponseEdits(false);
+  form.setCollectEmail(true);
+
+  // 1. Mã QR thiết bị (landing page điền sẵn)
+  const qrItem = form.addTextItem();
+  qrItem.setTitle('Mã QR thiết bị');
+  qrItem.setHelpText('Ví dụ: HMO-OBS-8372');
+  qrItem.setRequired(true);
+  qrItem.setValidation(FormApp.createTextValidation()
+    .requireTextMatchesPattern('^HMO-[A-Z]{2,3}-\\d{4,5}$')
+    .setHelpText('Mã QR phải có dạng HMO-XXX-XXXX (ví dụ: HMO-OBS-8372)')
+    .build());
+
+  // 2. Họ và tên người sử dụng
+  form.addTextItem()
+    .setTitle('Họ và tên người sử dụng')
+    .setRequired(true);
+
+  // 3. Đơn vị / Nhóm nghiên cứu
+  form.addListItem()
+    .setTitle('Đơn vị / Nhóm nghiên cứu')
+    .setRequired(true)
+    .setChoiceValues([
+      'Bộ môn Khí tượng và Khí hậu học',
+      'Bộ môn Thủy văn và Tài nguyên nước',
+      'Bộ môn Khoa học và Công nghệ Biển',
+      'Nghiên cứu sinh',
+      'Học viên cao học',
+      'Khác'
+    ]);
+
+  // 4. Mục đích sử dụng
+  form.addParagraphTextItem()
+    .setTitle('Mục đích sử dụng')
+    .setRequired(true);
+
+  // 5. Số giờ sử dụng — tối đa khớp CONFIG.ONSITE_MAX_HOURS trong Google_Apps_Script.js
+  form.addTextItem()
+    .setTitle('Số giờ sử dụng (dự kiến)')
+    .setHelpText('Tính từ lúc gửi khai báo. Ví dụ: 2 hoặc 1.5 (tối đa 24 giờ — dùng nhiều ngày thì khai báo mỗi ngày)')
+    .setRequired(true)
+    .setValidation(FormApp.createTextValidation()
+      .requireNumberBetween(0.5, 24)
+      .setHelpText('Nhập số giờ từ 0.5 đến 24')
+      .build());
+
+  // 6. Ghi chú
+  form.addParagraphTextItem()
+    .setTitle('Ghi chú')
+    .setRequired(false);
+
+  linkFormToSheet_(form, ss, 'Log_Muon_Tra');
+  const prefilled = getPrefilledUrl_(form, qrItem);
+  Logger.log('  ✓ Form tại chỗ đã tạo: ' + form.getPublishedUrl());
+
+  return {
+    name: 'Khai báo sử dụng tại chỗ',
+    editUrl: form.getEditUrl(),
+    publishedUrl: form.getPublishedUrl(),
+    prefilled: prefilled
+  };
+}
+
+
 // ==================== FORM 2: TRẢ THIẾT BỊ ====================
 
 function createReturnForm(ss) {
