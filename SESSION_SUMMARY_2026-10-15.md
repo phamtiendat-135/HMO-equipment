@@ -51,3 +51,10 @@
 - Test: backend 67/67 pass (+1 test kiểm tra 6 loại email đều có HTML + logo + escape tên; sửa 1 test tại chỗ vốn yêu cầu không có HTML). Frontend 24/24 pass. Render 8 mẫu email bằng Edge headless, đã xem ảnh.
 - Chưa đổi giao diện: email trả TB, bảo trì, báo hỏng, báo cáo tháng/năm, lỗi hệ thống.
 - Commit + push lên `main` (xem mục dưới). Apps Script CHƯA deploy — người dùng tự deploy theo hướng dẫn.
+
+**Đã xác minh:** commit `0b471ab` đã push lên `origin/main` (35ad64c..0b471ab). GitHub Pages đã phục vụ `sw.js` bản `v11` (kiểm tra bằng curl). `Create_Google_Forms.js` không trùng tên hàm/hằng với `Google_Apps_Script.js`.
+
+**Việc còn lại (người dùng):**
+1. Deploy Apps Script: test → `clasp push -f` → `clasp create-version` → `clasp update-deployment <id> -V <n>` (không cần `setup()`).
+2. Menu Sheet "📘 Tạo cột Link hướng dẫn sử dụng (Master_Data)".
+3. Tạo form tại chỗ: project Apps Script độc lập → dán `Create_Google_Forms.js` → chạy `createOnsiteFormOnly()` → gửi URL pre-filled để điền `FORMS.onsite` (index.html + QR_Landing_Page.html) rồi push lại. Trước bước này landing page vẫn 1 nút như cũ.
