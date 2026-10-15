@@ -30,7 +30,7 @@ QR Label on device
 | `index.html` | Bản deploy của landing page (GitHub Pages) — đã wire-up PWA | ✅ 4 form chính có URL thật; ⚠️ training/research còn placeholder (~line 1251) |
 | `QR_Landing_Page.html` | Mobile-friendly lookup page — scan QR → xem info + nút hành động (đồng bộ với index.html) | ✅ 4 form chính có URL thật; ⚠️ training/research còn placeholder (~line 1251) |
 | `manifest.json` | PWA manifest — name, icons 192/512, standalone, theme_color #1a3a6b | ✅ Cấu hình sẵn |
-| `sw.js` | Service worker — cache-first app shell, network-first script.google.com API (CACHE v11, có GET-guard) | ✅ Hoạt động |
+| `sw.js` | Service worker — cache-first app shell, network-first script.google.com API (CACHE v12, có GET-guard) | ✅ Hoạt động |
 | `icons/icon-192.png`, `icons/icon-512.png` | PWA icons | ✅ Có sẵn |
 | `Kich_ban_video_HMO_Eq.docx` | Kịch bản video hướng dẫn (caption + storyboard, gồm đoạn cài đặt app 3 nền tảng) | ✅ Hoàn thành |
 | `Slide_intro_outro_HMO_Eq.pptx` | Slide intro/outro 9:16 cho video | ✅ Hoàn thành |
@@ -236,7 +236,7 @@ Trước khi kết thúc MỌI phiên làm việc trong workspace này, tạo ho
 - Thêm hình thức **Sử dụng tại chỗ** (không cần phê duyệt, không cần quét trả) bên cạnh **Mượn mang đi** (giữ nguyên luồng duyệt ≥ 100 tr).
 - Form riêng tạo bằng `createOnsiteFormOnly()` (`Create_Google_Forms.js`); chữ ký nhận diện: câu hỏi "Họ và tên người sử dụng", "Số giờ sử dụng (dự kiến)".
 - Log: dòng tại chỗ có cột M = `🔬 Sử dụng tại chỗ — không cần duyệt` (`isOnsite_`), cột I = giờ kết thúc, cột Q = số giờ khai báo. Không thêm cột, không đổi schema. API trả status `onsite`.
-- Landing page: `FORMS.onsite` còn placeholder `FORM_ID_TAICHO` → vẫn 1 nút như cũ; có URL thật → 2 nút "📦 Mượn mang đi" / "🔬 Sử dụng tại chỗ". `sw.js` v11.
+- Landing page: `FORMS.onsite` = form thật (`1FAIpQLSeOh3Py…`, `entry.1095952640` = Mã QR, tạo 15/10) → 2 nút "📦 Mượn mang đi" / "🔬 Sử dụng tại chỗ" (nếu là placeholder `FORM_ID…` thì tự quay về 1 nút). `sw.js` v12. Form tại chỗ tạo ra ở chế độ **chỉ tài khoản @hus.edu.vn** (mặc định Workspace), khác form mượn (công khai).
 - Báo cáo tháng tách lượt mượn mang đi / tại chỗ (có giờ); báo cáo năm giữ giờ bắt đầu thật (không cắt về 00:00).
 - Email kết quả phê duyệt gửi người mượn: HTML (`buildDecisionEmail_`) — hạn trả trong tiêu đề + ô nổi bật, tên in đậm, nút "Thêm vào lịch" (Google Calendar). Mọi email gửi người mượn xưng "thầy/cô" (không dùng "bạn").
 - Nút "📘 Hướng dẫn sử dụng" trong email đã duyệt: link lấy từ cột **"Link hướng dẫn sử dụng"** của Master_Data (tạo bằng menu "📘 Tạo cột Link hướng dẫn…" → `ensureGuideColumn()`), chỉ nhận `https://`; thiếu thì dùng `CONFIG.GUIDE_DEFAULT_URL`; cả hai trống → nút mờ + "(đang cập nhật)". Thêm link vào Sheet là có hiệu lực ngay, không cần deploy.

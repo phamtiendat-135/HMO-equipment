@@ -134,8 +134,16 @@ function openPage(search = '', api = () => ({}), html = HTML) {
   const ONSITE_URL = 'https://docs.google.com/forms/d/e/ONSITE123/viewform?usp=pp_url&entry.777=';
   const HTML_ONSITE = HTML.replace(/onsite: '[^']*'/, `onsite: '${ONSITE_URL}'`);
   const free = () => ({ _borrowStatus: { available: true, borrowedCount: 0 } });
-  await test('Tại chỗ: chưa có form → giữ 1 nút "Đăng ký mượn/Sử dụng" như cũ', async () => {
+  const HTML_NO_ONSITE = HTML.replace(/onsite: '[^']*'/,
+    "onsite: 'https://docs.google.com/forms/d/e/FORM_ID_TAICHO/viewform?usp=pp_url&entry.FIELD_QR='");
+  await test('Tại chỗ: trang thật đã gắn form tại chỗ → nút trỏ đúng form, điền sẵn mã QR', async () => {
     const p = openPage('?id=HMO-OBS-8693', free);
+    await tick();
+    assert.equal(p.d.getElementById('onsite-btn').getAttribute('href'),
+      'https://docs.google.com/forms/d/e/1FAIpQLSeOh3PyIn_Ho2ebSJJPvpG5uQL9eHiQlxGUtVrYkPZbdGj_sQ/viewform?usp=pp_url&entry.1095952640=HMO-OBS-8693');
+  });
+  await test('Tại chỗ: chưa có form → giữ 1 nút "Đăng ký mượn/Sử dụng" như cũ', async () => {
+    const p = openPage('?id=HMO-OBS-8693', free, HTML_NO_ONSITE);
     await tick();
     assert.ok(p.d.getElementById('borrow-btn'));
     assert.equal(p.d.getElementById('onsite-btn'), null);
@@ -207,7 +215,7 @@ function openPage(search = '', api = () => ({}), html = HTML) {
     const ctx = vm.createContext({
       self: { addEventListener: (t, f) => { handlers[t] = f; }, skipWaiting() {}, clients: { claim: () => Promise.resolve() },
         location: { hostname: 'example.test' } },
-      caches: { keys: () => Promise.resolve(['hmo-equipment-v10', 'hmo-equipment-v11', 'other-app-v1']),
+      caches: { keys: () => Promise.resolve(['hmo-equipment-v11', 'hmo-equipment-v12', 'other-app-v1']),
         delete: k => { deleted.push(k); return Promise.resolve(true); } },
       URL, Response: class {}, JSON, Promise, fetch: () => Promise.reject(new Error('x'))
     });
@@ -215,7 +223,7 @@ function openPage(search = '', api = () => ({}), html = HTML) {
     let waited;
     handlers.activate({ waitUntil: p => { waited = p; } });
     await waited;
-    assert.deepEqual(deleted, ['hmo-equipment-v10']);
+    assert.deepEqual(deleted, ['hmo-equipment-v11']);
   });
   await test('Service worker: tài nguyên không phải trang lỗi → không trả HTML thay thế', async () => {
     const handlers = {};

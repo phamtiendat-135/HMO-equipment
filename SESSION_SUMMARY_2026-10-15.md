@@ -103,3 +103,15 @@
 - Nguyên nhân: thông báo nói cột T của tab **Master_Data** (19 cột gốc A–S → cột mới là T); người dùng đang đứng ở tab **Log_Muon_Tra**, nơi T = "Nguồn phản hồi mượn". Lỗi của v14: `activate()` gọi trên sheet lấy qua `openById()` không điều khiển màn hình người dùng → không chuyển tab; thông báo không nêu tên tab.
 - Sửa `ensureGuideColumn`: chuyển màn hình qua `getActiveSpreadsheet().setActiveSheet/setActiveRange` sang Master_Data!T1; thông báo ghi rõ "tab Master_Data (cột T)".
 - Test: backend 71/71 pass (+1 test chuyển tab/chọn ô). Deploy **version 15**: `list-deployments` → `@15`, API live trả đúng. Commit + push.
+
+## 17:04 — Người dùng đã thấy cột T (Master_Data); hướng dẫn bước tiếp theo
+
+- Không thay đổi file code, không chạy test, không deploy. Chỉ hướng dẫn: tạo form tại chỗ (`createOnsiteFormOnly`) → gửi URL; thử 1 lượt mượn ≥ 100 tr; kiểm tra khoản Máy tạo sóng; dần điền link hướng dẫn vào Master_Data!T.
+
+## 17:08 — Gắn form "Sử dụng tại chỗ" vào landing page
+
+- Người dùng chạy `createOnsiteFormOnly()` → URL `https://docs.google.com/forms/d/e/1FAIpQLSeOh3PyIn_Ho2ebSJJPvpG5uQL9eHiQlxGUtVrYkPZbdGj_sQ/viewform?usp=pp_url&entry.1095952640=`.
+- Mở URL không đăng nhập → chuyển sang trang đăng nhập Google: form đang **giới hạn tài khoản @hus.edu.vn** (mặc định khi tạo bằng script trong Workspace); form mượn hiện tại thì công khai. Chưa đọc được danh sách câu hỏi từ ngoài (do giới hạn) — câu hỏi do script tạo nên khớp `FORM_SIGNATURES.onsite`. Để người dùng quyết định giữ giới hạn hay mở công khai.
+- Đã sửa: `FORMS.onsite` trong `index.html` = `QR_Landing_Page.html` (giống hệt); `sw.js` v11 → v12; test frontend: thêm test trang thật trỏ đúng form, test "chưa có form" dùng bản placeholder, test SW theo v12.
+- Test: frontend 25/25, backend 71/71. Commit + push (Apps Script không đổi → không cần deploy).
+- Cần người dùng thử: quét QR → "🔬 Sử dụng tại chỗ" → gửi → kiểm tra dòng mới trong Log_Muon_Tra (cột M "🔬 Sử dụng tại chỗ") + email thông báo.
