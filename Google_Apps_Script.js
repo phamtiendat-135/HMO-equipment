@@ -522,7 +522,7 @@ function ensureGuideColumn() {
   let col, msg;
   if (existing >= 0) {
     col = existing + 1;
-    msg = `Master_Data đã có cột "${headers[existing]}" (cột ${columnLetter_(col)}) — dùng cột này.`;
+    msg = `Tab Master_Data đã có cột "${headers[existing]}" (cột ${columnLetter_(col)}) — dùng cột này.`;
   } else {
     col = headers.length + 1;
     if (sheet.getMaxColumns() < col) sheet.insertColumnsAfter(sheet.getMaxColumns(), 1);
@@ -530,15 +530,18 @@ function ensureGuideColumn() {
       .setNote('Dán link Google Site (https://...) hướng dẫn sử dụng / khuyến cáo cho từng thiết bị.\n' +
         'Để trống → email phê duyệt hiện nút "Hướng dẫn sử dụng (đang cập nhật)".');
     sheet.setColumnWidth(col, 260);
-    msg = `Đã thêm cột "${GUIDE_COLUMN_TITLE}" vào Master_Data (cột ${columnLetter_(col)}).`;
+    msg = `Đã thêm cột "${GUIDE_COLUMN_TITLE}" vào tab Master_Data (cột ${columnLetter_(col)}).`;
   }
   Logger.log(msg);
-  // Nhảy tới ô tiêu đề để người dùng thấy ngay (cột có thể nằm xa bên phải nếu sheet có dữ liệu lẻ).
+  // Chuyển màn hình sang Master_Data, chọn ô tiêu đề (cột có thể nằm xa bên phải).
+  // Phải dùng getActiveSpreadsheet(): sheet lấy qua openById() không điều khiển được màn hình người dùng.
   // Toast thay cho alert: alert chặn script tới khi bấm OK → menu trông như "chạy mãi" nếu hộp bị che.
   try {
-    sheet.activate();
-    sheet.getRange(1, col).activate();
-    SpreadsheetApp.getActiveSpreadsheet().toast(msg, 'Quản lý TB', 10);
+    const active = SpreadsheetApp.getActiveSpreadsheet();
+    const view = active.getSheetByName(CONFIG.SHEETS.MASTER);
+    active.setActiveSheet(view);
+    active.setActiveRange(view.getRange(1, col));
+    active.toast(msg, 'Quản lý TB', 10);
   } catch (err) { /* chạy ngoài UI */ }
   return msg;
 }

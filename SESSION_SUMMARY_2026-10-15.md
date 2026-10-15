@@ -96,4 +96,10 @@
 - Người dùng đồng ý. Claude chạy: test 70/70 → `clasp push -f` (2 file) → `clasp create-version` → **version 14** → `clasp update-deployment … -V 14`.
 - Đã xác minh: `list-deployments` → `@14`; API live `?id=HMO-LAB-8374` và `?action=history` trả đúng; `clasp pull` vào thư mục tạm → code trên Google khớp repo.
 - Commit + push các sửa đổi 16:53–16:57 (Google_Apps_Script.js, tests, CLAUDE.md, summary).
-- Còn lại cho người dùng: tìm/tạo lại cột "Link hướng dẫn sử dụng" (chạy lại menu → giờ tự nhảy tới ô); kiểm tra tab Form Responses xem người mượn Máy tạo sóng có nhập hạn trả 15/10 thật không (nếu nhầm, sửa ô H trong Log_Muon_Tra); dòng cũ đó vẫn hiện "0:00:00" (định dạng mới chỉ áp cho dòng mới — sửa tay: chọn cột G:H → Định dạng → Số → Ngày); tạo form tại chỗ (`createOnsiteFormOnly`).
+- Còn lại cho người dùng: tìm/tạo lại cột "Link hướng dẫn sử dụng" (chạy lại menu → giờ tự nhảy tới ô — xem 17:03); kiểm tra tab Form Responses xem người mượn Máy tạo sóng có nhập hạn trả 15/10 thật không (nếu nhầm, sửa ô H trong Log_Muon_Tra); dòng cũ đó vẫn hiện "0:00:00" (định dạng mới chỉ áp cho dòng mới — sửa tay: chọn cột G:H → Định dạng → Số → Ngày); tạo form tại chỗ (`createOnsiteFormOnly`).
+
+## 17:03 — "Báo cột T nhưng cột T là Nguồn phản hồi mượn" → v15
+
+- Nguyên nhân: thông báo nói cột T của tab **Master_Data** (19 cột gốc A–S → cột mới là T); người dùng đang đứng ở tab **Log_Muon_Tra**, nơi T = "Nguồn phản hồi mượn". Lỗi của v14: `activate()` gọi trên sheet lấy qua `openById()` không điều khiển màn hình người dùng → không chuyển tab; thông báo không nêu tên tab.
+- Sửa `ensureGuideColumn`: chuyển màn hình qua `getActiveSpreadsheet().setActiveSheet/setActiveRange` sang Master_Data!T1; thông báo ghi rõ "tab Master_Data (cột T)".
+- Test: backend 71/71 pass (+1 test chuyển tab/chọn ô). Deploy **version 15**: `list-deployments` → `@15`, API live trả đúng. Commit + push.

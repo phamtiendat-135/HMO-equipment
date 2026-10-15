@@ -769,7 +769,21 @@ test('Menu: tạo cột Link hướng dẫn 1 lần, chạy lại không tạo t
 test('Menu tạo cột: báo tên cột dạng chữ', () => {
   const h = harness();
   assert.deepEqual([1, 9, 26, 27, 52, 53].map(n => h.ctx.columnLetter_(n)), ['A', 'I', 'Z', 'AA', 'AZ', 'BA']);
-  assert.match(h.ctx.ensureGuideColumn(), /Đã thêm cột .* \(cột I\)/);
+  assert.match(h.ctx.ensureGuideColumn(), /Đã thêm cột .* vào tab Master_Data \(cột I\)/);
+});
+test('Menu tạo cột: chuyển màn hình sang tab Master_Data (qua getActiveSpreadsheet), chọn ô tiêu đề', () => {
+  const h = harness();
+  const seen = {};
+  h.ctx.SpreadsheetApp.getActiveSpreadsheet = () => ({
+    getSheetByName: n => ({ name: n, getRange: (r, c) => ({ r, c }) }),
+    setActiveSheet: s => { seen.sheet = s.name; },
+    setActiveRange: rg => { seen.cell = [rg.r, rg.c]; },
+    toast: msg => { seen.toast = msg; }
+  });
+  h.ctx.ensureGuideColumn();
+  assert.equal(seen.sheet, 'Master_Data');
+  assert.deepEqual(seen.cell, [1, 9]);
+  assert.match(seen.toast, /tab Master_Data \(cột I\)/);
 });
 test('Email nhắc trả / quá hạn xưng "thầy/cô", không còn "bạn"', () => {
   const overdue = harness([legacyLoan('A', '✅ Đã phê duyệt', 'a@example.invalid')]);
