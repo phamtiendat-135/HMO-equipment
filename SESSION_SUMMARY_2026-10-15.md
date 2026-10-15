@@ -115,3 +115,23 @@
 - Đã sửa: `FORMS.onsite` trong `index.html` = `QR_Landing_Page.html` (giống hệt); `sw.js` v11 → v12; test frontend: thêm test trang thật trỏ đúng form, test "chưa có form" dùng bản placeholder, test SW theo v12.
 - Test: frontend 25/25, backend 71/71. Commit + push (Apps Script không đổi → không cần deploy).
 - Cần người dùng thử: quét QR → "🔬 Sử dụng tại chỗ" → gửi → kiểm tra dòng mới trong Log_Muon_Tra (cột M "🔬 Sử dụng tại chỗ") + email thông báo.
+
+## 17:11 — Chốt phiên, bàn giao để làm tiếp ở máy nhà
+
+**Trạng thái cuối ngày (đã xác minh):**
+- GitHub `main` = local, không còn thay đổi chưa commit. Commit cuối chứa code: `a86693b` (landing page có form tại chỗ, sw v12 — đã live trên GitHub Pages).
+- Apps Script: deployment `@15` (v15), code trên Google khớp repo.
+- Google: cột "Link hướng dẫn sử dụng" đã có ở **Master_Data cột T**; form "Khai báo sử dụng tại chỗ" đã tạo (chỉ tài khoản @hus.edu.vn).
+
+**Việc còn lại (theo thứ tự):**
+1. Thử 1 lượt "🔬 Sử dụng tại chỗ" → kiểm tra dòng Log (cột M), email xanh ngọc, badge "🔵 Đang sử dụng tại chỗ" → xoá dòng thử.
+2. Quyết định form tại chỗ: giữ giới hạn @hus.edu.vn hay mở công khai (Cài đặt → Câu trả lời).
+3. Thử 1 lượt mượn ≥ 100 tr (hạn trả khác ngày mượn) → email xin duyệt → Phê duyệt → email kết quả → xoá dòng thử.
+4. Khoản Máy tạo sóng (HMO-LAB-8374, hạn 15/10): kiểm tra tab Form Responses; nhập nhầm thì sửa ô H trong Log_Muon_Tra. Định dạng lại G:H các dòng cũ: Định dạng → Số → Ngày.
+5. Dần điền link Google Site vào Master_Data!T.
+6. (Tùy chọn, đã đề xuất) email xác nhận cho mượn dưới ngưỡng; xưng hô theo "Vai trò"; đồng bộ giao diện các email còn lại (trả TB, bảo trì, báo hỏng, báo cáo).
+
+**Chuẩn bị máy nhà (lần đầu):**
+- `git pull` trong thư mục repo.
+- Deploy Apps Script cần: `npm i -g @google/clasp@3.4.0` → (nếu `clasp` không nhận lệnh: thêm `%APPDATA%\npm` vào PATH, mở lại terminal) → `clasp login` (datpt@hus.edu.vn) → bật Apps Script API tại script.google.com/home/usersettings. KHÔNG chạy `clasp pull` trong thư mục repo (ghi đè code local).
+- Test frontend cần jsdom: `npm i jsdom@24.1.3` trong một thư mục ngoài repo, rồi `node tests/frontend_regression.cjs <đường-dẫn>/node_modules/jsdom`. Backend: `node tests/backend_regression.cjs`.
