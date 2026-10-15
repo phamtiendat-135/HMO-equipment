@@ -135,3 +135,6 @@
 - `git pull` trong thư mục repo.
 - Deploy Apps Script cần: `npm i -g @google/clasp@3.4.0` → (nếu `clasp` không nhận lệnh: thêm `%APPDATA%\npm` vào PATH, mở lại terminal) → `clasp login` (datpt@hus.edu.vn) → bật Apps Script API tại script.google.com/home/usersettings. KHÔNG chạy `clasp pull` trong thư mục repo (ghi đè code local).
 - Test frontend cần jsdom: `npm i jsdom@24.1.3` trong một thư mục ngoài repo, rồi `node tests/frontend_regression.cjs <đường-dẫn>/node_modules/jsdom`. Backend: `node tests/backend_regression.cjs`.
+
+## Máy nhà — git pull
+- `git pull --ff-only`: 35ad64c → a1f37fa (7 commit từ máy cơ quan, fast-forward, không xung đột). Không sửa file code, không chạy test, không deploy.
