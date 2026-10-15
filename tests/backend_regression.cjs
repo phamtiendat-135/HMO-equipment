@@ -38,7 +38,12 @@ class Sheet {
       setValues(values) { values.forEach((r, i) => r.forEach((v, j) => set(row + i, col + j, v))); return range; },
       setFormulas(values) { return range.setValues(values); }
     };
-    for (const m of ['setNumberFormat', 'setNote', 'setFontWeight', 'setBackground', 'setHorizontalAlignment',
+    range.setNumberFormat = fmt => {
+      self.formats = self.formats || {};
+      for (let i = 0; i < nr; i++) for (let j = 0; j < nc; j++) self.formats[`${row + i},${col + j}`] = fmt;
+      return range;
+    };
+    for (const m of ['setNote', 'setFontWeight', 'setBackground', 'setHorizontalAlignment',
       'setFontColor', 'setFontSize', 'merge', 'setWrap', 'setFontStyle']) range[m] = () => range;
     return range;
   }
@@ -759,6 +764,12 @@ test('Menu: tạo cột Link hướng dẫn 1 lần, chạy lại không tạo t
   const header = h.sheets.Master_Data.rows[0];
   assert.equal(header.filter(x => x === 'Link hướng dẫn sử dụng').length, 1);
   assert.equal(header[header.length - 1], 'Link hướng dẫn sử dụng');
+  assert.match(h.ctx.ensureGuideColumn(), /đã có cột "Link hướng dẫn sử dụng" \(cột I\)/, 'báo đúng tên cột dạng chữ');
+});
+test('Menu tạo cột: báo tên cột dạng chữ', () => {
+  const h = harness();
+  assert.deepEqual([1, 9, 26, 27, 52, 53].map(n => h.ctx.columnLetter_(n)), ['A', 'I', 'Z', 'AA', 'AZ', 'BA']);
+  assert.match(h.ctx.ensureGuideColumn(), /Đã thêm cột .* \(cột I\)/);
 });
 test('Email nhắc trả / quá hạn xưng "thầy/cô", không còn "bạn"', () => {
   const overdue = harness([legacyLoan('A', '✅ Đã phê duyệt', 'a@example.invalid')]);
@@ -811,6 +822,29 @@ test('Email đồng bộ: xin duyệt, thông báo, tại chỗ, từ chối t�
   h.ctx.checkUpcomingReturns();
   check(h, 'nhắc trả', 1);
   assert.match(h.mail[0][3].htmlBody, /SẮP ĐẾN HẠN TRẢ/);
+});
+
+// ====================== Ngày mượn / hạn trả hiển thị và mượn trong ngày ======================
+test('Ngày: dòng mượn mới định dạng G:H là dd/MM/yyyy (không "0:00:00"); tại chỗ giữ giờ', () => {
+  const h = harness();
+  h.ctx.onFormSubmitBorrow(formEvent(borrowFields({ 'Mã QR thiết bị': 'HMO-LAB-0002' })));
+  const n = h.log.rows.length;
+  assert.equal(h.log.formats[`${n},7`], 'dd/MM/yyyy');
+  assert.equal(h.log.formats[`${n},8`], 'dd/MM/yyyy');
+  h.ctx.onFormSubmitOnsite(onsiteEvent());
+  const m = h.log.rows.length;
+  assert.equal(h.log.formats[`${m},7`], 'dd/MM/yyyy HH:mm');
+  assert.equal(h.log.formats[`${m},9`], 'dd/MM/yyyy HH:mm');
+});
+test('Ngày: hạn trả trùng ngày mượn → vẫn nhận, email PTK đánh dấu "trả trong ngày"', () => {
+  const h = harness([], { props: { APPROVAL_SECRET: 's' } });
+  h.ctx.onFormSubmitBorrow(formEvent(borrowFields({ 'Ngày mượn': '15/10/2026', 'Ngày dự kiến trả': '15/10/2026' })));
+  assert.equal(lastRow(h)[12], '(Chờ phê duyệt PTK)', 'mượn trong ngày là hợp lệ');
+  assert.match(h.mail[0][2], /Dự kiến trả: 15\/10\/2026 \(TRẢ TRONG NGÀY/);
+  assert.match(h.mail[0][3].htmlBody, /trả trong ngày \(cùng ngày mượn\)/);
+  const h2 = harness([], { props: { APPROVAL_SECRET: 's' } });
+  h2.ctx.onFormSubmitBorrow(formEvent(borrowFields()));
+  assert.ok(!/trong ngày/i.test(h2.mail[0][2] + h2.mail[0][3].htmlBody), 'khác ngày → không cảnh báo');
 });
 
 // ---------- Kết quả ----------

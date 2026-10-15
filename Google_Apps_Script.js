@@ -518,20 +518,36 @@ function ensureGuideColumn() {
   const sheet = SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID).getSheetByName(CONFIG.SHEETS.MASTER);
   if (!sheet) throw new Error('Không tìm thấy sheet ' + CONFIG.SHEETS.MASTER);
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  let msg;
-  if (findColIndex_(headers, ['link hướng dẫn', 'hướng dẫn sử dụng']) >= 0) {
-    msg = `Master_Data đã có cột "${GUIDE_COLUMN_TITLE}".`;
+  const existing = findColIndex_(headers, ['link hướng dẫn', 'hướng dẫn sử dụng']);
+  let col, msg;
+  if (existing >= 0) {
+    col = existing + 1;
+    msg = `Master_Data đã có cột "${headers[existing]}" (cột ${columnLetter_(col)}) — dùng cột này.`;
   } else {
-    const col = headers.length + 1;
+    col = headers.length + 1;
     if (sheet.getMaxColumns() < col) sheet.insertColumnsAfter(sheet.getMaxColumns(), 1);
     sheet.getRange(1, col).setValue(GUIDE_COLUMN_TITLE).setFontWeight('bold').setBackground('#E3F2FD')
       .setNote('Dán link Google Site (https://...) hướng dẫn sử dụng / khuyến cáo cho từng thiết bị.\n' +
         'Để trống → email phê duyệt hiện nút "Hướng dẫn sử dụng (đang cập nhật)".');
     sheet.setColumnWidth(col, 260);
-    msg = `Đã thêm cột "${GUIDE_COLUMN_TITLE}" vào Master_Data (cột ${col}).`;
+    msg = `Đã thêm cột "${GUIDE_COLUMN_TITLE}" vào Master_Data (cột ${columnLetter_(col)}).`;
   }
   Logger.log(msg);
-  try { SpreadsheetApp.getUi().alert(msg); } catch (err) { /* chạy ngoài UI */ }
+  // Nhảy tới ô tiêu đề để người dùng thấy ngay (cột có thể nằm xa bên phải nếu sheet có dữ liệu lẻ).
+  // Toast thay cho alert: alert chặn script tới khi bấm OK → menu trông như "chạy mãi" nếu hộp bị che.
+  try {
+    sheet.activate();
+    sheet.getRange(1, col).activate();
+    SpreadsheetApp.getActiveSpreadsheet().toast(msg, 'Quản lý TB', 10);
+  } catch (err) { /* chạy ngoài UI */ }
+  return msg;
+}
+
+/** 1 → "A", 27 → "AA". */
+function columnLetter_(col) {
+  let s = '';
+  for (let n = col; n > 0; n = Math.floor((n - 1) / 26)) s = String.fromCharCode(65 + (n - 1) % 26) + s;
+  return s;
 }
 
 /** Lý do tự động từ chối yêu cầu mượn, hoặc '' nếu hợp lệ. */
@@ -1260,6 +1276,9 @@ function recordLoanRequest_(ss, req, sourceId) {
     if (onsite) {
       sheet.getRange(loan.rowNum, LOG_COL.BORROW_DATE + 1, 1, 3).setNumberFormat('dd/MM/yyyy HH:mm');
       sheet.getRange(loan.rowNum, LOG_COL.HOURS + 1).setNumberFormat('0.0');
+    } else {
+      // Form mượn chỉ hỏi NGÀY → hiện dd/MM/yyyy, không kèm "0:00:00" (dễ hiểu nhầm là giờ mượn/trả)
+      sheet.getRange(loan.rowNum, LOG_COL.BORROW_DATE + 1, 1, 2).setNumberFormat('dd/MM/yyyy');
     }
     SpreadsheetApp.flush();
     Logger.log(`✓ Ghi ${onsite ? 'khai báo tại chỗ' : 'yêu cầu mượn'} ${loan.loanId} (${loan.qrCode}) ` +
@@ -1348,7 +1367,8 @@ function sendLoanRequestEmail_(loan) {
   body += `\nNGƯỜI MƯỢN:\n  Họ tên: ${loan.borrower}\n`;
   if (loan.email) body += `  Email: ${loan.email}\n`;
   if (loan.phone) body += `  SĐT: ${loan.phone}\n`;
-  body += `  Mục đích: ${loan.purpose}\n  Dự kiến trả: ${formatDateVN_(loan.dueDate) || 'N/A'}\n`;
+  body += `  Mục đích: ${loan.purpose}\n  Dự kiến trả: ${formatDateVN_(loan.dueDate) || 'N/A'}` +
+    (returnsSameDay_(loan) ? ' (TRẢ TRONG NGÀY — kiểm tra lại nếu nghi nhập nhầm)' : '') + '\n';
   body += `  Mã giao dịch: ${loan.loanId}\n\n`;
 
   if (!loan.needsApproval || !CONFIG.WEB_APP_URL) {
@@ -1364,6 +1384,14 @@ function sendLoanRequestEmail_(loan) {
   body += `— Hệ thống quản lý TB Khoa KTTV&HDH`;
   MailApp.sendEmail(CONFIG.ADMIN_EMAIL, subject, body,
     { htmlBody: buildApprovalEmailHtml_(loan, approveLink, rejectLink) });
+}
+
+/**
+ * Hạn trả trùng ngày mượn. Hợp lệ (mượn trong ngày) nhưng hay do nhập nhầm: trên điện thoại,
+ * ô chọn ngày của Google Form mặc định là hôm nay → email PTK đánh dấu để kiểm tra.
+ */
+function returnsSameDay_(loan) {
+  return !!(loan.borrowDate && loan.dueDate) && formatDateVN_(loan.borrowDate) === formatDateVN_(loan.dueDate);
 }
 
 /**
@@ -1385,7 +1413,9 @@ function buildApprovalEmailHtml_(loan, approveLink, rejectLink) {
       : `Có yêu cầu mượn mang đi thiết bị dưới ${esc(CONFIG.APPROVAL_THRESHOLD)} triệu VNĐ — ` +
         'đã ghi nhận, không cần duyệt.', true), 24)];
   if (due) {
-    const sub = WEEKDAYS_VN[due.getDay()] + (loan.borrowDate ? ' · mượn từ ' + formatDateVN_(loan.borrowDate) : '');
+    const sub = WEEKDAYS_VN[due.getDay()] + (returnsSameDay_(loan)
+      ? ' · ⚠️ trả trong ngày (cùng ngày mượn)'
+      : (loan.borrowDate ? ' · mượn từ ' + formatDateVN_(loan.borrowDate) : ''));
     blocks.push(emailBlock_(emailHighlight_('📅 Dự kiến trả', formatDateVN_(due), sub, EMAIL_TONE.amber)));
   }
   blocks.push(emailBlock_(emailDetails_([

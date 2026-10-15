@@ -71,3 +71,29 @@
 - Claude chạy `clasp update-deployment AKfycbwf… -V 13` → "Redeployed … @13".
 - Đã xác minh: `clasp list-deployments` → `@13 - Tai cho + email HTML co logo`; API live `?id=HMO-OBS-8693` và `?action=history` trả đúng (ok=true); `clasp pull` vào thư mục tạm trong scratchpad (không đụng repo) → code trên Google trùng khớp `Google_Apps_Script.js` của repo.
 - Còn lại: menu "📘 Tạo cột Link hướng dẫn sử dụng (Master_Data)"; tạo form tại chỗ (`createOnsiteFormOnly`) → gửi URL → điền `FORMS.onsite` + push; thử 1 lượt mượn ≥ 100 tr để xem email mới.
+
+## 16:53 — "Ngày mượn = Ngày dự kiến trả = 15/10/2026 0:00:00" + menu tạo cột chạy lâu
+
+**Điều tra ngày trùng:** API live → khoản đang mở duy nhất: HMO-LAB-8374 (Máy tạo sóng), "Phan N. H. N.", mượn 15/10, hạn 15/10, đã duyệt. Form mượn live (đọc FB_PUBLIC_LOAD_DATA_) có đúng 2 câu ngày "Ngày mượn", "Ngày dự kiến trả" (chỉ ngày) — khớp code. Không có chỗ nào trong code chép ngày mượn sang cột H; script timezone Asia/Bangkok. Kết luận: hệ thống ghi đúng dữ liệu form → nhiều khả năng người mượn chọn 15/10 cho cả hai (ô ngày trên điện thoại mặc định hôm nay). CHƯA xác minh trực tiếp tab Form Responses (không có quyền đọc Sheet từ đây) — người dùng nên kiểm tra.
+
+**Sửa (chưa deploy, chưa commit):**
+- `recordLoanRequest_`: dòng mượn mang đi đặt định dạng G:H = `dd/MM/yyyy` (bỏ "0:00:00" gây hiểu nhầm). Tại chỗ giữ `dd/MM/yyyy HH:mm`.
+- `returnsSameDay_` + email PTK (chữ thường và HTML) đánh dấu "trả trong ngày" khi hạn trả trùng ngày mượn (vẫn hợp lệ).
+- `ensureGuideColumn`: đổi `alert` (chặn script tới khi bấm OK → menu trông như treo) sang `toast`.
+- Test: backend 69/69 (+2 test; cả 2 FAIL trên code v13).
+
+**Menu tạo cột chạy lâu:** nghi do hộp alert/hộp cấp quyền đang chờ bấm. Người dùng cần kiểm tra hộp thoại trên Sheet / trang Executions. Chờ người dùng xác nhận deploy v14.
+
+## 16:57 — Bấm OK nhưng không thấy cột "Link hướng dẫn sử dụng"
+
+- Người dùng xác nhận hộp OK đã hiện (v13 dùng alert) → lệnh đã chạy xong, nhưng không thấy cột. Nguyên nhân khả dĩ (chưa xác minh trên Sheet thật): cột mới đặt sau `getLastColumn()` (cột cuối có dữ liệu ở BẤT KỲ dòng nào) → có thể nằm xa bên phải; hoặc Master_Data đã có cột chứa "hướng dẫn sử dụng" nên không tạo mới. Đã hướng dẫn tìm bằng Ctrl+F "Link hướng dẫn".
+- Sửa `ensureGuideColumn`: báo tên cột dạng chữ (`columnLetter_`), nêu rõ tên cột có sẵn nếu dùng lại, tự `activate()` nhảy tới ô tiêu đề, toast thay alert, trả về thông báo.
+- Test: backend 70/70 pass (+1 test, mở rộng 1 test).
+- Vẫn CHƯA commit/deploy các sửa đổi từ 16:53 trở đi — chờ người dùng xác nhận deploy v14.
+
+## 16:59 — ✅ Đã deploy Apps Script version 14 + push GitHub
+
+- Người dùng đồng ý. Claude chạy: test 70/70 → `clasp push -f` (2 file) → `clasp create-version` → **version 14** → `clasp update-deployment … -V 14`.
+- Đã xác minh: `list-deployments` → `@14`; API live `?id=HMO-LAB-8374` và `?action=history` trả đúng; `clasp pull` vào thư mục tạm → code trên Google khớp repo.
+- Commit + push các sửa đổi 16:53–16:57 (Google_Apps_Script.js, tests, CLAUDE.md, summary).
+- Còn lại cho người dùng: tìm/tạo lại cột "Link hướng dẫn sử dụng" (chạy lại menu → giờ tự nhảy tới ô); kiểm tra tab Form Responses xem người mượn Máy tạo sóng có nhập hạn trả 15/10 thật không (nếu nhầm, sửa ô H trong Log_Muon_Tra); dòng cũ đó vẫn hiện "0:00:00" (định dạng mới chỉ áp cho dòng mới — sửa tay: chọn cột G:H → Định dạng → Số → Ngày); tạo form tại chỗ (`createOnsiteFormOnly`).

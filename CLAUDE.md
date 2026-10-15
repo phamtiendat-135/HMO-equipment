@@ -230,6 +230,8 @@ Trước khi kết thúc MỌI phiên làm việc trong workspace này, tạo ho
 ## Changes Log (Session 15/10/2026 — Mượn mang đi / Sử dụng tại chỗ, Apps Script v13)
 
 - ✅ Đã deploy **version 13** (15/10) và xác minh: deployment `@13`, API live trả đúng, code trên Google khớp repo. Máy này đã cài clasp 3.4.0 (`%APPDATA%\npm` trong PATH User) và đã `clasp login`.
+- ✅ **Version 14** (15/10): dòng mượn mang đi định dạng G:H `dd/MM/yyyy` (bỏ "0:00:00"); email PTK đánh dấu "⚠️ trả trong ngày" khi hạn trả = ngày mượn (`returnsSameDay_`, vẫn hợp lệ); menu tạo cột Link hướng dẫn: toast thay alert, nhảy tới ô tiêu đề, báo tên cột dạng chữ (`columnLetter_`). Đã xác minh `@14` + code trên Google khớp repo.
+- Lưu ý menu: `alert()` chặn script tới khi bấm OK → menu trông như treo. Hàm menu mới nên dùng `toast`.
 
 - Thêm hình thức **Sử dụng tại chỗ** (không cần phê duyệt, không cần quét trả) bên cạnh **Mượn mang đi** (giữ nguyên luồng duyệt ≥ 100 tr).
 - Form riêng tạo bằng `createOnsiteFormOnly()` (`Create_Google_Forms.js`); chữ ký nhận diện: câu hỏi "Họ và tên người sử dụng", "Số giờ sử dụng (dự kiến)".
