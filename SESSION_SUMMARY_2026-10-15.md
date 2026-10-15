@@ -58,3 +58,16 @@
 1. Deploy Apps Script: test → `clasp push -f` → `clasp create-version` → `clasp update-deployment <id> -V <n>` (không cần `setup()`).
 2. Menu Sheet "📘 Tạo cột Link hướng dẫn sử dụng (Master_Data)".
 3. Tạo form tại chỗ: project Apps Script độc lập → dán `Create_Google_Forms.js` → chạy `createOnsiteFormOnly()` → gửi URL pre-filled để điền `FORMS.onsite` (index.html + QR_Landing_Page.html) rồi push lại. Trước bước này landing page vẫn 1 nút như cũ.
+
+## 16:35 — Lỗi `clasp` không nhận lệnh trên máy này
+
+- Nguyên nhân: máy chưa cài clasp; thư mục npm global `C:\Users\admin\AppData\Roaming\npm` không có trong PATH; chưa từng `clasp login` (không có `~/.clasprc.json`).
+- Đã làm: `npm install -g @google/clasp@3.4.0` (kiểm tra `clasp --version` = 3.4.0); thêm `%APPDATA%\npm` vào PATH cấp **User**. ExecutionPolicy CurrentUser = RemoteSigned → chạy được `clasp.ps1`.
+- Người dùng cần: mở lại cửa sổ PowerShell/VS Code (để nhận PATH mới) → `clasp login` (tài khoản datpt@hus.edu.vn) → bật Apps Script API tại script.google.com/home/usersettings → tiếp tục bước deploy. Chưa deploy.
+
+## 16:40 — ✅ Đã deploy Apps Script version 13
+
+- Người dùng tự chạy: test 67/67 → `clasp push -f` (2 file: appsscript.json, Google_Apps_Script.js) → `clasp create-version` → **version 13**. Lệnh `update-deployment` lỗi vì dán nguyên chỗ giữ chỗ `<số version…>`.
+- Claude chạy `clasp update-deployment AKfycbwf… -V 13` → "Redeployed … @13".
+- Đã xác minh: `clasp list-deployments` → `@13 - Tai cho + email HTML co logo`; API live `?id=HMO-OBS-8693` và `?action=history` trả đúng (ok=true); `clasp pull` vào thư mục tạm trong scratchpad (không đụng repo) → code trên Google trùng khớp `Google_Apps_Script.js` của repo.
+- Còn lại: menu "📘 Tạo cột Link hướng dẫn sử dụng (Master_Data)"; tạo form tại chỗ (`createOnsiteFormOnly`) → gửi URL → điền `FORMS.onsite` + push; thử 1 lượt mượn ≥ 100 tr để xem email mới.
