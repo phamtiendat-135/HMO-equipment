@@ -18,3 +18,12 @@
 - CLAUDE.md cập nhật bảng hàm + changes log.
 
 **Chưa làm:** commit/push, deploy Apps Script (sẽ là v16). Sau deploy người dùng cần: menu "📧 Tạo cột Email CB quản lý" → điền email từng thiết bị (trống → về PTK); nên sửa lời cảm ơn của form trả trên Google Forms ("Cảm ơn bạn!") thành "Đã ghi nhận khai trả — CB quản lý sẽ kiểm tra thiết bị".
+
+## 09:25 — ✅ Deploy Apps Script v16 + push GitHub (kiểm tra khi nhận lại)
+
+- Người dùng đồng ý deploy + push; yêu cầu xưng "anh" (đã lưu vào memory của Claude).
+- Chạy: test 83/83 → `clasp push -f` → **version 16** → `update-deployment … -V 16`.
+- Đã xác minh: `list-deployments` → `@16`; `clasp pull` vào thư mục tạm → code trên Google khớp repo; API live `?id`, `history`, `allStatus` trả đúng; link `?action=inspect_ok` giả chữ ký → trang "Link không hợp lệ hoặc đã hết hạn".
+- `git push`: commit `aad5cde` lên `origin/main`; GitHub Pages đã phục vụ `sw.js` v13 + badge mới.
+- Ghi nhận: `allStatus` = {} → khoản Máy tạo sóng (HMO-LAB-8374) không còn mở (đã được trả/đóng trước khi deploy v16 → không qua bước kiểm tra).
+- Còn lại cho anh Đạt: menu "📧 Tạo cột Email CB quản lý" → điền email; sửa lời cảm ơn của form trả; thử 1 vòng mượn → trả → kiểm tra.
