@@ -52,3 +52,11 @@
 3. Thử 1 vòng: mượn TB < 100 tr → trả → quét lại thấy "⏳ Đã trả — chờ cán bộ kiểm tra" → bấm ✅/⚠️ trong email → xoá dòng thử (Log_Muon_Tra, Log_Bao_Hong).
 4. Còn từ 15/10: thử "🔬 Sử dụng tại chỗ"; quyết định giới hạn @hus.edu.vn của form tại chỗ; thử mượn ≥ 100 tr; định dạng G:H dòng cũ; điền link hướng dẫn Master_Data!T.
 5. Xem lại sau đợt chạy thử: có cần nút "Kiểm tra nhận lại" trên trang quét không.
+
+## 09:52 — Review 4 tài liệu so với hệ thống v16 (chưa sửa tài liệu)
+
+- Đọc + đối chiếu: `HUONG_DAN_TRIEN_KHAI.md`, `QUY_TRINH_QUAN_LY_THIET_BI.md`, `QUY_TRINH_SU_DUNG_THIET_BI.docx` (pandoc), `Kich_ban_video_HMO_Eq.docx` (pandoc) với code/menu/form/landing page hiện tại.
+- Tạo `REVIEW_TAI_LIEU_2026-10-19.md`: 12 thay đổi hệ thống chưa có trong tài liệu; 9 quyết định cần anh chốt (D1–D9); bảng đề xuất sửa cho từng tài liệu; kịch bản motion graphic mới (16 cảnh, ~2:50, 9:16) + 3 cách sản xuất (đề xuất C: dựng bằng HTML thật → MP4).
+- **Lỗi phát hiện (D3), đã tái hiện bằng harness test trên code hiện tại:** ngày hạn trả = hôm nay → `checkOverdueReturns` gửi "🔴 QUÁ HẠN … đã quá 0 ngày" (điều kiện `daysOverdue >= CONFIG.OVERDUE_DAYS` với 0), trong khi trang tra cứu (daysOverdue=0) và Nhật ký (isOverdue=false) không coi là quá hạn. CHƯA sửa — chờ anh chốt.
+- Không sửa code, không deploy. Test chạy: chỉ script tái hiện lỗi (ngoài repo).
+- Chờ anh trả lời D1–D9 → sửa code (nếu chọn) → viết lại 4 tài liệu (.docx giữ định dạng NĐ30, xuất lại PDF) → video.
