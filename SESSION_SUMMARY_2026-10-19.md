@@ -27,3 +27,9 @@
 - `git push`: commit `aad5cde` lên `origin/main`; GitHub Pages đã phục vụ `sw.js` v13 + badge mới.
 - Ghi nhận: `allStatus` = {} → khoản Máy tạo sóng (HMO-LAB-8374) không còn mở (đã được trả/đóng trước khi deploy v16 → không qua bước kiểm tra).
 - Còn lại cho anh Đạt: menu "📧 Tạo cột Email CB quản lý" → điền email; sửa lời cảm ơn của form trả; thử 1 vòng mượn → trả → kiểm tra.
+
+## 09:31 — Anh Đạt quét QR thử, "chưa thấy thay đổi"
+
+- Giải thích: v16 không thêm nút trên trang quét; thay đổi chỉ hiện khi thiết bị đã được khai trả (badge "⏳ Đã trả — chờ cán bộ kiểm tra") và kiểm tra làm qua email. Hướng dẫn thử 1 vòng mượn (TB < 100 tr) → trả → quét lại → email kiểm tra.
+- Đề xuất (chờ anh quyết định): nút "🔍 Kiểm tra nhận lại (CB quản lý)" trên trang khi thiết bị đang chờ kiểm tra — bấm sẽ gửi lại link kiểm tra tới email CB đã đăng ký (không cho người lạ xác nhận thay).
+- Không thay đổi file code, không chạy test, không deploy.
