@@ -96,3 +96,8 @@
 - `PROMPT_CLAUDE_DESIGN_TAI_LIEU.md`: thêm A4 — flyer cài app 1 trang A4 (khung điện thoại chứa ảnh thật, 2 cột Android/iPhone, khối "Xong!", mẹo, ô chừa dán QR); nếu chưa có ảnh bước cài thì vẽ mô phỏng, không giả ảnh chụp.
 - Lưu ý: biểu tượng emoji trong ảnh theo kiểu Windows (chụp bằng Edge trên Windows).
 - Không sửa code, không chạy test, không deploy.
+
+## 15:14 — commit & push theo yêu cầu
+
+- Kiểm tra: working tree sạch, `main` trùng `origin/main` (commit cuối `5fba012`) — mọi thay đổi trong phiên đã được push trước đó. Chỉ thêm mục ghi chú này.
+- Không sửa code, không chạy test, không deploy. Trạng thái cuối: Apps Script `@17`, GitHub Pages `sw.js` v13.
