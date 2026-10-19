@@ -1,6 +1,9 @@
 # Prompt cho Claude Design — 3 tài liệu hệ thống quản lý thiết bị HMO
 
-**Cách dùng:** mỗi tài liệu là **một khối prompt** bên dưới. Mở Claude Design → **đính kèm `HMO_logo.jpg`** → dán nguyên khối → gửi. Muốn sửa thì nhắn tiếp trong cùng cuộc trò chuyện (ví dụ "rút còn 4 trang", "đổi sơ đồ bước 3 thành dạng thẻ").
+**Cách dùng:** mỗi tài liệu là **một khối prompt** bên dưới. Mở Claude Design → **đính kèm `HMO_logo.jpg`** → dán nguyên khối → gửi. Muốn sửa thì nhắn tiếp trong cùng cuộc trò chuyện (ví dụ "chữ to hơn", "bỏ bớt khối email", "đổi sơ đồ thành dạng thẻ").
+
+- **Phần A — FLYER 1 trang A4** (mỗi tài liệu đúng 1 trang): dùng để in dán, phát tay, gửi Zalo.
+- **Phần B — bản nhiều trang** (4–8 trang): khi cần đầy đủ chi tiết.
 
 Nội dung lấy từ bản v2.0 ngày 19/10/2026 (hệ thống Apps Script v17). Hệ thống thay đổi thì sửa phần "NỘI DUNG" trong prompt.
 
@@ -13,6 +16,132 @@ Nội dung lấy từ bản v2.0 ngày 19/10/2026 (hệ thống Apps Script v17)
 - Font không chân, hỗ trợ tiếng Việt (Be Vietnam Pro, Inter hoặc Arial).
 
 ---
+
+# A. FLYER — MỖI TÀI LIỆU 1 TRANG A4
+
+## A1. Flyer QUY TRÌNH SỬ DỤNG — cho người dùng
+
+```text
+Hãy thiết kế MỘT FLYER khổ A4 dọc, ĐÚNG 1 TRANG, in được (lề 10 mm): "MƯỢN – DÙNG – TRẢ THIẾT BỊ BẰNG MÃ QR" cho Khoa Khí tượng Thủy văn & Hải dương học (HMO), Trường ĐH Khoa học Tự nhiên – ĐHQG Hà Nội. Logo HMO đính kèm, đặt góc trên trái.
+
+NGƯỜI ĐỌC: giảng viên, nghiên cứu sinh, học viên, sinh viên — đứng trước thiết bị, đọc lướt trong 30 giây là làm theo được.
+
+YÊU CẦU TRÌNH BÀY
+- Toàn trang tối đa ~200 chữ. Chữ to (thân bài ≥ 11 pt, tiêu đề khối ≥ 16 pt). Nhiều khoảng trắng.
+- Mỗi bước MỘT hành động, ≤ 8 chữ, có biểu tượng. Dùng mũi tên → giữa các bước.
+- Không thuật ngữ kỹ thuật. Không thêm nội dung ngoài phần dưới.
+- Màu: navy #1a3a6b (chủ đạo), cam #F07800 (nhấn); mỗi thẻ một màu viền: 📦 xanh #2F5496, 🔬 xanh ngọc #00838f, ✅ xanh lá #2e7d32, ⚠️ đỏ #c62828. Font không chân hỗ trợ tiếng Việt (Be Vietnam Pro / Inter).
+
+BỐ CỤC (từ trên xuống)
+1. Dải đầu (navy): logo + tiêu đề "MƯỢN – DÙNG – TRẢ THIẾT BỊ BẰNG MÃ QR" + dòng phụ "Khoa KTTV&HDH — Quét mã, làm theo 3 bước".
+2. Dải "BƯỚC 0": 📷 Mở camera → quét tem QR trên thiết bị → chạm link → chọn nút.
+3. Lưới 2×2 bốn thẻ lớn:
+   📦 MANG RA NGOÀI — "Mượn mang đi"
+     1. Điền form, chọn ĐÚNG ngày trả
+     2. Nhận email xác nhận / duyệt
+     3. Nhận thiết bị từ cán bộ quản lý
+     (ghi chú nhỏ: thiết bị ≥ 100 triệu chờ Phó Trưởng khoa duyệt)
+   🔬 DÙNG TẠI PHÒNG — "Sử dụng tại chỗ"
+     1. Đăng nhập email @hus.edu.vn
+     2. Nhập số giờ dùng
+     3. Xong — hết giờ tự kết thúc
+     (ghi chú nhỏ: không cần duyệt, không cần trả)
+   ✅ KHI TRẢ — "Xác nhận trả"
+     1. Ghi tình trạng, phụ kiện
+     2. Giao tận tay cán bộ quản lý
+     3. Nhận email "Đã nhận lại"
+   ⚠️ THẤY HỎNG — "Báo hỏng"
+     1. Mô tả sự cố, gửi ảnh
+     2. Không tự sửa
+     3. Cán bộ sẽ xử lý
+4. Dải "EMAIL THẦY/CÔ SẼ NHẬN" — 4 biểu tượng nhỏ trên một hàng:
+   ✅ Xác nhận (kèm hạn trả, nút Thêm vào lịch) · ⏰ Nhắc trước hạn 2 ngày · 🔴 Quá hạn: nhắc mỗi ngày · ✅ Đã nhận lại.
+5. Hộp cam một dòng: "Ô ngày trên điện thoại mặc định là HÔM NAY — nhớ chọn đúng ngày trả!"
+6. Chân trang: bên trái "Cài như ứng dụng: Thêm vào màn hình chính" · "Hỗ trợ: datpt@hus.edu.vn"; bên phải chừa ô vuông 3 × 3 cm viền nét đứt ghi "QR trang tra cứu" (để dán mã QR thật sau).
+```
+
+---
+
+## A2. Flyer QUY TRÌNH QUẢN LÝ — cho cán bộ quản lý
+
+```text
+Hãy thiết kế MỘT FLYER khổ A4 dọc, ĐÚNG 1 TRANG, in được (lề 10 mm): "QUẢN LÝ THIẾT BỊ BẰNG MÃ QR — VIỆC CỦA CÁN BỘ" cho Khoa Khí tượng Thủy văn & Hải dương học (HMO), Trường ĐH Khoa học Tự nhiên – ĐHQG Hà Nội. Logo HMO đính kèm, góc trên trái.
+
+NGƯỜI ĐỌC: cán bộ quản lý thiết bị và Phó Trưởng khoa. Mục tiêu: nhìn là biết email nào đến thì bấm gì, hệ thống tự làm gì.
+
+YÊU CẦU TRÌNH BÀY
+- Toàn trang tối đa ~250 chữ. Thân bài ≥ 10 pt. Ưu tiên sơ đồ, bảng, biểu tượng; không viết đoạn văn.
+- Phân biệt rõ: ⚙ HỆ THỐNG TỰ LÀM (nền xám nhạt) và 👤 CÁN BỘ LÀM (nền trắng, viền navy).
+- Không thuật ngữ kỹ thuật. Không thêm nội dung ngoài phần dưới.
+- Màu: navy #1a3a6b (chủ đạo), cam #F07800 (nhấn); trạng thái: xanh lá #2e7d32, đỏ #c62828, vàng cam #b45309, xanh ngọc #00838f. Font không chân hỗ trợ tiếng Việt.
+
+BỐ CỤC (từ trên xuống)
+1. Dải đầu (navy): logo + tiêu đề + dòng phụ "Khoa KTTV&HDH — Sổ tay 1 trang cho cán bộ quản lý".
+2. SƠ ĐỒ VÒNG ĐỜI MỘT LƯỢT MƯỢN (một hàng ngang các ô màu nối mũi tên):
+   Yêu cầu mượn → [≥ 100 tr: 🟠 Chờ PTK duyệt] → 🔴 Đang mượn → ⏳ Chờ kiểm tra → 🟢 Đã trả
+   Nhánh phụ từ "Chờ kiểm tra": ⚠️ Có sự cố → 🔧 PTK khắc phục → 🟢
+   Nhánh riêng: 🔬 Dùng tại chỗ → hết giờ tự kết thúc → 🟢
+   Chú thích nhỏ: các ô 🟠 🔴 ⏳ ⚠️ 🔬 = thiết bị đang KHÓA, không ai mượn được.
+3. BẢNG "NHẬN EMAIL NÀY → BẤM GÌ" (khối nổi bật nhất, 3 cột: Email · Ai nhận · Việc cần làm):
+   ⚠️ Cần phê duyệt · Phó Trưởng khoa · bấm Phê duyệt / Từ chối → xác nhận
+   🔍 Kiểm tra thiết bị trả · Cán bộ quản lý · kiểm tra thiết bị, đếm phụ kiện → bấm ✅ Hoạt động tốt hoặc ⚠️ Có sự cố
+   ⚠️ Sự cố khi nhận lại · Phó Trưởng khoa · sửa xong → bấm 🔧 Đã khắc phục
+   🚨 Báo hỏng · Cán bộ + PTK · xem thiết bị, đánh giá sửa / thanh lý
+   🔧 Lịch bảo trì (thứ Hai) · Cán bộ + PTK · lên kế hoạch; làm xong quét QR → Ghi bảo trì, nhập ngày lần sau
+4. Hai cột cạnh nhau:
+   ⚙ HỆ THỐNG TỰ LÀM: kiểm tra và tự từ chối yêu cầu sai · thiết bị < 100 tr ghi nhận ngay · nhắc người mượn trước hạn 2 ngày · quá hạn: nhắc mỗi ngày · chưa kiểm tra sau 2 ngày: nhắc cán bộ · báo cáo tháng, báo cáo hiệu quả năm.
+   👤 QUY TẮC CẦN NHỚ: giao thiết bị phải kiểm tra + ký nhận · ≥ 100 triệu: Phó Trưởng khoa duyệt · thiết bị hỏng hẳn: đổi tình trạng "Hỏng" trong danh mục → tự khóa mượn · sửa > 50% giá trị: đề xuất thanh lý · kiểm kê 6 tháng/lần.
+5. Chân trang: "Liên hệ: TS. Phạm Tiến Đạt — Phó Trưởng khoa — datpt@hus.edu.vn".
+```
+
+---
+
+## A3. Flyer HƯỚNG DẪN TRIỂN KHAI & VẬN HÀNH — cho người vận hành kỹ thuật
+
+```text
+Hãy thiết kế MỘT FLYER khổ A4 dọc, ĐÚNG 1 TRANG, in được (lề 10 mm): "VẬN HÀNH HỆ THỐNG QR QUẢN LÝ THIẾT BỊ — 1 TRANG" cho Khoa Khí tượng Thủy văn & Hải dương học (HMO), Trường ĐH Khoa học Tự nhiên – ĐHQG Hà Nội. Logo HMO đính kèm, góc trên trái.
+
+NGƯỜI ĐỌC: người vận hành kỹ thuật (biết Google Sheets, chạy được lệnh PowerShell, không phải lập trình viên). Dán cạnh máy tính để tra nhanh.
+
+YÊU CẦU TRÌNH BÀY
+- Toàn trang tối đa ~250 chữ (không tính khung lệnh). Thân bài ≥ 9,5 pt.
+- Khung lệnh dùng font monospace, nền xám nhạt, GIỮ NGUYÊN VĂN lệnh bên dưới (kể cả mã dài), cho phép xuống dòng.
+- Hộp "KHÔNG ĐƯỢC LÀM" nền đỏ nhạt, viền đỏ #c62828, đặt ở nửa trên trang.
+- Không thêm nội dung ngoài phần dưới.
+- Màu: navy #1a3a6b (chủ đạo), cam #F07800 (nhấn), đỏ #c62828 (cấm), xanh lá #2e7d32 (đúng). Font không chân hỗ trợ tiếng Việt.
+
+BỐ CỤC (từ trên xuống)
+1. Dải đầu (navy): logo + tiêu đề + dòng phụ "Apps Script version 17 — Khoa KTTV&HDH".
+2. SƠ ĐỒ 1 HÀNG (biểu tượng + mũi tên): Tem QR → Trang tra cứu (GitHub Pages) → 5 Google Form → Google Sheet master → Apps Script → Email.
+3. Hộp đỏ "⛔ 5 ĐIỀU KHÔNG ĐƯỢC LÀM":
+   1. Không chạy clasp create-deployment
+   2. Không chạy clasp pull trong thư mục dự án
+   3. Không xoá .claspignore, không sửa appsscript.json
+   4. Không đổi tên câu hỏi trên form, không xoá tab Form Responses
+   5. Không xoá / chèn cột trong Log_Muon_Tra
+4. Khối "🔄 CẬP NHẬT APPS SCRIPT — chạy liền 5 lệnh" (khung lệnh):
+   cd D:\HMO_equipment\HMO-equipment
+   node tests/backend_regression.cjs
+   clasp push -f
+   clasp create-version "mô tả"
+   clasp update-deployment AKfycbwfXPsePpUOqJp6F4-c58gCwzJPsCyBDFN3JMGWTHuO_F_HR4uMYl9r9s7UWfdGCmHI_Q -V N
+   Ghi chú dưới khung: N = số version vừa in ra · test phải "pass" hết mới làm tiếp.
+5. Hai cột cạnh nhau:
+   🌐 CẬP NHẬT TRANG TRA CỨU: sửa index.html → chép sang QR_Landing_Page.html → tăng số phiên bản trong sw.js → git push (≈ 1 phút).
+   📊 SỬA TRONG GOOGLE SHEET (có hiệu lực ngay): tình trạng "Hỏng" → khóa mượn · cột "Email CB quản lý" → người nhận email kiểm tra, báo hỏng, bảo trì · cột "Link hướng dẫn sử dụng" → nút Hướng dẫn trong email.
+6. Bảng "🛠 SỰ CỐ THƯỜNG GẶP" (2 cột: Hiện tượng → Cách xử lý):
+   Không thấy email → Apps Script → Executions, xem dòng Failed
+   Link email hết hạn → menu "Gửi lại email phê duyệt / kiểm tra đang chờ"
+   Báo "không nhận diện được form" → đổi lại tên câu hỏi trên form
+   Menu chạy mãi → tìm hộp thoại chờ bấm OK
+   Điện thoại chưa thấy bản mới → đóng hẳn app, mở lại
+7. Dải dưới "⏰ LỊCH TỰ ĐỘNG": 7h nhắc hạn trả · 8h quá hạn + nhắc kiểm tra · Thứ Hai 9h bảo trì · Ngày 1 báo cáo tháng.
+8. Chân trang: "Chi tiết: HUONG_DAN_TRIEN_KHAI.md · Liên hệ: datpt@hus.edu.vn".
+```
+
+---
+
+# B. BẢN NHIỀU TRANG
 
 ## 1. QUY TRÌNH SỬ DỤNG THIẾT BỊ — cho người dùng
 

@@ -83,3 +83,8 @@
 
 - Tạo `PROMPT_CLAUDE_DESIGN_TAI_LIEU.md`: 3 prompt tự chứa nội dung (Claude Design không đọc repo) — (1) Quy trình sử dụng cho người dùng: A4 4–5 trang + trang "Thao tác nhanh" dán tường; (2) Sổ tay quản lý cho PTK/CB: sơ đồ trạng thái, 3 quy trình, bảng email, checklist "Việc của cán bộ quản lý"; (3) Sổ tay vận hành kỹ thuật: sơ đồ kiến trúc, hộp "5 điều không được làm", lệnh clasp nguyên văn, bảng sự cố, checklist. Kèm màu thương hiệu, yêu cầu câu ngắn / mỗi bước một hành động / không thêm chức năng. Nội dung lấy từ bản v2.0 (hệ thống v17).
 - Không sửa code, không chạy test, không deploy.
+
+## 10:25 — Thêm prompt FLYER 1 trang A4 cho 3 tài liệu
+
+- `PROMPT_CLAUDE_DESIGN_TAI_LIEU.md`: thêm Phần A — 3 prompt flyer, mỗi tài liệu đúng 1 trang A4 (A1 người dùng: bước 0 quét QR + lưới 4 thẻ mượn/tại chỗ/trả/báo hỏng + dải email + ô chừa dán QR; A2 cán bộ: sơ đồ vòng đời 1 hàng + bảng "nhận email này → bấm gì" + hệ thống tự làm / quy tắc; A3 vận hành: sơ đồ 1 hàng + hộp 5 điều cấm + khung 5 lệnh + sự cố + lịch). Giới hạn chữ ~200–250/trang. Bản nhiều trang giữ ở Phần B.
+- Không sửa code, không chạy test, không deploy.
