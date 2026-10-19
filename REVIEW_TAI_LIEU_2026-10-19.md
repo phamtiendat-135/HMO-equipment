@@ -2,7 +2,7 @@
 
 **Phạm vi:** `HUONG_DAN_TRIEN_KHAI.md`, `QUY_TRINH_QUAN_LY_THIET_BI.md`, `QUY_TRINH_SU_DUNG_THIET_BI.docx` (+ `.pdf`), `Kich_ban_video_HMO_Eq.docx`.
 **Đối chiếu với:** Apps Script **v16** (deploy 19/10), trang tra cứu GitHub Pages (`sw.js` v13), 5 Google Form đang chạy.
-**Trạng thái:** đề xuất để anh duyệt — **chưa sửa file nào**. Anh đánh dấu ✅ / ❌ / ✏️ vào từng mục rồi báo tôi.
+**Trạng thái (cập nhật 19/10):** anh đã chốt **D1a** (TB < 100 tr tự ghi nhận); đã sửa code **D2, D3, D4** (Apps Script **v17**); đã viết lại `HUONG_DAN_TRIEN_KHAI.md` và `QUY_TRINH_QUAN_LY_THIET_BI.md`. **Còn mở:** D6 (anh hỏi lý do ẩn Đào tạo/NCKH), D8 (thống kê giờ HPC), `QUY_TRINH_SU_DUNG_THIET_BI.docx`, video.
 
 ---
 

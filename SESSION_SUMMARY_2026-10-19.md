@@ -60,3 +60,12 @@
 - **Lỗi phát hiện (D3), đã tái hiện bằng harness test trên code hiện tại:** ngày hạn trả = hôm nay → `checkOverdueReturns` gửi "🔴 QUÁ HẠN … đã quá 0 ngày" (điều kiện `daysOverdue >= CONFIG.OVERDUE_DAYS` với 0), trong khi trang tra cứu (daysOverdue=0) và Nhật ký (isOverdue=false) không coi là quá hạn. CHƯA sửa — chờ anh chốt.
 - Không sửa code, không deploy. Test chạy: chỉ script tái hiện lỗi (ngoài repo).
 - Chờ anh trả lời D1–D9 → sửa code (nếu chọn) → viết lại 4 tài liệu (.docx giữ định dạng NĐ30, xuất lại PDF) → video.
+
+## 10:06 — v17 + viết lại Hướng dẫn triển khai & SOP
+
+- Anh chốt: D1a (TB < 100 tr tự ghi nhận); sửa code D2, D3, D4; D6 anh hỏi lý do ẩn Đào tạo/NCKH (chưa làm); D8 anh muốn tìm cách thống kê giờ dùng HPC qua mạng (chưa làm). Video để tối anh làm.
+- Code (`Google_Apps_Script.js`): D2 `sendAutoAcceptedEmail_` + `buildDecisionEmail_(…, autoAccepted)`; D3 `OVERDUE_DAYS=1` + `Math.max(1, …)`; D4 `withManagers_` (báo hỏng) + `sendMaintenanceToManagers_`; phát hiện thêm và sửa: `checkMaintenanceSchedule` tính ngày bằng giờ hiện tại (hụt 1 ngày, hạn hôm nay bị báo quá hạn) → `startOfToday_()`.
+- Test: backend **90/90** (+7 test; 5 test mới FAIL trên v16), frontend 28/28. Render email "Đã ghi nhận mượn" bằng Edge headless, đã xem.
+- ✅ Deploy **v17**: `list-deployments` → `@17`; `clasp pull` vào thư mục tạm → khớp repo; API live trả đúng. Commit `61c62de` đã push.
+- Tài liệu: viết lại `HUONG_DAN_TRIEN_KHAI.md` (v2.0: kiến trúc, Sheet A–V, 5 form, trang tra cứu, tem, clasp, cấu hình, test, lịch, menu, sự cố, file, checklist) và `QUY_TRINH_QUAN_LY_THIET_BI.md` (v2.0 dự thảo: QT-02A/B/C, vòng đời, bảng email, QT-03/04/05 sửa theo hệ thống, phụ lục C mới — 20 TB chưa có CB đều "Không hoạt động" theo xlsx, cần đối chiếu Sheet thật). Cập nhật CLAUDE.md, trạng thái trong REVIEW.
+- Còn lại: `QUY_TRINH_SU_DUNG_THIET_BI.docx/.pdf`, kịch bản video, D6, D8 (HPC), điền Email CB quản lý.

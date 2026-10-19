@@ -39,8 +39,8 @@ QR Label on device
 | `Create_Google_Forms.js` | Script tạo 4 Google Forms tự động | ✅ Đã cập nhật 3 bộ môn |
 | `Google_Forms_Template.md` | Template specs cho 4 Google Forms | ✅ Đã cập nhật 3 bộ môn |
 | `TAI_LIEU_CHUYEN_GIAO.docx` | Tài liệu chuyển giao hệ thống | ✅ Hoàn thành |
-| `QUY_TRINH_QUAN_LY_THIET_BI.md` | SOP — 5 quy trình (QT-01 → QT-05) | Reference document |
-| `HUONG_DAN_TRIEN_KHAI.md` | Hướng dẫn triển khai (8 bước) | Reference document |
+| `QUY_TRINH_QUAN_LY_THIET_BI.md` | SOP **v2.0 dự thảo (19/10)** — QT-01, QT-02A mượn mang đi, QT-02B tại chỗ, QT-02C trả + kiểm tra nhận lại, QT-03→05, bảng nhắc việc/email | ✅ Cập nhật theo v17 |
+| `HUONG_DAN_TRIEN_KHAI.md` | **Hướng dẫn triển khai & vận hành kỹ thuật v2.0 (19/10)** — kiến trúc, Sheet A–V, 5 form, clasp, menu, lịch, xử lý sự cố | ✅ Cập nhật theo v17 |
 | `QUY_TRINH_SU_DUNG_THIET_BI.docx` / `.pdf` | Quy trình sử dụng thiết bị | Reference document |
 | `hmo_deployment_workflow.svg` | Sơ đồ quy trình triển khai | Reference document |
 
@@ -255,6 +255,12 @@ Trước khi kết thúc MỌI phiên làm việc trong workspace này, tạo ho
 - Cấu trúc Log v3 (`LOG_SCHEMA_VERSION=3`) — tự thêm header cột V ở lần ghi đầu.
 - Landing page: badge "⏳ Đã trả — chờ cán bộ kiểm tra" / "⚠️ Đang xử lý sự cố", nhãn lịch sử; `sw.js` v13.
 
+## Changes Log (Session 19/10/2026 — v17 + tài liệu)
+
+- ✅ Deploy **version 17** (xác minh `@17`, code trên Google khớp repo): email "✅ Đã ghi nhận mượn" cho TB < 100 tr (`sendAutoAcceptedEmail_`, `buildDecisionEmail_(…, autoAccepted)`); nhắc quá hạn từ ngày SAU hạn trả (`OVERDUE_DAYS=1`, trước đó gửi "quá 0 ngày"); báo hỏng gửi PTK + Email CB quản lý (`withManagers_`); nhắc bảo trì gửi thêm từng CB (`sendMaintenanceToManagers_`); nhắc bảo trì tính theo ngày lịch (trước hụt 1 ngày).
+- Viết lại `HUONG_DAN_TRIEN_KHAI.md` và `QUY_TRINH_QUAN_LY_THIET_BI.md` (v2.0) theo `REVIEW_TAI_LIEU_2026-10-19.md` (D1a: TB < 100 tr tự ghi nhận). Chưa làm: `QUY_TRINH_SU_DUNG_THIET_BI.docx/.pdf`, kịch bản video (motion graphic).
+- Còn mở: D6 (mục Đào tạo/NCKH), D8 (thống kê giờ dùng HPC qua mạng).
+
 ## Deploy Apps Script (clasp)
 
 Script là **container-bound** trong Sheet master. Cấu hình đã có sẵn trong repo: `.clasp.json`, `.claspignore`, `appsscript.json`.
