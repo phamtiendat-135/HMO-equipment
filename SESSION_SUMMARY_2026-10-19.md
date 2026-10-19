@@ -109,3 +109,15 @@
 - Test: backend **94/94** (+4; 3 test mới FAIL trên v17). Deploy **v18**: `@18`, code trên Google khớp repo, API `?id=HMO-OBS-8689` trả đúng.
 - Tài liệu: SOP (hạn mức phê duyệt: S631 960 tr/máy, ADCP ~471 tr/máy, AWAC ~1.216 tr), HUONG_DAN (giải thích cột Nguyên giá), CLAUDE.md, `QUY_TRINH_SU_DUNG_THIET_BI.docx/.pdf` dựng lại (validate PASSED, xuất PDF bằng Word, đã xem trang 3).
 - KHÔNG sửa Google Sheet (không cần; cột tổng giữ nguyên).
+
+## 16:46 — Chốt phiên chiều 19/10 (tối làm tiếp ở nhà)
+
+**Trạng thái (đã xác minh trong phiên):** Apps Script deployment `@18` (code trên Google khớp repo); GitHub Pages `sw.js` v13; `main` đồng bộ `origin/main`.
+
+**Việc còn lại:**
+1. Kịch bản video motion graphic (anh làm tối) — kịch bản 16 cảnh ở `REVIEW_TAI_LIEU_2026-10-19.md` mục 5.
+2. Chạy prompt Claude Design (`PROMPT_CLAUDE_DESIGN_TAI_LIEU.md`): flyer A1–A4; flyer cài app cần tự chụp 3 ảnh trên điện thoại (xem `design_assets/flyer_cai_app/README.md`).
+3. Điền "Email CB quản lý" trong Master_Data (menu tạo cột); sửa lời cảm ơn form trả.
+4. D6 (mục Đào tạo/NCKH) chưa quyết.
+5. Đối chiếu Phụ lục C SOP với Sheet thật; ký ban hành Quy trình v2.0.
+- Mục này không sửa code, không chạy test, không deploy.
