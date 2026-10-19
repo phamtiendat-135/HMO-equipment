@@ -38,8 +38,9 @@ const CONFIG = {
   // Số ngày nhắc trước khi đến hạn bảo trì
   MAINTENANCE_REMINDER_DAYS: 30,
 
-  // Số ngày quá hạn trả trước khi gửi nhắc nhở (0 = gửi ngay ngày đến hạn)
-  OVERDUE_DAYS: 0,
+  // Quá hạn bao nhiêu ngày thì bắt đầu nhắc (tối thiểu 1 = ngay hôm sau ngày hạn trả;
+  // đúng ngày hạn trả chưa tính là quá hạn — khớp trang tra cứu / Nhật ký)
+  OVERDUE_DAYS: 1,
 
   // Số ngày trước hạn trả để gửi email nhắc người mượn
   REMIND_DAYS_BEFORE: 2,
@@ -741,7 +742,7 @@ function checkOverdueReturns() {
     if (!due) continue;
     const daysOverdue = Math.floor((today - due) / (1000 * 60 * 60 * 24));
 
-    if (daysOverdue >= CONFIG.OVERDUE_DAYS) {
+    if (daysOverdue >= Math.max(1, CONFIG.OVERDUE_DAYS)) {
       const email = (row[15] || '').toString().trim(); // cột P
       overdueItems.push({
         qr: (row[0] || 'N/A').toString().trim(),
@@ -994,7 +995,7 @@ function checkMaintenanceSchedule() {
 
   const data = maintSheet.getDataRange().getValues();
   const headers = data[0];
-  const today = new Date();
+  const today = startOfToday_(); // so theo ngày lịch (hạn hôm nay = còn 0 ngày, chưa quá hạn)
 
   const colQR = headers.indexOf('Mã QR');
   const colTen = headers.indexOf('Tên thiết bị');
@@ -1020,14 +1021,14 @@ function checkMaintenanceSchedule() {
       if (!nd) continue; // bỏ qua nếu ngày không hợp lệ
       const daysUntil = Math.floor((nd - today) / (1000 * 60 * 60 * 24));
 
-      if (daysUntil > 0 && daysUntil <= CONFIG.MAINTENANCE_REMINDER_DAYS) {
+      if (daysUntil >= 0 && daysUntil <= CONFIG.MAINTENANCE_REMINDER_DAYS) {
         upcomingMaint.push({
           qr: row[colQR],
           name: row[colTen],
           nextDate: Utilities.formatDate(nd, 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy'),
           daysUntil: daysUntil
         });
-      } else if (daysUntil <= 0) {
+      } else if (daysUntil < 0) {
         upcomingMaint.push({
           qr: row[colQR],
           name: row[colTen],
@@ -1059,7 +1060,7 @@ function checkMaintenanceSchedule() {
     body += `📅 SẮP ĐẾN HẠN (trong ${CONFIG.MAINTENANCE_REMINDER_DAYS} ngày tới):\n\n`;
     upcoming.forEach(m => {
       body += `  • ${m.qr} — ${m.name}\n`;
-      body += `    Hạn: ${m.nextDate} (còn ${m.daysUntil} ngày)\n\n`;
+      body += `    Hạn: ${m.nextDate} (${m.daysUntil ? 'còn ' + m.daysUntil + ' ngày' : 'hôm nay'})\n\n`;
     });
   }
 
@@ -1067,6 +1068,38 @@ function checkMaintenanceSchedule() {
   body += `— Hệ thống quản lý TB Khoa KTTV&HDH`;
 
   MailApp.sendEmail(CONFIG.ADMIN_EMAIL, subject, body);
+  sendMaintenanceToManagers_(ss, upcomingMaint);
+}
+
+/**
+ * Nhắc bảo trì cho từng CB quản lý (cột "Email CB quản lý"): mỗi người 1 email, chỉ gồm thiết bị mình quản lý.
+ * Lỗi gửi cho một người không chặn những người khác.
+ */
+function sendMaintenanceToManagers_(ss, items) {
+  const byEmail = {};
+  items.forEach(item => {
+    let master = null;
+    try { master = getMasterRecord_(ss, String(item.qr).trim()); } catch (err) { /* bỏ qua */ }
+    (master ? master.managerEmails : []).forEach(email => {
+      if (email.toLowerCase() === CONFIG.ADMIN_EMAIL.toLowerCase()) return; // PTK đã nhận bản tổng
+      (byEmail[email] = byEmail[email] || []).push(item);
+    });
+  });
+  Object.keys(byEmail).forEach(email => {
+    const list = byEmail[email];
+    let body = `Kính gửi thầy/cô,\n\nThiết bị thầy/cô quản lý đến hạn bảo trì/hiệu chuẩn:\n\n`;
+    list.forEach(m => {
+      body += `  • ${m.qr} — ${m.name}\n    Hạn: ${m.nextDate} ` +
+        `(${m.overdue ? 'quá ' + Math.abs(m.daysUntil) + ' ngày' : (m.daysUntil ? 'còn ' + m.daysUntil + ' ngày' : 'hôm nay')})\n\n`;
+    });
+    body += `Sau khi thực hiện, quét QR thiết bị → "🔧 Ghi bảo trì" để cập nhật lần tiếp theo.\n\n`;
+    body += `— Hệ thống quản lý TB Khoa KTTV&HDH`;
+    try {
+      MailApp.sendEmail(email, `[KTTV&HDH] 🔧 Lịch bảo trì: ${list.length} thiết bị thầy/cô quản lý`, body);
+    } catch (err) {
+      Logger.log(`⚠️ Không gửi được nhắc bảo trì cho ${email}: ${err.message}`);
+    }
+  });
 }
 
 
@@ -1309,7 +1342,8 @@ function recordLoanRequest_(ss, req, sourceId) {
       location: onsite ? 'Tại chỗ' + (equipLocation ? ' — ' + equipLocation : '') : req.location,
       borrowDate: borrowDate, dueDate: dueDate,
       onsite: onsite, hours: req.hours,
-      needsApproval: needsApproval, rejectReason: rejectReason
+      needsApproval: needsApproval, rejectReason: rejectReason,
+      guideUrl: (master && master.guideUrl) || safeGuideUrl_(CONFIG.GUIDE_DEFAULT_URL)
     };
     const closeOnsite = onsite && !rejectReason;
 
@@ -1359,11 +1393,28 @@ function notifyLoanRequest_(loan) {
   try {
     if (loan.rejectReason) sendAutoRejectEmails_(loan);
     else if (loan.onsite) sendOnsiteNoticeEmail_(loan);
-    else sendLoanRequestEmail_(loan);
+    else {
+      sendLoanRequestEmail_(loan);
+      if (!loan.needsApproval) sendAutoAcceptedEmail_(loan);
+    }
   } catch (err) {
     throw new Error(`Đã ghi giao dịch ${loan.loanId} nhưng gửi email thất bại: ${err.message}. ` +
       (loan.needsApproval ? 'Dùng menu "Gửi lại email phê duyệt đang chờ".' : 'Giao dịch vẫn hợp lệ trong Log.'));
   }
+}
+
+/**
+ * TB dưới ngưỡng (tự ghi nhận, không cần duyệt): gửi người mượn email xác nhận cùng mẫu email đã duyệt —
+ * hạn trả, nút thêm vào lịch, nút hướng dẫn sử dụng. Không có email người mượn thì bỏ qua.
+ */
+function sendAutoAcceptedEmail_(loan) {
+  if (!loan.email) return;
+  const mail = buildDecisionEmail_(true, {
+    qrCode: loan.qrCode, equipName: loan.equipName, borrower: loan.borrower, purpose: loan.purpose,
+    borrowDate: loan.borrowDate, dueDate: loan.dueDate, loanId: loan.loanId, guideUrl: loan.guideUrl,
+    dateStr: formatDateVN_(new Date(), 'dd/MM/yyyy HH:mm')
+  }, true);
+  MailApp.sendEmail(loan.email, mail.subject, mail.body, { htmlBody: mail.htmlBody });
 }
 
 /** Email thông báo cho PTK khi có khai báo sử dụng tại chỗ — chỉ để biết, không có link duyệt. */
@@ -2324,7 +2375,14 @@ function onFormSubmitDamage(e) {
   body += `\n→ Hệ thống KHÔNG tự đổi tình trạng trong Master_Data. Sau khi kiểm tra, nếu thiết bị ` +
     `không còn dùng được, cập nhật cột tình trạng thành "Hỏng" để chặn mượn.\n`;
   body += `\n— Hệ thống quản lý TB Khoa KTTV&HDH`;
-  MailApp.sendEmail(CONFIG.ADMIN_EMAIL, `[KTTV&HDH] 🚨 Báo hỏng: ${row[1]} (${qrCode})`, body);
+  // PTK + CB quản lý của thiết bị (cột "Email CB quản lý")
+  MailApp.sendEmail(withManagers_(master).join(','), `[KTTV&HDH] 🚨 Báo hỏng: ${row[1]} (${qrCode})`, body);
+}
+
+/** [PTK, ...email CB quản lý của thiết bị] — không trùng lặp. */
+function withManagers_(master) {
+  const list = [CONFIG.ADMIN_EMAIL].concat(master ? master.managerEmails : []);
+  return list.filter((email, i) => list.findIndex(x => x.toLowerCase() === email.toLowerCase()) === i);
 }
 
 
@@ -3275,28 +3333,36 @@ function weekdayLeft_(date) {
 }
 
 /**
- * Email kết quả phê duyệt cho người mượn: { subject, body (chữ thường), htmlBody }.
- * Đã duyệt → nêu rõ hạn trả (tiêu đề + ô nổi bật + nút thêm vào lịch). Mọi giá trị người dùng đều escape.
+ * Email gửi người mượn: { subject, body (chữ thường), htmlBody }. Mọi giá trị người dùng đều escape.
+ *   isApprove=true  → PTK đã duyệt (hoặc autoAccepted=true: TB dưới ngưỡng, tự ghi nhận, không cần duyệt):
+ *                     hạn trả nổi bật (tiêu đề + ô) + nút thêm vào lịch + nút hướng dẫn sử dụng.
+ *   isApprove=false → PTK từ chối.
  */
-function buildDecisionEmail_(isApprove, o) {
+function buildDecisionEmail_(isApprove, o, autoAccepted) {
   const tone = isApprove ? EMAIL_TONE.green : EMAIL_TONE.red;
   const equipLink = CONFIG.LANDING_PAGE_URL + '?id=' + encodeURIComponent(o.qrCode);
   const due = isApprove ? o.dueDate : null;
   const dueStr = due ? formatDateVN_(due) : '';
   const dueLong = due ? `${WEEKDAYS_VN[due.getDay()]}, ${dueStr} (${daysLeftText_(due)})` : '';
 
-  const subject = isApprove
-    ? `[KTTV&HDH] ✅ Đã duyệt mượn ${o.equipName}` + (due ? ` — hạn trả ${dueStr}` : '')
-    : `[KTTV&HDH] ❌ Yêu cầu mượn ${o.equipName} bị TỪ CHỐI`;
+  const subject = autoAccepted
+    ? `[KTTV&HDH] ✅ Đã ghi nhận mượn ${o.equipName}` + (due ? ` — hạn trả ${dueStr}` : '')
+    : isApprove
+      ? `[KTTV&HDH] ✅ Đã duyệt mượn ${o.equipName}` + (due ? ` — hạn trả ${dueStr}` : '')
+      : `[KTTV&HDH] ❌ Yêu cầu mượn ${o.equipName} bị TỪ CHỐI`;
   const greeting = 'Kính gửi thầy/cô' + (o.borrower ? ' ' + o.borrower : '') + ',';
-  const lead = isApprove
-    ? 'Yêu cầu mượn thiết bị của thầy/cô đã được Phó Trưởng khoa PHÊ DUYỆT.'
-    : 'Yêu cầu mượn thiết bị của thầy/cô đã bị Phó Trưởng khoa TỪ CHỐI.';
+  const lead = autoAccepted
+    ? `Yêu cầu mượn thiết bị của thầy/cô đã được GHI NHẬN (thiết bị dưới ${CONFIG.APPROVAL_THRESHOLD} ` +
+      'triệu VNĐ, không cần phê duyệt).'
+    : isApprove
+      ? 'Yêu cầu mượn thiết bị của thầy/cô đã được Phó Trưởng khoa PHÊ DUYỆT.'
+      : 'Yêu cầu mượn thiết bị của thầy/cô đã bị Phó Trưởng khoa TỪ CHỐI.';
   const next = isApprove
     ? 'Thầy/cô có thể đến nhận thiết bị theo lịch đã đăng ký. Khi trả, quét mã QR trên thiết bị ' +
       '(hoặc mở link bên dưới) và bấm "✅ Xác nhận trả".'
     : 'Vui lòng liên hệ cán bộ quản lý thiết bị để biết thêm thông tin.';
   const support = isApprove ? 'Cần gia hạn hoặc hỗ trợ' : 'Cần hỗ trợ';
+  const timeLabel = autoAccepted ? 'Ghi nhận lúc' : (isApprove ? 'Duyệt lúc' : 'Xử lý lúc');
 
   const details = [
     ['Thiết bị', o.equipName + ' (' + o.qrCode + ')'],
@@ -3304,7 +3370,7 @@ function buildDecisionEmail_(isApprove, o) {
     ['Hạn trả', dueLong],
     ['Mục đích', o.purpose],
     ['Mã giao dịch', o.loanId],
-    [isApprove ? 'Duyệt lúc' : 'Xử lý lúc', o.dateStr]
+    [timeLabel, o.dateStr]
   ].filter(([, value]) => value);
 
   let body = `${greeting}\n\n${lead}\n\n`;
@@ -3317,10 +3383,13 @@ function buildDecisionEmail_(isApprove, o) {
 
   const esc = escapeHtml_;
   const blocks = [
-    emailBlock_(emailPill_(isApprove ? '✅ ĐÃ PHÊ DUYỆT' : '❌ KHÔNG ĐƯỢC DUYỆT', tone) +
+    emailBlock_(emailPill_(autoAccepted ? '✅ ĐÃ GHI NHẬN' : (isApprove ? '✅ ĐÃ PHÊ DUYỆT' : '❌ KHÔNG ĐƯỢC DUYỆT'), tone) +
       emailP_(emailGreeting_(o.borrower), true) +
-      emailP_(`Yêu cầu mượn thiết bị của thầy/cô ${isApprove ? 'đã được' : 'đã bị'} Phó Trưởng khoa ` +
-        emailStrong_(isApprove ? 'phê duyệt' : 'từ chối', tone) + '.'), 24)
+      emailP_(autoAccepted
+        ? `Yêu cầu mượn thiết bị của thầy/cô đã được ${emailStrong_('ghi nhận', tone)} — thiết bị dưới ` +
+          `${esc(CONFIG.APPROVAL_THRESHOLD)} triệu VNĐ, không cần phê duyệt.`
+        : `Yêu cầu mượn thiết bị của thầy/cô ${isApprove ? 'đã được' : 'đã bị'} Phó Trưởng khoa ` +
+          emailStrong_(isApprove ? 'phê duyệt' : 'từ chối', tone) + '.'), 24)
   ];
   if (due) blocks.push(emailBlock_(emailHighlight_('📅 Hạn trả thiết bị', dueStr, weekdayLeft_(due), EMAIL_TONE.amber)));
   blocks.push(emailBlock_(emailDetails_([
@@ -3329,7 +3398,7 @@ function buildDecisionEmail_(isApprove, o) {
     ['Hạn trả', emailStrong_(dueStr, EMAIL_TONE.amber)],
     ['Mục đích', esc(o.purpose)],
     ['Mã giao dịch', emailMono_(o.loanId)],
-    [isApprove ? 'Duyệt lúc' : 'Xử lý lúc', esc(o.dateStr)]
+    [timeLabel, esc(o.dateStr)]
   ])));
   blocks.push(emailBlock_(emailNote_(
     esc(next).replace('&quot;✅ Xác nhận trả&quot;', '<strong>“✅ Xác nhận trả”</strong>'))));
@@ -3343,7 +3412,8 @@ function buildDecisionEmail_(isApprove, o) {
       : emailDisabledButton_('📘 Hướng dẫn sử dụng', '(đang cập nhật)'), 10));
   }
 
-  const htmlBody = emailLayout_({ heading: 'Kết quả yêu cầu mượn thiết bị', tone: tone, blocks: blocks, support: support });
+  const heading = autoAccepted ? 'Xác nhận mượn thiết bị' : 'Kết quả yêu cầu mượn thiết bị';
+  const htmlBody = emailLayout_({ heading: heading, tone: tone, blocks: blocks, support: support });
   return { subject: subject, body: body, htmlBody: htmlBody };
 }
 

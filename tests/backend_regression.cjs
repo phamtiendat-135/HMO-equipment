@@ -1011,6 +1011,103 @@ test('Kiểm tra: dòng cũ đã trả (cột V trống) và khai báo tại ch�
   assert.ok(!h.mail.some(m => /Kiểm tra thiết bị trả/.test(m[1])));
 });
 
+// ====================== D3: quá hạn tính từ ngày SAU hạn trả ======================
+function overdueMailFor(daysAfterDue) {
+  const loan = legacyLoan('A', '✅ Đã phê duyệt', 'a@example.invalid');
+  const due = new Date(); due.setHours(0, 0, 0, 0); due.setDate(due.getDate() - daysAfterDue);
+  loan[7] = due;
+  const h = harness([loan]);
+  h.ctx.checkOverdueReturns();
+  return h.mail.find(m => m[0] === 'a@example.invalid' && /QUÁ HẠN/.test(m[1]));
+}
+test('D3: đúng ngày hạn trả KHÔNG gửi "quá hạn 0 ngày"; hôm sau mới nhắc "quá 1 ngày"', () => {
+  assert.equal(overdueMailFor(0), undefined);
+  assert.match(overdueMailFor(1)[1], /đã quá 1 ngày/);
+  assert.match(overdueMailFor(5)[1], /đã quá 5 ngày/);
+});
+
+// ====================== D2: email xác nhận cho mượn dưới ngưỡng ======================
+test('D2: mượn TB < 100 tr → người mượn nhận "Đã ghi nhận mượn" (hạn trả, lịch, hướng dẫn); PTK vẫn nhận thông báo', () => {
+  const h = harness();
+  h.sheets.Master_Data.rows[0].push('Link hướng dẫn sử dụng');
+  h.sheets.Master_Data.rows[3].push('https://sites.google.com/view/hmo/lab-0002');
+  h.ctx.onFormSubmitBorrow(formEvent(borrowFields({ 'Mã QR thiết bị': 'HMO-LAB-0002' })));
+  assert.equal(lastRow(h)[12], '', 'tự ghi nhận, không chờ duyệt');
+  const ptk = h.mail.find(m => m[0] === 'datpt@hus.edu.vn');
+  assert.match(ptk[3].htmlBody, /THÔNG BÁO — KHÔNG CẦN DUYỆT/);
+  const mine = h.mail.find(m => m[0] === 'a@example.invalid');
+  assert.match(mine[1], /✅ Đã ghi nhận mượn .* — hạn trả 25\/09\/2026/);
+  const html = mine[3].htmlBody;
+  assert.match(html, /ĐÃ GHI NHẬN/);
+  assert.match(html, /không cần phê duyệt/);
+  assert.match(html, /Xác nhận mượn thiết bị/);
+  assert.match(html, /calendar\.google\.com/);
+  assert.ok(html.includes('href="https://sites.google.com/view/hmo/lab-0002"'));
+  assert.match(html, /Ghi nhận lúc/);
+  assert.ok(!/Phó Trưởng khoa/.test(html.replace(/Hệ thống[^<]*/g, '')) || /không cần phê duyệt/.test(html));
+});
+test('D2: TB ≥ 100 tr (chờ duyệt), tại chỗ, bị từ chối → KHÔNG gửi email "Đã ghi nhận"', () => {
+  const cases = [
+    h => h.ctx.onFormSubmitBorrow(formEvent(borrowFields())),
+    h => h.ctx.onFormSubmitOnsite(onsiteEvent({ 'Mã QR thiết bị': 'HMO-LAB-0002' })),
+    h => h.ctx.onFormSubmitBorrow(formEvent(borrowFields({ 'Mã QR thiết bị': 'HMO-PC-0001' })))
+  ];
+  for (const run of cases) {
+    const h = harness([], { props: { APPROVAL_SECRET: 's' } });
+    run(h);
+    assert.ok(!h.mail.some(m => /Đã ghi nhận mượn/.test(m[1])), h.mail.map(m => m[1]).join(' | '));
+  }
+});
+
+// ====================== D4: báo hỏng / nhắc bảo trì gửi cả CB quản lý ======================
+test('D4: báo hỏng gửi PTK + Email CB quản lý của thiết bị (không trùng PTK)', () => {
+  const h = harness();
+  h.sheets.Master_Data.rows[0].push('Email CB quản lý');
+  h.sheets.Master_Data.rows[1].push('ql@example.invalid, DATPT@hus.edu.vn');
+  h.ctx.onFormSubmitDispatch(formEvent({ 'Mã QR thiết bị': QR, 'Người phát hiện': 'B', 'Mức độ hỏng': 'Nặng',
+    'Mô tả sự cố': 'Không lên nguồn' }, 'Form Responses 4'));
+  const m = h.mail.find(x => /Báo hỏng/.test(x[1]));
+  assert.equal(m[0], 'datpt@hus.edu.vn,ql@example.invalid');
+});
+test('D4: báo hỏng thiết bị chưa có email CB → chỉ PTK như cũ', () => {
+  const h = harness();
+  h.ctx.onFormSubmitDispatch(formEvent({ 'Mã QR thiết bị': QR, 'Người phát hiện': 'B', 'Mức độ hỏng': 'Nhẹ',
+    'Mô tả sự cố': 'x' }, 'Form Responses 4'));
+  assert.equal(h.mail.find(x => /Báo hỏng/.test(x[1]))[0], 'datpt@hus.edu.vn');
+});
+test('D4: nhắc bảo trì — PTK nhận bản tổng, mỗi CB chỉ nhận thiết bị mình quản lý', () => {
+  const h = harness();
+  h.sheets.Master_Data.rows[0].push('Email CB quản lý');
+  h.sheets.Master_Data.rows[1].push('ql1@example.invalid');
+  h.sheets.Master_Data.rows[3].push('ql2@example.invalid');
+  const soon = new Date(); soon.setDate(soon.getDate() + 10);
+  const late = new Date(); late.setDate(late.getDate() - 3);
+  h.sheets.Log_Bao_Tri.rows.push([QR, 'Máy đo', 'Hiệu chuẩn', new Date(2026, 0, 1), soon]);
+  h.sheets.Log_Bao_Tri.rows.push(['HMO-LAB-0002', 'Mô hình', 'Bảo trì', new Date(2026, 0, 1), late]);
+  h.ctx.checkMaintenanceSchedule();
+  const to = addr => h.mail.filter(m => m[0] === addr);
+  assert.equal(to('datpt@hus.edu.vn').length, 1);
+  assert.match(to('datpt@hus.edu.vn')[0][2], new RegExp(QR) );
+  const m1 = to('ql1@example.invalid');
+  assert.equal(m1.length, 1);
+  assert.ok(m1[0][2].includes(QR) && !m1[0][2].includes('HMO-LAB-0002'));
+  assert.match(m1[0][2], /còn 10 ngày/);
+  const m2 = to('ql2@example.invalid');
+  assert.ok(m2[0][2].includes('HMO-LAB-0002') && /quá 3 ngày/.test(m2[0][2]));
+});
+test('Bảo trì: hạn đúng HÔM NAY → "hôm nay" (chưa quá hạn); hôm qua → "quá 1 ngày"', () => {
+  const h = harness();
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
+  h.sheets.Log_Bao_Tri.rows.push([QR, 'Máy đo', 'Hiệu chuẩn', new Date(2026, 0, 1), today]);
+  h.sheets.Log_Bao_Tri.rows.push(['HMO-LAB-0002', 'Mô hình', 'Bảo trì', new Date(2026, 0, 1), yesterday]);
+  h.ctx.checkMaintenanceSchedule();
+  const body = h.mail[0][2];
+  assert.match(body, new RegExp(QR + '[^\\n]*\\n\\s*Hạn: [0-9/]+ \\(hôm nay\\)'));
+  assert.match(body, /HMO-LAB-0002[^\n]*\n\s*Hạn: [0-9/]+ \(quá 1 ngày\)/);
+  assert.match(h.mail[0][1], /1 quá hạn, 1 sắp đến hạn/);
+});
+
 // ---------- Kết quả ----------
 let failed = 0;
 for (const [ok, name, err] of results) {
