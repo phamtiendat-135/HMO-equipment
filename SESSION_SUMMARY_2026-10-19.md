@@ -88,3 +88,11 @@
 
 - `PROMPT_CLAUDE_DESIGN_TAI_LIEU.md`: thêm Phần A — 3 prompt flyer, mỗi tài liệu đúng 1 trang A4 (A1 người dùng: bước 0 quét QR + lưới 4 thẻ mượn/tại chỗ/trả/báo hỏng + dải email + ô chừa dán QR; A2 cán bộ: sơ đồ vòng đời 1 hàng + bảng "nhận email này → bấm gì" + hệ thống tự làm / quy tắc; A3 vận hành: sơ đồ 1 hàng + hộp 5 điều cấm + khung 5 lệnh + sự cố + lịch). Giới hạn chữ ~200–250/trang. Bản nhiều trang giữ ở Phần B.
 - Không sửa code, không chạy test, không deploy.
+
+## 10:52 — Prompt flyer "Cài app" dùng ảnh thật của app
+
+- Chụp màn hình app thật (GitHub Pages) khổ iPhone 390 px, 3x, bằng Edge headless (iframe 390 px + cắt bằng PIL). Puppeteer/cổng debug của Edge không chạy được trên máy (nghi chính sách chặn remote debugging) → để ô "Có sẵn" hiện kết quả, chụp bản sao `index.html` (giống bản deploy) với kết quả API thật lấy trước bằng curl (`?id=HMO-OBS-8693` → available, 3/3). Script/ảnh trung gian ở scratchpad.
+- Thêm `design_assets/flyer_cai_app/`: 01 biểu tượng app, 02 trang chủ, 03 trang thiết bị ("🟢 Còn 3/3 sẵn sàng"), 04 khối 6 nút, 05 trang đầy đủ + README (kèm 3 ảnh anh nên tự chụp trên điện thoại: menu Chrome, bảng Chia sẻ Safari, màn hình chính). Đã xem ảnh.
+- `PROMPT_CLAUDE_DESIGN_TAI_LIEU.md`: thêm A4 — flyer cài app 1 trang A4 (khung điện thoại chứa ảnh thật, 2 cột Android/iPhone, khối "Xong!", mẹo, ô chừa dán QR); nếu chưa có ảnh bước cài thì vẽ mô phỏng, không giả ảnh chụp.
+- Lưu ý: biểu tượng emoji trong ảnh theo kiểu Windows (chụp bằng Edge trên Windows).
+- Không sửa code, không chạy test, không deploy.

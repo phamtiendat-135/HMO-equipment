@@ -2,7 +2,7 @@
 
 **Cách dùng:** mỗi tài liệu là **một khối prompt** bên dưới. Mở Claude Design → **đính kèm `HMO_logo.jpg`** → dán nguyên khối → gửi. Muốn sửa thì nhắn tiếp trong cùng cuộc trò chuyện (ví dụ "chữ to hơn", "bỏ bớt khối email", "đổi sơ đồ thành dạng thẻ").
 
-- **Phần A — FLYER 1 trang A4** (mỗi tài liệu đúng 1 trang): dùng để in dán, phát tay, gửi Zalo.
+- **Phần A — FLYER 1 trang A4** (mỗi tài liệu đúng 1 trang): dùng để in dán, phát tay, gửi Zalo. A4 = flyer cài app, dùng ảnh thật trong `design_assets/flyer_cai_app/`.
 - **Phần B — bản nhiều trang** (4–8 trang): khi cần đầy đủ chi tiết.
 
 Nội dung lấy từ bản v2.0 ngày 19/10/2026 (hệ thống Apps Script v17). Hệ thống thay đổi thì sửa phần "NỘI DUNG" trong prompt.
@@ -137,6 +137,57 @@ BỐ CỤC (từ trên xuống)
    Điện thoại chưa thấy bản mới → đóng hẳn app, mở lại
 7. Dải dưới "⏰ LỊCH TỰ ĐỘNG": 7h nhắc hạn trả · 8h quá hạn + nhắc kiểm tra · Thứ Hai 9h bảo trì · Ngày 1 báo cáo tháng.
 8. Chân trang: "Chi tiết: HUONG_DAN_TRIEN_KHAI.md · Liên hệ: datpt@hus.edu.vn".
+```
+
+---
+
+## A4. Flyer CÀI APP — dùng ảnh thật của app
+
+**Đính kèm khi gửi:** `HMO_logo.jpg` + các ảnh trong `design_assets/flyer_cai_app/`: `01_bieu_tuong_app.png`, `03_app_trang_thiet_bi.png`, `04_app_cac_nut.png`; thêm `06_android_menu.png`, `07_iphone_chia_se.png`, `08_man_hinh_chinh.png` nếu đã tự chụp (xem README trong thư mục đó).
+
+```text
+Hãy thiết kế MỘT FLYER khổ A4 dọc, ĐÚNG 1 TRANG, in được (lề 10 mm): "CÀI APP HMO THIẾT BỊ TRÊN ĐIỆN THOẠI" cho Khoa Khí tượng Thủy văn & Hải dương học (HMO), Trường ĐH Khoa học Tự nhiên – ĐHQG Hà Nội.
+
+ẢNH ĐÍNH KÈM — DÙNG ĐÚNG ẢNH, KHÔNG VẼ LẠI GIAO DIỆN APP:
+- HMO_logo.jpg: logo Khoa, góc trên trái.
+- 01_bieu_tuong_app.png: biểu tượng app (tên hiển thị "HMO Thiết bị").
+- 03_app_trang_thiet_bi.png: ảnh chụp thật màn hình app (trang một thiết bị). Đặt TRONG khung điện thoại (bo góc, viền tối), không cắt mất phần tiêu đề xanh và dòng "Có sẵn".
+- 04_app_cac_nut.png: ảnh chụp thật 6 nút thao tác.
+- Nếu có: 06_android_menu.png (menu Chrome có "Thêm vào màn hình chính"), 07_iphone_chia_se.png (bảng Chia sẻ Safari có "Thêm vào MH chính"), 08_man_hinh_chinh.png (màn hình chính có biểu tượng app). Dùng các ảnh này làm hình minh họa cho từng bước, khoanh tròn màu cam đúng chỗ cần chạm.
+- Nếu KHÔNG có ảnh 06/07/08: vẽ mô phỏng đơn giản (dạng nét phẳng) giao diện trình duyệt, chỉ thể hiện nút cần chạm và dòng chữ cần chọn, khoanh tròn màu cam. Không giả làm ảnh chụp.
+
+NGƯỜI ĐỌC: cán bộ, giảng viên, sinh viên — không rành công nghệ. Đọc xong làm theo được trong 1 phút.
+
+YÊU CẦU TRÌNH BÀY
+- Tối đa ~170 chữ trên toàn trang. Mỗi bước ≤ 8 chữ, đánh số tròn lớn (1, 2, 3). Hình to hơn chữ.
+- Màu: navy #1a3a6b (chủ đạo), cam #F07800 (khoanh chỗ chạm, nhấn), xanh lá #2e7d32 (khối "Xong!"). Font không chân hỗ trợ tiếng Việt (Be Vietnam Pro / Inter).
+- Không thêm nội dung ngoài phần dưới.
+
+BỐ CỤC (từ trên xuống)
+1. Dải đầu (navy): logo + tiêu đề "CÀI APP HMO THIẾT BỊ" + dòng phụ "1 phút — chỉ làm 1 lần — không cần CH Play / App Store".
+2. Khối "APP TRÔNG NHƯ THẾ NÀY": bên trái khung điện thoại chứa 03_app_trang_thiet_bi.png; bên phải 3 dòng ngắn có biểu tượng:
+   • Quét QR là thấy ngay thiết bị
+   • Biết thiết bị đang rảnh hay đang mượn
+   • Mượn – dùng tại chỗ – trả – báo hỏng
+3. Dải "BƯỚC 1 (mọi máy)": Mở trình duyệt, vào phamtiendat-135.github.io/HMO-equipment — hoặc quét một tem QR bất kỳ. (Chừa ô vuông 3 × 3 cm viền nét đứt ghi "QR mở app" ngay cạnh để dán mã QR thật.)
+4. Hai cột ngang nhau:
+   ANDROID — trình duyệt Chrome
+     2. Chạm ⋮ (góc trên phải)
+     3. Chọn "Thêm vào màn hình chính" (hoặc "Cài đặt ứng dụng")
+     4. Chạm "Thêm"
+     [hình: 06_android_menu.png hoặc mô phỏng]
+   IPHONE — bắt buộc dùng Safari
+     2. Chạm nút Chia sẻ ⬆ (thanh dưới)
+     3. Chọn "Thêm vào MH chính"
+     4. Chạm "Thêm"
+     [hình: 07_iphone_chia_se.png hoặc mô phỏng]
+   Dưới hai cột, một dòng nhỏ: "Máy tính (Chrome / Edge): bấm biểu tượng Cài đặt ở cuối thanh địa chỉ → Cài đặt."
+5. Khối "✅ XONG!" (viền xanh lá): bên trái 08_man_hinh_chinh.png (hoặc mô phỏng màn hình chính) với biểu tượng 01_bieu_tuong_app.png và chữ "HMO Thiết bị"; bên phải "Chạm biểu tượng để mở — app chạy toàn màn hình" và ảnh nhỏ 04_app_cac_nut.png kèm chú thích "6 nút để mượn, trả, báo hỏng".
+6. Dải mẹo (chữ nhỏ, 3 ý):
+   • Xem danh mục được cả khi mạng yếu; đăng ký mượn cần có mạng.
+   • App tự cập nhật — chưa thấy bản mới thì đóng hẳn app rồi mở lại.
+   • iPhone: phải mở bằng Safari mới có "Thêm vào MH chính".
+7. Chân trang: "Hỗ trợ: datpt@hus.edu.vn — Khoa KTTV&HDH".
 ```
 
 ---
