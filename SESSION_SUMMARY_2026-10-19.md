@@ -33,3 +33,8 @@
 - Giải thích: v16 không thêm nút trên trang quét; thay đổi chỉ hiện khi thiết bị đã được khai trả (badge "⏳ Đã trả — chờ cán bộ kiểm tra") và kiểm tra làm qua email. Hướng dẫn thử 1 vòng mượn (TB < 100 tr) → trả → quét lại → email kiểm tra.
 - Đề xuất (chờ anh quyết định): nút "🔍 Kiểm tra nhận lại (CB quản lý)" trên trang khi thiết bị đang chờ kiểm tra — bấm sẽ gửi lại link kiểm tra tới email CB đã đăng ký (không cho người lạ xác nhận thay).
 - Không thay đổi file code, không chạy test, không deploy.
+
+## 09:34 — Có nên thêm nút "Kiểm tra nhận lại" trên trang quét?
+
+- Khuyến nghị: CHƯA thêm. Nút không thêm bước cho ai nhưng lợi ích nhỏ (CB đã nhận email lúc khai trả + nhắc sau 2 ngày + menu gửi lại), lại thêm rủi ro bấm nhầm và cần chống spam. Xem lại sau đợt chạy thử nếu CB phản ánh.
+- Không thay đổi file code, không chạy test, không deploy.
