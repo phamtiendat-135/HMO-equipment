@@ -78,3 +78,8 @@
 - `QUY_TRINH_QUAN_LY_THIET_BI.md`: sửa câu HPC theo D8, bỏ ưu tiên "chốt phương án HPC". CLAUDE.md + REVIEW cập nhật trạng thái.
 - Không sửa code, không deploy trong mục này.
 - Còn lại: kịch bản video (tối), D6 (Đào tạo/NCKH), đối chiếu số liệu phụ lục C với Sheet thật, điền Email CB quản lý; các tài liệu khác (TAI_LIEU_CHUYEN_GIAO, THUYET_TRINH, áp phích A4) chưa rà.
+
+## 10:22 — Prompt Claude Design cho 3 tài liệu
+
+- Tạo `PROMPT_CLAUDE_DESIGN_TAI_LIEU.md`: 3 prompt tự chứa nội dung (Claude Design không đọc repo) — (1) Quy trình sử dụng cho người dùng: A4 4–5 trang + trang "Thao tác nhanh" dán tường; (2) Sổ tay quản lý cho PTK/CB: sơ đồ trạng thái, 3 quy trình, bảng email, checklist "Việc của cán bộ quản lý"; (3) Sổ tay vận hành kỹ thuật: sơ đồ kiến trúc, hộp "5 điều không được làm", lệnh clasp nguyên văn, bảng sự cố, checklist. Kèm màu thương hiệu, yêu cầu câu ngắn / mỗi bước một hành động / không thêm chức năng. Nội dung lấy từ bản v2.0 (hệ thống v17).
+- Không sửa code, không chạy test, không deploy.
