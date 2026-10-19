@@ -109,7 +109,8 @@ QR Label on device
 
 - Equipment valued **< 100 million VND**: approved by section manager (CB phu trach mang)
 - Equipment valued **>= 100 million VND**: requires Vice Dean approval (auto-email notification)
-- High-value items always needing Vice Dean approval: AWAC (1.2B), ADCP (941M), GPS Hemisphere (1.9B), lab models (>400M)
+- Threshold is per UNIT: `unitValue = Nguyên giá ÷ Số lượng` ("Nguyên giá (tr.đ)" in Master_Data is the LINE TOTAL, as in the accounting ledger — do not change it to per-unit; monthly report sums line totals)
+- High-value items always needing Vice Dean approval: AWAC600 2021 (~1,216M), Hemisphere S631 (960M/unit × 2 = 1,920M), ADCP FlowQuest (~471M/unit × 2 = 941.6M), lab models (420–2,263M)
 
 ## Management Structure
 
@@ -255,12 +256,18 @@ Trước khi kết thúc MỌI phiên làm việc trong workspace này, tạo ho
 - Cấu trúc Log v3 (`LOG_SCHEMA_VERSION=3`) — tự thêm header cột V ở lần ghi đầu.
 - Landing page: badge "⏳ Đã trả — chờ cán bộ kiểm tra" / "⚠️ Đang xử lý sự cố", nhãn lịch sử; `sw.js` v13.
 
-## Changes Log (Session 19/10/2026 — v17 + tài liệu)
-
-- ✅ Deploy **version 17** (xác minh `@17`, code trên Google khớp repo): email "✅ Đã ghi nhận mượn" cho TB < 100 tr (`sendAutoAcceptedEmail_`, `buildDecisionEmail_(…, autoAccepted)`); nhắc quá hạn từ ngày SAU hạn trả (`OVERDUE_DAYS=1`, trước đó gửi "quá 0 ngày"); báo hỏng gửi PTK + Email CB quản lý (`withManagers_`); nhắc bảo trì gửi thêm từng CB (`sendMaintenanceToManagers_`); nhắc bảo trì tính theo ngày lịch (trước hụt 1 ngày).
-- Viết lại `HUONG_DAN_TRIEN_KHAI.md` và `QUY_TRINH_QUAN_LY_THIET_BI.md` (v2.0) theo `REVIEW_TAI_LIEU_2026-10-19.md` (D1a: TB < 100 tr tự ghi nhận). Chưa làm: `QUY_TRINH_SU_DUNG_THIET_BI.docx/.pdf`, kịch bản video (motion graphic).
-- Viết lại `QUY_TRINH_SU_DUNG_THIET_BI.docx/.pdf` v2.0 (12 mục, trang cuối = Thao tác nhanh để in). D8: giữ nguyên — HPC dùng qua tài khoản, không thống kê giờ (ít người dùng). Còn mở: D6 (Đào tạo/NCKH), kịch bản video.
-
+## Changes Log (Session 19/10/2026 — v17 + tài liệu)
+
+- ✅ Deploy **version 17** (xác minh `@17`, code trên Google khớp repo): email "✅ Đã ghi nhận mượn" cho TB < 100 tr (`sendAutoAcceptedEmail_`, `buildDecisionEmail_(…, autoAccepted)`); nhắc quá hạn từ ngày SAU hạn trả (`OVERDUE_DAYS=1`, trước đó gửi "quá 0 ngày"); báo hỏng gửi PTK + Email CB quản lý (`withManagers_`); nhắc bảo trì gửi thêm từng CB (`sendMaintenanceToManagers_`); nhắc bảo trì tính theo ngày lịch (trước hụt 1 ngày).
+- Viết lại `HUONG_DAN_TRIEN_KHAI.md` và `QUY_TRINH_QUAN_LY_THIET_BI.md` (v2.0) theo `REVIEW_TAI_LIEU_2026-10-19.md` (D1a: TB < 100 tr tự ghi nhận). Chưa làm: `QUY_TRINH_SU_DUNG_THIET_BI.docx/.pdf`, kịch bản video (motion graphic).
+- Viết lại `QUY_TRINH_SU_DUNG_THIET_BI.docx/.pdf` v2.0 (12 mục, trang cuối = Thao tác nhanh để in). D8: giữ nguyên — HPC dùng qua tài khoản, không thống kê giờ (ít người dùng). Còn mở: D6 (Đào tạo/NCKH), kịch bản video.
+
+## Changes Log (Session 19/10/2026 chiều — v18: giá một chiếc)
+
+- Phát hiện: "Nguyên giá (tr.đ)" ghi TỔNG dòng tài sản (16 dòng có Số lượng > 1, VD Hemisphere S631: 2 máy = 1.920 tr → 960 tr/máy; ADCP 2 máy = 941,6 tr → ~471 tr/máy) nhưng email và ngưỡng duyệt dùng số tổng.
+- Quyết định (anh Đạt): GIỮ cột tổng (khớp sổ tài sản); code tính `unitValue = value / qty` trong `getMasterRecord_` → ngưỡng duyệt (`recordLoanRequest_`, `syncFormResponsesToLog`) và email (`equipValueText_`, `formatMillion_`: "960 triệu VNĐ/chiếc (tổng 2 chiếc: 1.920 triệu)"). Báo cáo tháng vẫn cộng tổng dòng. Không đổi kết quả duyệt của thiết bị nào hiện có.
+- ✅ Deploy **version 18** (xác minh `@18`, code trên Google khớp repo). Sửa số trong SOP, HUONG_DAN, QUY_TRINH_SU_DUNG (.docx/.pdf).
+
 ## Deploy Apps Script (clasp)
 
 Script là **container-bound** trong Sheet master. Cấu hình đã có sẵn trong repo: `.clasp.json`, `.claspignore`, `appsscript.json`.

@@ -59,8 +59,8 @@ Tem QR trên thiết bị ──► Trang tra cứu (GitHub Pages, cài được
 |---|---|
 | `Mã QR` | Khóa tra cứu (`HMO-XXX-NNNN`) |
 | `Tên thiết bị`, `Địa điểm (chuẩn)` | Hiển thị, email |
-| `Nguyên giá (tr.đ)` | ≥ 100 → cần PTK duyệt khi mượn mang đi (`CONFIG.APPROVAL_THRESHOLD`) |
-| `Số lượng` | Số lượt được mượn/giữ chỗ cùng lúc |
+| `Nguyên giá (tr.đ)` | Ghi **tổng** của dòng tài sản (như sổ kế toán). Hệ thống tính **giá một chiếc = Nguyên giá ÷ Số lượng**; ≥ 100 → cần PTK duyệt khi mượn mang đi (`CONFIG.APPROVAL_THRESHOLD`). Email hiện "960 triệu VNĐ/chiếc (tổng 2 chiếc: 1.920 triệu)". Báo cáo tháng cộng theo tổng dòng |
+| `Số lượng` | Số chiếc; = số lượt được mượn/giữ chỗ cùng lúc |
 | `Tình trạng thực tế (01/2025)` | **"Hỏng" / "Không hoạt động" → chặn mượn và dùng tại chỗ** |
 | `CB quản lý hiện tại` | Tên hiển thị trên trang tra cứu; điền sẵn tên người kiểm tra |
 | `Link hướng dẫn sử dụng` (cột T) | Nút "📘 Hướng dẫn sử dụng" trong email xác nhận / đã duyệt. Chỉ nhận `https://…`. Trống → "(đang cập nhật)" |

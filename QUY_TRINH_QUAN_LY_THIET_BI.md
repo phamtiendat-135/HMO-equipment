@@ -118,7 +118,7 @@ Thiết bị **< 100 triệu**: hệ thống tự ghi nhận yêu cầu hợp l�
 | 4 | **Kiểm tra trước khi bàn giao:** thiết bị chính hoạt động, phụ kiện đủ (ví dụ ADCP 6527 kèm bộ rung điện 6532, giá lắp xuồng 6530), pin/nguồn, tài liệu. Bàn giao, người mượn ký nhận | CB quản lý thiết bị |
 | 5 | Sử dụng đúng mục đích, đúng hạn | Người mượn |
 
-Hạn mức phê duyệt: AWAC (1,2 tỷ), ADCP (941 tr), thiết bị định vị vệ tinh (1,9 tỷ), các bộ mô hình > 400 tr luôn qua Phó Trưởng khoa (nguyên giá ≥ 100 tr).
+Ngưỡng 100 triệu tính theo **giá một chiếc** = nguyên giá ÷ số lượng (cột "Nguyên giá" trong danh mục ghi **tổng** của dòng tài sản, như sổ kế toán). Luôn qua Phó Trưởng khoa, ví dụ: AWAC600 Nortek 2021 (~1.216 tr), thiết bị định vị vệ tinh Hemisphere S631 (**960 tr/máy**, 2 máy, tổng 1.920 tr), ADCP FlowQuest (~471 tr/máy, 2 máy, tổng 941,6 tr), các bộ mô hình thí nghiệm (420 – 2.263 tr).
 
 Bước 4 là **thao tác ngoài hệ thống** (chưa có bước "bàn giao" trên hệ thống).
 

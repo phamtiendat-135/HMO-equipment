@@ -537,11 +537,16 @@ function getMasterRecord_(ss, qrCode) {
   for (let i = 1; i < data.length; i++) {
     const r = data[i];
     if (String(r[col.qr]).trim() !== qrCode) continue;
+    // "Nguyên giá (tr.đ)" ghi theo TỔNG của dòng tài sản (như sổ kế toán), VD 2 máy S631 = 1.920 tr.
+    // Mượn / duyệt tính theo GIÁ MỘT CHIẾC = tổng ÷ số lượng.
+    const value = parseFloat(r[col.value]) || 0;
+    const qty = Math.max(1, parseInt(r[col.qty], 10) || 1);
     return {
       qrCode: qrCode,
       name: String(r[col.name] || qrCode),
-      value: parseFloat(r[col.value]) || 0,
-      qty: Math.max(1, parseInt(r[col.qty], 10) || 1),
+      value: value,
+      unitValue: value / qty,
+      qty: qty,
       status: col.status >= 0 ? String(r[col.status] || '') : '',
       location: col.location >= 0 ? String(r[col.location] || '') : '',
       guideUrl: col.guide >= 0 ? safeGuideUrl_(r[col.guide]) : '',
@@ -550,6 +555,21 @@ function getMasterRecord_(ss, qrCode) {
     };
   }
   return null;
+}
+
+/** Số triệu theo kiểu Việt Nam, tối đa 1 chữ số thập phân: 1920 → "1.920", 470.8 → "470,8". */
+function formatMillion_(value) {
+  const rounded = Math.round((Number(value) || 0) * 10) / 10;
+  const [intPart, decPart] = Math.abs(rounded).toFixed(1).split('.');
+  const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return (rounded < 0 ? '-' : '') + grouped + (decPart !== '0' ? ',' + decPart : '');
+}
+
+/** "960 triệu VNĐ/chiếc (tổng 2 chiếc: 1.920 triệu)" — 1 chiếc thì chỉ "1.215,9 triệu VNĐ". */
+function equipValueText_(unitValue, qty) {
+  return qty > 1
+    ? `${formatMillion_(unitValue)} triệu VNĐ/chiếc (tổng ${qty} chiếc: ${formatMillion_(unitValue * qty)} triệu)`
+    : `${formatMillion_(unitValue)} triệu VNĐ`;
 }
 
 /**
@@ -1327,7 +1347,7 @@ function recordLoanRequest_(ss, req, sourceId) {
     const rejectReason = validateLoanRequest_(master, openCount, borrowDate, dueDate, req.dueDateRaw) ||
       (onsite && !req.hours
         ? `Số giờ sử dụng "${req.hoursRaw}" không hợp lệ (tối đa ${CONFIG.ONSITE_MAX_HOURS} giờ)` : '');
-    const needsApproval = !onsite && !rejectReason && master.value >= CONFIG.APPROVAL_THRESHOLD;
+    const needsApproval = !onsite && !rejectReason && master.unitValue >= CONFIG.APPROVAL_THRESHOLD;
     const equipLocation = master ? master.location : '';
 
     const loan = {
@@ -1335,7 +1355,7 @@ function recordLoanRequest_(ss, req, sourceId) {
       rowNum: data.length + 1,
       qrCode: req.qrCode,
       equipName: master ? master.name : req.qrCode,
-      equipValue: master ? master.value : 0,
+      equipValue: master ? master.unitValue : 0, equipQty: master ? master.qty : 1,
       equipLocation: equipLocation,
       borrower: req.borrower, email: req.email, phone: req.phone,
       unit: req.unit, purpose: req.purpose,
@@ -1422,7 +1442,7 @@ function sendOnsiteNoticeEmail_(loan) {
   const subject = `[KTTV&HDH] 🔬 Sử dụng tại chỗ — ${loan.equipName} (${loan.qrCode})`;
   let body = `Thông báo: Có khai báo sử dụng thiết bị TẠI CHỖ (không cần phê duyệt).\n\n`;
   body += `THÔNG TIN THIẾT BỊ:\n  Tên: ${loan.equipName}\n  Mã QR: ${loan.qrCode}\n`;
-  body += `  Giá trị: ${loan.equipValue.toLocaleString()} triệu VNĐ\n`;
+  body += `  Giá trị: ${equipValueText_(loan.equipValue, loan.equipQty)}\n`;
   if (loan.equipLocation) body += `  Địa điểm: ${loan.equipLocation}\n`;
   body += `\nNGƯỜI SỬ DỤNG:\n  Họ tên: ${loan.borrower}\n`;
   if (loan.email) body += `  Email: ${loan.email}\n`;
@@ -1455,7 +1475,7 @@ function buildOnsiteEmailHtml_(loan) {
     emailBlock_(emailHighlight_('🕘 Thời gian sử dụng', big, sub, tone)),
     emailBlock_(emailDetails_([
       ['Thiết bị', emailEquip_(loan.equipName, loan.qrCode)],
-      ['Giá trị', esc(loan.equipValue.toLocaleString() + ' triệu VNĐ')],
+      ['Giá trị', esc(equipValueText_(loan.equipValue, loan.equipQty))],
       ['Vị trí TB', esc(loan.equipLocation)],
       ['Người dùng', emailStrong_(loan.borrower)],
       ['Email', esc(loan.email)],
@@ -1478,7 +1498,7 @@ function sendLoanRequestEmail_(loan) {
     ? `⚠️ THIẾT BỊ GIÁ TRỊ CAO — CẦN PHÊ DUYỆT CỦA PHÓ TRƯỞNG KHOA\n${'─'.repeat(50)}\n\n`
     : `Thông báo: Có yêu cầu mượn thiết bị mới.\n\n`;
   body += `THÔNG TIN THIẾT BỊ:\n  Tên: ${loan.equipName}\n  Mã QR: ${loan.qrCode}\n`;
-  body += `  Giá trị: ${loan.equipValue.toLocaleString()} triệu VNĐ\n`;
+  body += `  Giá trị: ${equipValueText_(loan.equipValue, loan.equipQty)}\n`;
   if (loan.equipLocation) body += `  Địa điểm: ${loan.equipLocation}\n`;
   body += `\nNGƯỜI MƯỢN:\n  Họ tên: ${loan.borrower}\n`;
   if (loan.email) body += `  Email: ${loan.email}\n`;
@@ -1536,7 +1556,7 @@ function buildApprovalEmailHtml_(loan, approveLink, rejectLink) {
   }
   blocks.push(emailBlock_(emailDetails_([
     ['Thiết bị', emailEquip_(loan.equipName, loan.qrCode)],
-    ['Giá trị', emailStrong_(loan.equipValue.toLocaleString() + ' triệu VNĐ', loan.needsApproval ? tone : null)],
+    ['Giá trị', emailStrong_(equipValueText_(loan.equipValue, loan.equipQty), loan.needsApproval ? tone : null)],
     ['Vị trí TB', esc(loan.equipLocation)],
     ['Người mượn', emailStrong_(loan.borrower)],
     ['Email', esc(loan.email)],
@@ -1624,7 +1644,7 @@ function resendPendingApprovals() {
     const master = getMasterRecord_(ss, String(r[LOG_COL.QR]).trim());
     sendLoanRequestEmail_({
       loanId: String(r[LOG_COL.LOAN_ID]), qrCode: String(r[LOG_COL.QR]),
-      equipName: String(r[LOG_COL.NAME]), equipValue: master ? master.value : 0,
+      equipName: String(r[LOG_COL.NAME]), equipValue: master ? master.unitValue : 0, equipQty: master ? master.qty : 1,
       equipLocation: master ? master.location : '',
       borrower: String(r[LOG_COL.BORROWER]), email: String(r[LOG_COL.EMAIL] || ''), phone: '',
       unit: String(r[LOG_COL.UNIT]), purpose: String(r[LOG_COL.PURPOSE]),
@@ -2445,7 +2465,7 @@ function syncFormResponsesToLog() {
         if (knownSources.has(sourceId) || legacyKeys.has(key)) continue;
 
         const master = getMasterRecord_(ss, qr);
-        const needsApproval = !!master && master.value >= CONFIG.APPROVAL_THRESHOLD;
+        const needsApproval = !!master && master.unitValue >= CONFIG.APPROVAL_THRESHOLD;
         const out = new Array(LOG_WIDTH).fill('');
         out[LOG_COL.QR] = asText_(qr);
         out[LOG_COL.NAME] = asText_(master ? master.name : qr);

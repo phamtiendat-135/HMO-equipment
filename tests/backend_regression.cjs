@@ -1108,6 +1108,44 @@ test('Bảo trì: hạn đúng HÔM NAY → "hôm nay" (chưa quá hạn); hôm 
   assert.match(h.mail[0][1], /1 quá hạn, 1 sắp đến hạn/);
 });
 
+// ====================== Giá một chiếc = Nguyên giá (tổng dòng) ÷ Số lượng ======================
+function withDevice(row) {
+  const h = harness([], { props: { APPROVAL_SECRET: 's' } });
+  h.sheets.Master_Data.rows.push(row);
+  return h;
+}
+test('Giá: định dạng số triệu kiểu Việt Nam', () => {
+  const h = harness();
+  assert.deepEqual([1920, 960, 470.8, 941.6 / 2, 514.3468 / 4, 1215.9, 3.3, 0].map(h.ctx.formatMillion_),
+    ['1.920', '960', '470,8', '470,8', '128,6', '1.215,9', '3,3', '0']);
+});
+test('Giá: S631 (2 máy, tổng 1.920 tr) → email xin duyệt ghi 960 tr/chiếc, kèm tổng; vẫn cần PTK duyệt', () => {
+  const h = withDevice(['HMO-OBS-8689', 'Thiết bị định vị vệ tinh', 1920, 'P206-T3', 'Tốt', 2, 'Quan trắc', '']);
+  h.ctx.onFormSubmitBorrow(formEvent(borrowFields({ 'Mã QR thiết bị': 'HMO-OBS-8689' })));
+  assert.equal(lastRow(h)[12], '(Chờ phê duyệt PTK)');
+  const m = h.mail.find(x => /CẦN PHÊ DUYỆT/.test(x[1]));
+  assert.match(m[2], /Giá trị: 960 triệu VNĐ\/chiếc \(tổng 2 chiếc: 1\.920 triệu\)/);
+  assert.match(m[3].htmlBody, /960 triệu VNĐ\/chiếc \(tổng 2 chiếc: 1\.920 triệu\)/);
+  assert.ok(!/1,920|1920 triệu/.test(m[2] + m[3].htmlBody), 'không còn hiện tổng như giá 1 máy');
+});
+test('Giá: ngưỡng duyệt theo giá MỘT CHIẾC — 4 chiếc tổng 300 tr (75 tr/chiếc) không cần duyệt', () => {
+  const h = withDevice(['HMO-OBS-0004', 'GPS cầm tay', 300, 'P204-T3', 'Tốt', 4, 'Quan trắc', '']);
+  h.ctx.onFormSubmitBorrow(formEvent(borrowFields({ 'Mã QR thiết bị': 'HMO-OBS-0004' })));
+  assert.equal(lastRow(h)[12], '', 'tự ghi nhận (trước đây so tổng 300 ≥ 100 nên bắt duyệt)');
+  assert.match(h.mail.find(x => x[0] === 'datpt@hus.edu.vn')[2], /Giá trị: 75 triệu VNĐ\/chiếc \(tổng 4 chiếc: 300 triệu\)/);
+});
+test('Giá: thiết bị 1 chiếc chỉ hiện một con số; báo cáo tháng vẫn cộng theo tổng dòng', () => {
+  const h = harness([], { props: { APPROVAL_SECRET: 's' } });
+  h.ctx.onFormSubmitBorrow(formEvent(borrowFields()));
+  assert.match(h.mail[0][2], /Giá trị: 200 triệu VNĐ\n/);
+  const r = harness();
+  r.sheets.Master_Data.rows.push(['HMO-OBS-8689', 'S631', 1920, 'P206-T3', 'Tốt', 2, 'Quan trắc', '']);
+  r.ctx.generateAnnualUsageReport = () => {};
+  r.ctx.monthlyReport();
+  // 200 + 10 + 10 + 1920 = 2140 tr = 2.1 tỷ (cộng nguyên giá theo dòng, không chia số lượng)
+  assert.match(r.mail[0][2], /Tổng giá trị: 2\.1 tỷ VNĐ/);
+});
+
 // ---------- Kết quả ----------
 let failed = 0;
 for (const [ok, name, err] of results) {

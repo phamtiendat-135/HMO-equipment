@@ -101,3 +101,11 @@
 
 - Kiểm tra: working tree sạch, `main` trùng `origin/main` (commit cuối `5fba012`) — mọi thay đổi trong phiên đã được push trước đó. Chỉ thêm mục ghi chú này.
 - Không sửa code, không chạy test, không deploy. Trạng thái cuối: Apps Script `@17`, GitHub Pages `sw.js` v13.
+
+## 16:39 — Giá máy S631: tính theo giá một chiếc (Apps Script v18)
+
+- Anh báo giá S631 đang là tổng 2 máy. Kiểm tra xlsx: HMO-OBS-8689 "Thiết bị định vị vệ tinh" Hemisphere S631, Số lượng 2, Nguyên giá **1.920** tr (tổng) → **960 tr/máy**. Cả cột Nguyên giá ghi theo tổng dòng (16 dòng SL > 1; ADCP cũng vậy: 941,6 tr/2 máy). Trang tra cứu không hiển thị giá.
+- Anh chọn: giữ cột tổng, hệ thống tự chia. Code: `getMasterRecord_` thêm `unitValue`; ngưỡng duyệt + email dùng giá một chiếc (`equipValueText_`, `formatMillion_`); báo cáo tháng giữ tổng. Kết quả cần duyệt của mọi thiết bị hiện có không đổi (thấp nhất HPC-7897 ≈ 128,6 tr/chiếc).
+- Test: backend **94/94** (+4; 3 test mới FAIL trên v17). Deploy **v18**: `@18`, code trên Google khớp repo, API `?id=HMO-OBS-8689` trả đúng.
+- Tài liệu: SOP (hạn mức phê duyệt: S631 960 tr/máy, ADCP ~471 tr/máy, AWAC ~1.216 tr), HUONG_DAN (giải thích cột Nguyên giá), CLAUDE.md, `QUY_TRINH_SU_DUNG_THIET_BI.docx/.pdf` dựng lại (validate PASSED, xuất PDF bằng Word, đã xem trang 3).
+- KHÔNG sửa Google Sheet (không cần; cột tổng giữ nguyên).
