@@ -288,14 +288,15 @@ test('P1-07 đồng bộ sau khi trigger đã ghi → không tạo dòng trùng'
   h.ctx.syncFormResponsesToLog();
   assert.equal(h.log.rows.length, 2);
 });
-test('P1-07 nâng cấu trúc: dòng cũ được gán Mã giao dịch, thêm header S–U, chỉ chạy 1 lần', () => {
+test('P1-07 nâng cấu trúc: dòng cũ được gán Mã giao dịch, thêm header S–V, chỉ chạy 1 lần', () => {
   const h = harness([legacyLoan('A', ''), legacyLoan('B', '')]);
   h.ctx.onFormSubmitBorrow(formEvent(borrowFields({ 'Mã QR thiết bị': 'HMO-LAB-0002' })));
-  assert.deepEqual(h.log.rows[0].slice(18, 21), ['Mã giao dịch', 'Nguồn phản hồi mượn', 'Nguồn phản hồi trả']);
+  assert.deepEqual(h.log.rows[0].slice(18, 22),
+    ['Mã giao dịch', 'Nguồn phản hồi mượn', 'Nguồn phản hồi trả', 'Kiểm tra nhận lại']);
   const ids = h.log.rows.slice(1).map(r => r[18]);
   assert.ok(ids.every(id => /^L\d{6}-[0-9A-F]{6}$/.test(id)), ids.join(','));
   assert.equal(new Set(ids).size, ids.length);
-  assert.equal(h.props.LOG_SCHEMA_VERSION, '2');
+  assert.equal(h.props.LOG_SCHEMA_VERSION, '3');
   assert.match(h.log.rows[1][14], /SEARCH\("chối"/, 'công thức quá hạn cũ được cập nhật');
 });
 
@@ -859,6 +860,155 @@ test('Ngày: hạn trả trùng ngày mượn → vẫn nhận, email PTK đánh
   const h2 = harness([], { props: { APPROVAL_SECRET: 's' } });
   h2.ctx.onFormSubmitBorrow(formEvent(borrowFields()));
   assert.ok(!/trong ngày/i.test(h2.mail[0][2] + h2.mail[0][3].htmlBody), 'khác ngày → không cảnh báo');
+});
+
+// ====================== Kiểm tra thiết bị khi nhận lại ======================
+const dayStr = daysAgo => fakeFormatDate(new Date(Date.now() - daysAgo * 86400000), '', 'dd/MM/yyyy');
+/** Một khoản đã duyệt rồi được khai trả. managerEmail: undefined = Master_Data chưa có cột email. */
+function returnedLoan(opts = {}) {
+  const h = harness([legacyLoan(opts.borrower || 'Nguyễn Văn A', '✅ Đã phê duyệt', 'a@example.invalid')],
+    { props: { APPROVAL_SECRET: 's' } });
+  if (opts.managerEmail !== undefined) {
+    h.sheets.Master_Data.rows[0].push('CB quản lý hiện tại', 'Email CB quản lý');
+    h.sheets.Master_Data.rows[1].push('TS. Quản Lý', opts.managerEmail);
+  }
+  h.ctx.onFormSubmitReturn(formEvent(returnFields({ 'Ngày trả': dayStr(opts.daysAgo || 0),
+    'Họ và tên người trả': opts.borrower || 'Nguyễn Văn A' }), 'Form Responses 2'));
+  return { h, loanId: h.log.rows[1][18] };
+}
+const linkFor = (h, action, loanId) => params(run(h, `buildApprovalLink_('${action}', '${loanId}')`));
+const inspect = (h, action, loanId, who, note, sev) => {
+  const p = linkFor(h, action, loanId);
+  return h.ctx.confirmInspectionFromPage(p.action, p.loan, p.t, p.sig, who, note, sev);
+};
+
+test('Kiểm tra: khai trả → "⏳ Chờ kiểm tra", CHƯA đóng: giữ chỗ, badge "inspecting", hết nhắc quá hạn', () => {
+  const { h } = returnedLoan({ managerEmail: 'ql@example.invalid' });
+  const r = h.log.rows[1];
+  assert.ok(r[8] instanceof Date, 'vẫn ghi ngày trả');
+  assert.equal(r[21], '⏳ Chờ kiểm tra');
+  const bs = h.ctx.checkBorrowStatus_(QR);
+  assert.equal(bs.available, false);
+  assert.equal(bs.status, 'inspecting');
+  h.ctx.onFormSubmitBorrow(formEvent(borrowFields()));
+  assert.match(lastRow(h)[12], /hết \(1\/1\)/, 'chưa kiểm tra thì chưa cho mượn tiếp');
+  const before = h.mail.length;
+  h.ctx.checkOverdueReturns();
+  assert.ok(!h.mail.slice(before).some(m => /QUÁ HẠN/.test(m[1])), 'không nhắc quá hạn khoản đã khai trả');
+});
+test('Kiểm tra: email gửi "Email CB quản lý" của thiết bị (nhiều email), có 2 nút ký; PTK nhận báo khai trả', () => {
+  const { h, loanId } = returnedLoan({ managerEmail: 'ql1@example.invalid; ql2@example.invalid, sai-dinh-dang' });
+  const req = h.mail.find(m => /Kiểm tra thiết bị trả/.test(m[1]));
+  assert.equal(req[0], 'ql1@example.invalid,ql2@example.invalid');
+  assert.ok(req[3].htmlBody.includes('action=inspect_ok&amp;loan=' + loanId));
+  assert.ok(req[3].htmlBody.includes('action=inspect_issue&amp;loan=' + loanId));
+  assert.ok(!/chưa có &quot;Email CB quản lý&quot;/.test(req[3].htmlBody));
+  const admin = h.mail.find(m => m[0] === 'datpt@hus.edu.vn');
+  assert.match(admin[1], /Đã khai trả, chờ CB kiểm tra/);
+  assert.match(admin[2], /ql1@example\.invalid, ql2@example\.invalid/);
+});
+test('Kiểm tra: thiết bị chưa có email CB → gửi PTK, ghi rõ lý do', () => {
+  for (const managerEmail of [undefined, '']) {
+    const { h } = returnedLoan({ managerEmail });
+    const req = h.mail.find(m => /Kiểm tra thiết bị trả/.test(m[1]));
+    assert.equal(req[0], 'datpt@hus.edu.vn');
+    assert.match(req[3].htmlBody, /chưa có "Email CB quản lý"|chưa có &quot;Email CB quản lý&quot;/);
+  }
+});
+test('Kiểm tra: mở link chỉ hiện trang (có ô người kiểm tra), KHÔNG ghi', () => {
+  const { h, loanId } = returnedLoan({ managerEmail: 'ql@example.invalid' });
+  const page = h.ctx.doGet({ parameter: linkFor(h, 'inspect_ok', loanId) }).html;
+  assert.match(page, /Người kiểm tra/);
+  assert.match(page, /value="TS\. Quản Lý"/, 'điền sẵn tên CB quản lý');
+  assert.equal(h.log.rows[1][21], '⏳ Chờ kiểm tra');
+  const issuePage = h.ctx.doGet({ parameter: linkFor(h, 'inspect_issue', loanId) }).html;
+  assert.match(issuePage, /<select id="sev"[\s\S]*Mô tả sự cố \(bắt buộc\)/);
+});
+test('Kiểm tra: ✅ hoạt động tốt → đóng khoản, thiết bị sẵn sàng, người mượn nhận email; dùng lại link bị chặn', () => {
+  const { h, loanId } = returnedLoan({ managerEmail: 'ql@example.invalid' });
+  const html = inspect(h, 'inspect_ok', loanId, 'TS. Quản Lý', 'Đủ phụ kiện', '');
+  assert.match(html, /ĐÃ NHẬN LẠI THIẾT BỊ/);
+  assert.match(h.log.rows[1][21], /^✅ Hoạt động tốt — TS\. Quản Lý \(.*\): Đủ phụ kiện$/);
+  assert.equal(h.ctx.checkBorrowStatus_(QR).available, true);
+  const toBorrower = h.mail.find(m => m[0] === 'a@example.invalid' && /Đã nhận lại thiết bị/.test(m[1]));
+  assert.ok(toBorrower && /Kính gửi thầy\/cô <strong>Nguyễn Văn A<\/strong>/.test(toBorrower[3].htmlBody));
+  assert.match(inspect(h, 'inspect_issue', loanId, 'X', 'muộn', ''), /đã được xử lý trước đó/);
+  assert.match(h.log.rows[1][21], /^✅/);
+});
+test('Kiểm tra: ⚠️ có sự cố → Log_Bao_Hong + email PTK có nút khắc phục; khóa mượn tới khi 🔧 khắc phục', () => {
+  const { h, loanId } = returnedLoan({ managerEmail: 'ql@example.invalid' });
+  const html = inspect(h, 'inspect_issue', loanId, 'TS. Quản Lý', 'Vỡ đầu dò', 'Nặng — không sử dụng được');
+  assert.match(html, /ĐÃ GHI NHẬN SỰ CỐ/);
+  assert.match(h.log.rows[1][21], /^⚠️ Có sự cố \[Nặng — không sử dụng được\] — TS\. Quản Lý .*: Vỡ đầu dò$/);
+  const bs = h.ctx.checkBorrowStatus_(QR);
+  assert.equal(bs.available, false);
+  assert.equal(bs.status, 'issue');
+  const dmg = h.sheets.Log_Bao_Hong.rows[1];
+  assert.equal(dmg[0], QR);
+  assert.equal(dmg[5], 'Vỡ đầu dò');
+  assert.equal(dmg[9], 'Mới — chờ xử lý');
+  assert.equal(dmg[10], 'kiem-tra:' + loanId);
+  const ptk = h.mail.find(m => m[0] === 'datpt@hus.edu.vn' && /Sự cố khi nhận lại/.test(m[1]));
+  assert.ok(ptk[3].htmlBody.includes('action=resolve&amp;loan=' + loanId));
+  assert.match(inspect(h, 'resolve', loanId, 'Phạm Tiến Đạt', 'Thay đầu dò', ''), /ĐÃ KHẮC PHỤC/);
+  assert.match(h.log.rows[1][21], /^🔧 Đã khắc phục — Phạm Tiến Đạt .*Thay đầu dò \| ⚠️ Có sự cố/);
+  assert.equal(h.ctx.checkBorrowStatus_(QR).available, true);
+  assert.match(h.sheets.Log_Bao_Hong.rows[1][9], /^Đã khắc phục — Phạm Tiến Đạt/);
+});
+test('Kiểm tra: chặn link sai chữ ký / sai loại, thiếu tên, sự cố thiếu mô tả; mức độ lạ → mặc định', () => {
+  const { h, loanId } = returnedLoan({ managerEmail: 'ql@example.invalid' });
+  const p = linkFor(h, 'inspect_ok', loanId);
+  assert.match(h.ctx.confirmInspectionFromPage('inspect_issue', p.loan, p.t, p.sig, 'A', 'x', ''), /không hợp lệ/);
+  const approveSig = linkFor(h, 'approve', loanId);
+  assert.match(h.ctx.confirmInspectionFromPage('approve', approveSig.loan, approveSig.t, approveSig.sig, 'A', '', ''),
+    /không hợp lệ/, 'link phê duyệt không dùng được cho kiểm tra');
+  assert.match(inspect(h, 'inspect_ok', loanId, '  ', '', ''), /Thiếu tên người kiểm tra/);
+  assert.match(inspect(h, 'inspect_issue', loanId, 'A', '   ', ''), /Thiếu mô tả sự cố/);
+  assert.equal(h.log.rows[1][21], '⏳ Chờ kiểm tra');
+  inspect(h, 'inspect_issue', loanId, 'A', 'x', '<script>');
+  assert.match(h.log.rows[1][21], /\[Nhẹ — vẫn sử dụng được\]/);
+  assert.match(inspect(h, 'resolve', loanId, '=HYPERLINK("x")', '', ''), /ĐÃ KHẮC PHỤC/);
+  assert.ok(!/^=/.test(h.log.rows[1][21]), 'không ghi công thức vào Sheet');
+});
+test('Kiểm tra: khai trả lần 2 khi đang chờ kiểm tra → không đóng gì, báo rõ', () => {
+  const { h } = returnedLoan({ managerEmail: 'ql@example.invalid' });
+  h.ctx.onFormSubmitReturn(formEvent(returnFields({ 'Ngày trả': dayStr(0) }), 'Form Responses 2'));
+  assert.ok(h.mail.some(m => /CẦN XỬ LÝ TAY/.test(m[1]) && /đang chờ cán bộ quản lý kiểm tra/.test(m[2])));
+});
+test('Kiểm tra: nhắc CB khi chờ 2 ngày, rồi cứ 2 ngày 1 lần; báo PTK danh sách', () => {
+  for (const [daysAgo, expect] of [[0, false], [1, false], [2, true], [3, false], [4, true]]) {
+    const { h } = returnedLoan({ managerEmail: 'ql@example.invalid', daysAgo });
+    const before = h.mail.length;
+    h.ctx.checkOverdueReturns();
+    const sent = h.mail.slice(before);
+    const remind = sent.find(m => m[0] === 'ql@example.invalid' && /NHẮC \(đã \d+ ngày\)/.test(m[1]));
+    assert.equal(!!remind, expect, `ngày ${daysAgo}`);
+    assert.equal(sent.some(m => m[0] === 'datpt@hus.edu.vn' && /chưa được kiểm tra/.test(m[1])), expect);
+  }
+});
+test('Kiểm tra: menu gửi lại email kiểm tra (VD sau khi điền email CB)', () => {
+  const { h } = returnedLoan();
+  h.sheets.Master_Data.rows[0].push('Email CB quản lý');
+  h.sheets.Master_Data.rows[1].push('moi@example.invalid');
+  assert.equal(h.ctx.resendPendingInspections(), 1);
+  assert.equal(h.mail[h.mail.length - 1][0], 'moi@example.invalid');
+});
+test('Kiểm tra: tên người mượn chứa HTML bị escape trong email và trang kiểm tra', () => {
+  const bad = '<img src=x onerror=alert(1)>';
+  const { h, loanId } = returnedLoan({ managerEmail: 'ql@example.invalid', borrower: bad });
+  const req = h.mail.find(m => /Kiểm tra thiết bị trả/.test(m[1]));
+  assert.ok(!req[3].htmlBody.includes(bad) && req[3].htmlBody.includes('&lt;img'));
+  const page = h.ctx.doGet({ parameter: linkFor(h, 'inspect_ok', loanId) }).html;
+  assert.ok(!page.includes(bad) && page.includes('&lt;img'));
+});
+test('Kiểm tra: dòng cũ đã trả (cột V trống) và khai báo tại chỗ vẫn là "đã trả", không cần kiểm tra', () => {
+  const old = legacyLoan('A', '✅ Đã phê duyệt');
+  old[8] = new Date(2026, 8, 24);
+  const h = harness([old]);
+  assert.equal(h.ctx.checkBorrowStatus_(QR).available, true);
+  h.ctx.onFormSubmitOnsite(onsiteEvent());
+  assert.equal(h.ctx.getAllUsageLog_(5)[0].status, 'onsite');
+  assert.ok(!h.mail.some(m => /Kiểm tra thiết bị trả/.test(m[1])));
 });
 
 // ---------- Kết quả ----------

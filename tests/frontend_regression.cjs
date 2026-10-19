@@ -180,6 +180,27 @@ function openPage(search = '', api = () => ({}), html = HTML) {
     assert.match(html, />Tại chỗ</);
   });
 
+  // ---------------- Kiểm tra khi nhận lại ----------------
+  for (const [status, text] of [['inspecting', /Đã trả — chờ cán bộ kiểm tra/], ['issue', /Đang xử lý sự cố/]]) {
+    await test(`Badge "${status}": hiện đúng chữ, khóa nút mượn / tại chỗ`, async () => {
+      const p = openPage('?id=HMO-HPC-7879', () => ({ _borrowStatus:
+        { available: false, borrowedCount: 1, borrower: 'Phan H. N.', dueDate: '15/10/2026', daysOverdue: 0, status } }));
+      await tick();
+      const badge = p.d.getElementById('avail-badge').textContent;
+      assert.match(badge, text);
+      assert.ok(!/hạn:|Quá/.test(badge), badge);
+      assert.ok(p.d.getElementById('borrow-btn').classList.contains('disabled'));
+      assert.ok(p.d.getElementById('onsite-btn').classList.contains('disabled'));
+    });
+  }
+  await test('Lịch sử: nhãn "Chờ kiểm tra" / "Có sự cố"', async () => {
+    const html = await historyPage({ ok: true, history: [
+      { borrower: 'A', borrowDate: '10/10/2026', returnDate: '15/10/2026', usageHours: 120, status: 'inspecting', isActive: true },
+      { borrower: 'B', borrowDate: '01/10/2026', returnDate: '05/10/2026', usageHours: 96, status: 'issue', isActive: true }] });
+    assert.match(html, /Chờ kiểm tra/);
+    assert.match(html, /Có sự cố/);
+  });
+
   // ---------------- Đào tạo / NCKH chưa kết nối ----------------
   await test('Đào tạo/NCKH chưa có form: KHÔNG báo "Đã ghi nhận", giữ nội dung đã nhập', async () => {
     const p = openPage('?id=HMO-OBS-8693', () => ({ _borrowStatus: { available: true, borrowedCount: 0 } }));
@@ -215,7 +236,7 @@ function openPage(search = '', api = () => ({}), html = HTML) {
     const ctx = vm.createContext({
       self: { addEventListener: (t, f) => { handlers[t] = f; }, skipWaiting() {}, clients: { claim: () => Promise.resolve() },
         location: { hostname: 'example.test' } },
-      caches: { keys: () => Promise.resolve(['hmo-equipment-v11', 'hmo-equipment-v12', 'other-app-v1']),
+      caches: { keys: () => Promise.resolve(['hmo-equipment-v12', 'hmo-equipment-v13', 'other-app-v1']),
         delete: k => { deleted.push(k); return Promise.resolve(true); } },
       URL, Response: class {}, JSON, Promise, fetch: () => Promise.reject(new Error('x'))
     });
@@ -223,7 +244,7 @@ function openPage(search = '', api = () => ({}), html = HTML) {
     let waited;
     handlers.activate({ waitUntil: p => { waited = p; } });
     await waited;
-    assert.deepEqual(deleted, ['hmo-equipment-v11']);
+    assert.deepEqual(deleted, ['hmo-equipment-v12']);
   });
   await test('Service worker: tài nguyên không phải trang lỗi → không trả HTML thay thế', async () => {
     const handlers = {};

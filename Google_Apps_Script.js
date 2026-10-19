@@ -44,6 +44,9 @@ const CONFIG = {
   // Số ngày trước hạn trả để gửi email nhắc người mượn
   REMIND_DAYS_BEFORE: 2,
 
+  // Khoản đã khai trả mà CB quản lý chưa kiểm tra sau ngần này ngày → nhắc lại (rồi cứ 2 ngày nhắc 1 lần)
+  INSPECTION_REMIND_DAYS: 2,
+
   // URL trang landing page — dùng trong link email nhắc trả
   LANDING_PAGE_URL: 'https://phamtiendat-135.github.io/HMO-equipment/',
 
@@ -217,26 +220,36 @@ function parseDate_(val) {
 // Mọi chỗ đọc/ghi Log_Muon_Tra dùng chung các hằng số và hàm dưới đây, để "đang mượn",
 // "giữ chỗ", "đã trả" chỉ có MỘT định nghĩa (review 28/09: P1-05, P1-07, P1-08).
 
-/** Chỉ số cột Log_Muon_Tra (0-based). S, T, U thêm từ 29/09/2026. */
+/** Chỉ số cột Log_Muon_Tra (0-based). S, T, U thêm từ 29/09/2026; V từ 19/10/2026. */
 const LOG_COL = {
   QR: 0, NAME: 1, BORROWER: 2, UNIT: 3, PURPOSE: 4, LOCATION: 5,
   BORROW_DATE: 6, DUE_DATE: 7, RETURN_DATE: 8, COND_OUT: 9, COND_IN: 10,
   ACCESSORIES: 11, APPROVAL: 12, NOTE: 13, OVERDUE: 14, EMAIL: 15,
-  HOURS: 16, REMINDED: 17, LOAN_ID: 18, BORROW_SOURCE: 19, RETURN_SOURCE: 20
+  HOURS: 16, REMINDED: 17, LOAN_ID: 18, BORROW_SOURCE: 19, RETURN_SOURCE: 20, INSPECTION: 21
 };
-const LOG_WIDTH = LOG_COL.RETURN_SOURCE + 1;
+const LOG_WIDTH = LOG_COL.INSPECTION + 1;
 const LOG_NEW_HEADERS = [
   [LOG_COL.LOAN_ID, 'Mã giao dịch'],
   [LOG_COL.BORROW_SOURCE, 'Nguồn phản hồi mượn'],
-  [LOG_COL.RETURN_SOURCE, 'Nguồn phản hồi trả']
+  [LOG_COL.RETURN_SOURCE, 'Nguồn phản hồi trả'],
+  [LOG_COL.INSPECTION, 'Kiểm tra nhận lại']
 ];
-const LOG_SCHEMA_VERSION = '2';
+const LOG_SCHEMA_VERSION = '3';
 const PROP_LOG_SCHEMA = 'LOG_SCHEMA_VERSION';
 
-// ONSITE chỉ dùng khi hiển thị (displayStatus_); loanStatus_ coi khai báo tại chỗ là đã trả (có cột I)
-const LOAN_STATUS = { PENDING: 'pending', APPROVED: 'approved', REJECTED: 'rejected', RETURNED: 'returned', ONSITE: 'onsite' };
+// ONSITE chỉ dùng khi hiển thị (displayStatus_); loanStatus_ coi khai báo tại chỗ là đã trả (có cột I).
+// INSPECTING / ISSUE: đã khai trả (có cột I) nhưng CB quản lý chưa xác nhận / phát hiện sự cố (cột V).
+const LOAN_STATUS = {
+  PENDING: 'pending', APPROVED: 'approved', REJECTED: 'rejected', RETURNED: 'returned', ONSITE: 'onsite',
+  INSPECTING: 'inspecting', ISSUE: 'issue'
+};
 const APPROVAL_PENDING_TEXT = '(Chờ phê duyệt PTK)';
 const ONSITE_TEXT = '🔬 Sử dụng tại chỗ — không cần duyệt';
+// Cột V "Kiểm tra nhận lại" — nhận diện theo chữ đầu (bỏ dấu, bỏ emoji), gõ tay trong Sheet vẫn hiểu
+const INSPECT_PENDING_TEXT = '⏳ Chờ kiểm tra';
+const INSPECT_OK_PREFIX = '✅ Hoạt động tốt';
+const INSPECT_ISSUE_PREFIX = '⚠️ Có sự cố';
+const INSPECT_RESOLVED_PREFIX = '🔧 Đã khắc phục';
 const AUTO_REJECT_PREFIX = '⛔ Tự động từ chối — ';
 // Khớp INACTIVE_STATUSES ở landing page ('Không hoạt động', 'Hỏng'), so sánh sau khi bỏ dấu
 const UNBORROWABLE_STATUSES = ['khong hoat dong', 'hong'];
@@ -283,9 +296,17 @@ function formatDateVN_(date, pattern) {
   return date ? Utilities.formatDate(date, 'Asia/Ho_Chi_Minh', pattern || 'dd/MM/yyyy') : '';
 }
 
-/** Trạng thái một dòng Log_Muon_Tra, suy ra từ cột I (ngày trả) và cột M (phê duyệt). */
+/**
+ * Trạng thái một dòng Log_Muon_Tra, suy ra từ cột I (ngày trả), cột V (kiểm tra nhận lại) và cột M (phê duyệt).
+ * Cột V trống (dòng cũ, khai báo tại chỗ) → coi là đã trả.
+ */
 function loanStatus_(row) {
-  if (row[LOG_COL.RETURN_DATE]) return LOAN_STATUS.RETURNED;
+  if (row[LOG_COL.RETURN_DATE]) {
+    const inspection = normalizeText_(row[LOG_COL.INSPECTION]).replace(/^[^a-z0-9]+/, '');
+    if (inspection.startsWith('cho kiem tra')) return LOAN_STATUS.INSPECTING;
+    if (inspection.startsWith('co su co')) return LOAN_STATUS.ISSUE;
+    return LOAN_STATUS.RETURNED;
+  }
   const approval = normalizeText_(row[LOG_COL.APPROVAL]);
   if (approval.includes('cho phe duyet')) return LOAN_STATUS.PENDING;
   if (approval.includes('tu choi')) return LOAN_STATUS.REJECTED;
@@ -310,12 +331,19 @@ function displayStatus_(row) {
 }
 
 /**
- * Giữ chỗ thiết bị: đang chờ duyệt, đã duyệt mà chưa trả, HOẶC đang dùng tại chỗ.
- * Bị từ chối thì nhả ngay.
+ * Giữ chỗ thiết bị: đang chờ duyệt, đã duyệt mà chưa trả, đã khai trả nhưng CB chưa kiểm tra / có sự cố
+ * chưa khắc phục, HOẶC đang dùng tại chỗ. Bị từ chối thì nhả ngay.
  */
 function holdsStock_(row, now) {
   const status = loanStatus_(row);
-  return status === LOAN_STATUS.PENDING || status === LOAN_STATUS.APPROVED || isOnsiteInUse_(row, now);
+  return status === LOAN_STATUS.PENDING || status === LOAN_STATUS.APPROVED ||
+    status === LOAN_STATUS.INSPECTING || status === LOAN_STATUS.ISSUE || isOnsiteInUse_(row, now);
+}
+
+/** Đang "mở" theo nghĩa hiển thị (lịch sử / nhật ký): chưa xong vòng mượn → kiểm tra. */
+function isActiveStatus_(status) {
+  return status === LOAN_STATUS.PENDING || status === LOAN_STATUS.APPROVED ||
+    status === LOAN_STATUS.INSPECTING || status === LOAN_STATUS.ISSUE;
 }
 
 /** Thiết bị thực sự đang ở ngoài (đã duyệt, chưa trả). Dùng cho nhắc hạn / quá hạn / trả. */
@@ -472,6 +500,15 @@ function sourceIdOf_(e) {
 }
 
 const GUIDE_COLUMN_TITLE = 'Link hướng dẫn sử dụng';
+const GUIDE_COLUMN_KEYS = ['link hướng dẫn', 'hướng dẫn sử dụng'];
+const MANAGER_EMAIL_COLUMN_TITLE = 'Email CB quản lý';
+const MANAGER_EMAIL_COLUMN_KEYS = ['email cb', 'email cán bộ'];
+
+/** "a@x.vn, b@y.vn; c@z.vn" → ['a@x.vn', 'b@y.vn', 'c@z.vn'] — bỏ mục không giống email. */
+function parseEmails_(value) {
+  return String(value == null ? '' : value).split(/[\s,;]+/)
+    .map(s => s.trim()).filter(s => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s));
+}
 
 /** Chỉ nhận link https:// (ô Sheet do người nhập) — còn lại coi như chưa có. */
 function safeGuideUrl_(value) {
@@ -492,7 +529,9 @@ function getMasterRecord_(ss, qrCode) {
     qty: findColIndex_(h, ['số lượng']),
     status: findColIndex_(h, ['tình trạng']),
     location: findColIndex_(h, ['địa điểm']),
-    guide: findColIndex_(h, ['link hướng dẫn', 'hướng dẫn sử dụng'])
+    guide: findColIndex_(h, GUIDE_COLUMN_KEYS),
+    manager: findColIndex_(h, ['cb quản lý hiện tại']),
+    managerEmail: findColIndex_(h, MANAGER_EMAIL_COLUMN_KEYS)
   };
   for (let i = 1; i < data.length; i++) {
     const r = data[i];
@@ -504,7 +543,9 @@ function getMasterRecord_(ss, qrCode) {
       qty: Math.max(1, parseInt(r[col.qty], 10) || 1),
       status: col.status >= 0 ? String(r[col.status] || '') : '',
       location: col.location >= 0 ? String(r[col.location] || '') : '',
-      guideUrl: col.guide >= 0 ? safeGuideUrl_(r[col.guide]) : ''
+      guideUrl: col.guide >= 0 ? safeGuideUrl_(r[col.guide]) : '',
+      managerName: col.manager >= 0 ? String(r[col.manager] || '').trim() : '',
+      managerEmails: col.managerEmail >= 0 ? parseEmails_(r[col.managerEmail]) : []
     };
   }
   return null;
@@ -515,10 +556,27 @@ function getMasterRecord_(ss, qrCode) {
  * Sau đó dán link Google Site vào ô của từng thiết bị — không cần sửa code / deploy lại.
  */
 function ensureGuideColumn() {
+  return ensureMasterColumn_(GUIDE_COLUMN_TITLE, GUIDE_COLUMN_KEYS, '#E3F2FD',
+    'Dán link Google Site (https://...) hướng dẫn sử dụng / khuyến cáo cho từng thiết bị.\n' +
+    'Để trống → email phê duyệt hiện nút "Hướng dẫn sử dụng (đang cập nhật)".');
+}
+
+/**
+ * Menu: thêm cột "Email CB quản lý" vào cuối Master_Data. Email ở đây nhận yêu cầu KIỂM TRA
+ * thiết bị khi người mượn trả (nhiều email cách nhau bằng dấu phẩy). Để trống → gửi PTK.
+ */
+function ensureManagerEmailColumn() {
+  return ensureMasterColumn_(MANAGER_EMAIL_COLUMN_TITLE, MANAGER_EMAIL_COLUMN_KEYS, '#FFF3E0',
+    'Email cán bộ quản lý thiết bị — nhận email KIỂM TRA khi người mượn trả.\n' +
+    'Nhiều người: cách nhau bằng dấu phẩy. Để trống → gửi Phó Trưởng khoa.');
+}
+
+/** Thêm cột vào cuối Master_Data nếu chưa có (theo từ khóa), rồi đưa màn hình tới ô tiêu đề. */
+function ensureMasterColumn_(title, keys, background, note) {
   const sheet = SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID).getSheetByName(CONFIG.SHEETS.MASTER);
   if (!sheet) throw new Error('Không tìm thấy sheet ' + CONFIG.SHEETS.MASTER);
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  const existing = findColIndex_(headers, ['link hướng dẫn', 'hướng dẫn sử dụng']);
+  const existing = findColIndex_(headers, keys);
   let col, msg;
   if (existing >= 0) {
     col = existing + 1;
@@ -526,11 +584,9 @@ function ensureGuideColumn() {
   } else {
     col = headers.length + 1;
     if (sheet.getMaxColumns() < col) sheet.insertColumnsAfter(sheet.getMaxColumns(), 1);
-    sheet.getRange(1, col).setValue(GUIDE_COLUMN_TITLE).setFontWeight('bold').setBackground('#E3F2FD')
-      .setNote('Dán link Google Site (https://...) hướng dẫn sử dụng / khuyến cáo cho từng thiết bị.\n' +
-        'Để trống → email phê duyệt hiện nút "Hướng dẫn sử dụng (đang cập nhật)".');
+    sheet.getRange(1, col).setValue(title).setFontWeight('bold').setBackground(background).setNote(note);
     sheet.setColumnWidth(col, 260);
-    msg = `Đã thêm cột "${GUIDE_COLUMN_TITLE}" vào tab Master_Data (cột ${columnLetter_(col)}).`;
+    msg = `Đã thêm cột "${title}" vào tab Master_Data (cột ${columnLetter_(col)}).`;
   }
   Logger.log(msg);
   // Chuyển màn hình sang Master_Data, chọn ô tiêu đề (cột có thể nằm xa bên phải).
@@ -646,6 +702,12 @@ function ensureRemindedColumn_(logSheet) {
 
 
 function checkOverdueReturns() {
+  // Cùng lượt quét hằng ngày: nhắc CB quản lý kiểm tra thiết bị đã khai trả (không cần trigger mới)
+  try {
+    checkPendingInspections_();
+  } catch (err) {
+    Logger.log('⚠️ checkPendingInspections_: ' + err.message);
+  }
   const ss = SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID);
   // ✅ FIX: Chỉ quét Log_Muon_Tra (nguồn chính thống), KHÔNG quét Form Responses.
   // Lý do: Form Responses của form mượn KHÔNG có cột "Ngày trả thực tế",
@@ -1582,7 +1644,15 @@ function onFormSubmitReturn(e) {
   const ss = SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID);
   const result = recordReturn_(ss, req, sourceIdOf_(e));
   if (!result) return; // phản hồi này đã được xử lý
+  if (!result.problem) result.inspectors = inspectorsFor_(ss, result.qrCode).emails;
   sendReturnEmail_(ss, result);
+  if (result.problem) return;
+  try {
+    sendInspectionRequest_(ss, result.loanId, false);
+  } catch (err) {
+    throw new Error(`Đã ghi khai trả ${result.loanId} nhưng gửi email kiểm tra thất bại: ${err.message}. ` +
+      'Dùng menu "Gửi lại email kiểm tra đang chờ".');
+  }
 }
 
 function readReturnRequest_(namedValues, cellValues) {
@@ -1604,10 +1674,13 @@ function pickLoanToClose_(data, req) {
   const onLoan = [];
   let pendingCount = 0;
   let onsiteCount = 0;
+  let inspectingCount = 0;
   data.forEach((r, i) => {
     if (i === 0 || String(r[LOG_COL.QR]).trim() !== req.qrCode) return;
+    const status = loanStatus_(r);
     if (isOnLoan_(r)) onLoan.push(i);
-    else if (loanStatus_(r) === LOAN_STATUS.PENDING) pendingCount++;
+    else if (status === LOAN_STATUS.PENDING) pendingCount++;
+    else if (status === LOAN_STATUS.INSPECTING || status === LOAN_STATUS.ISSUE) inspectingCount++;
     else if (isOnsiteInUse_(r)) onsiteCount++;
   });
 
@@ -1615,6 +1688,9 @@ function pickLoanToClose_(data, req) {
   if (onLoan.length === 0) {
     if (pendingCount) {
       return { problem: 'Yêu cầu mượn thiết bị này còn đang CHỜ DUYỆT — chưa có khoản đã bàn giao để đóng' };
+    }
+    if (inspectingCount) {
+      return { problem: 'Thiết bị này ĐÃ được khai trả và đang chờ cán bộ quản lý kiểm tra — không cần khai trả lại' };
     }
     return { problem: onsiteCount
       ? 'Thiết bị đang được khai báo SỬ DỤNG TẠI CHỖ — khoản này tự đóng khi hết giờ, không cần xác nhận trả'
@@ -1680,6 +1756,8 @@ function recordReturn_(ss, req, sourceId) {
         .setValue(asText_(existing ? existing + ' | ' + req.notes : req.notes));
     }
     sheet.getRange(rowNum, LOG_COL.RETURN_SOURCE + 1).setValue(sourceId);
+    // Chưa đóng hẳn: chờ CB quản lý kiểm tra thiết bị (thiết bị vẫn giữ chỗ, hết bị nhắc quá hạn)
+    sheet.getRange(rowNum, LOG_COL.INSPECTION + 1).setValue(INSPECT_PENDING_TEXT);
     writeUsageHours_(sheet, rowNum, row[LOG_COL.BORROW_DATE], returnDate);
     SpreadsheetApp.flush();
 
@@ -1695,7 +1773,7 @@ function recordReturn_(ss, req, sourceId) {
       result.warnings.push(`Tình trạng khi trả: "${req.condition}" — cần kiểm tra và cập nhật Master_Data ` +
         'nếu thiết bị không còn cho mượn được');
     }
-    Logger.log(`✓ Đóng khoản mượn ${result.loanId} (${req.qrCode}) tại dòng ${rowNum}`);
+    Logger.log(`✓ Ghi khai trả ${result.loanId} (${req.qrCode}) tại dòng ${rowNum} — chờ CB kiểm tra`);
     return result;
   } finally {
     lock.releaseLock();
@@ -1708,9 +1786,11 @@ function sendReturnEmail_(ss, result) {
   const needsAction = result.problem || result.warnings.length;
   const subject = result.problem
     ? `[KTTV&HDH] ⚠️ CẦN XỬ LÝ TAY — phản hồi trả: ${equipName} (${result.qrCode})`
-    : `[KTTV&HDH] ✅ Đã trả thiết bị: ${equipName} (${result.qrCode})${needsAction ? ' — có cảnh báo' : ''}`;
+    : `[KTTV&HDH] ⏳ Đã khai trả, chờ CB kiểm tra: ${equipName} (${result.qrCode})${needsAction ? ' — có cảnh báo' : ''}`;
 
-  let body = result.problem ? `Phản hồi trả thiết bị CHƯA được ghi nhận.\n\n` : `Thiết bị đã được trả.\n\n`;
+  let body = result.problem ? `Phản hồi trả thiết bị CHƯA được ghi nhận.\n\n`
+    : `Người mượn đã khai trả thiết bị. Khoản mượn CHƯA đóng: chờ cán bộ quản lý kiểm tra.\n` +
+      `Email kiểm tra đã gửi tới: ${(result.inspectors || []).join(', ') || CONFIG.ADMIN_EMAIL}\n\n`;
   body += `  Tên thiết bị : ${equipName}\n  Mã QR        : ${result.qrCode}\n`;
   body += `  Người trả    : ${result.returner || 'N/A'}${result.email ? ' — ' + result.email : ''}\n`;
   body += `  Ngày trả     : ${formatDateVN_(result.returnDate, 'dd/MM/yyyy HH:mm')}\n`;
@@ -1725,6 +1805,403 @@ function sendReturnEmail_(ss, result) {
   result.warnings.forEach(w => { body += `\n⚠️ ${w}`; });
   body += `\n\n— Hệ thống quản lý TB Khoa KTTV&HDH`;
   MailApp.sendEmail(CONFIG.ADMIN_EMAIL, subject, body);
+}
+
+
+// ==================== 4c-2. KIỂM TRA THIẾT BỊ KHI NHẬN LẠI ====================
+// Người mượn khai trả → cột V "⏳ Chờ kiểm tra" (vẫn giữ chỗ, hết nhắc quá hạn) → email CB quản lý
+// (Master_Data "Email CB quản lý"; trống → PTK) có 2 nút ✅ Hoạt động tốt / ⚠️ Có sự cố.
+// Link ký theo Mã giao dịch như link phê duyệt: mở TRANG XÁC NHẬN (bấm nút mới ghi), dùng 1 lần.
+//   ✅ → khoản đóng, thiết bị sẵn sàng, người mượn nhận email "đã nhận lại".
+//   ⚠️ → ghi Log_Bao_Hong + email PTK kèm nút "🔧 Đã khắc phục"; thiết bị khóa mượn tới khi khắc phục.
+
+const INSPECT_ACTIONS = ['inspect_ok', 'inspect_issue', 'resolve'];
+const INSPECT_SEVERITIES = ['Nhẹ — vẫn sử dụng được', 'Trung bình — hoạt động không ổn định',
+  'Nặng — không sử dụng được'];
+
+/** Người nhận email kiểm tra. Thiếu "Email CB quản lý" → gửi PTK (fallback=true). */
+function inspectorsFor_(ss, qrCode) {
+  let master = null;
+  try {
+    master = getMasterRecord_(ss, String(qrCode).trim());
+  } catch (err) {
+    Logger.log('inspectorsFor_: không đọc được Master_Data — ' + err.message);
+  }
+  const own = master ? master.managerEmails : [];
+  return {
+    emails: own.length ? own : [CONFIG.ADMIN_EMAIL],
+    names: master ? master.managerName : '',
+    fallback: !own.length
+  };
+}
+
+/** Thông tin một khoản theo Mã giao dịch (đọc Log, không khóa). null nếu không thấy. */
+function loanInfo_(ss, loanId) {
+  const { data } = readLogData_(ss);
+  const index = findLoanIndex_(data, loanId);
+  if (index < 0) return null;
+  const r = data[index];
+  const returned = r[LOG_COL.RETURN_DATE];
+  return {
+    index: index, loanId: loanId, status: loanStatus_(r),
+    qrCode: String(r[LOG_COL.QR] || '').trim(), equipName: String(r[LOG_COL.NAME] || r[LOG_COL.QR] || ''),
+    borrower: String(r[LOG_COL.BORROWER] || ''), email: String(r[LOG_COL.EMAIL] || '').trim(),
+    unit: String(r[LOG_COL.UNIT] || ''), purpose: String(r[LOG_COL.PURPOSE] || ''),
+    borrowDate: parseDate_(r[LOG_COL.BORROW_DATE]), dueDate: parseDate_(r[LOG_COL.DUE_DATE]),
+    returnDate: returned instanceof Date ? returned : parseDate_(returned),
+    condIn: String(r[LOG_COL.COND_IN] || ''), inspection: String(r[LOG_COL.INSPECTION] || '')
+  };
+}
+
+/** Số ngày (lịch) kể từ ngày khai trả. */
+function daysSinceReturn_(loan) {
+  if (!loan.returnDate) return 0;
+  const day = new Date(loan.returnDate);
+  day.setHours(0, 0, 0, 0);
+  return Math.max(0, Math.round((startOfToday_() - day) / MS_PER_DAY));
+}
+
+/** Email yêu cầu CB quản lý kiểm tra (hoặc nhắc lại). Trả false nếu khoản không còn chờ kiểm tra. */
+function sendInspectionRequest_(ss, loanId, isReminder) {
+  const loan = loanInfo_(ss, loanId);
+  if (!loan || loan.status !== LOAN_STATUS.INSPECTING) return false;
+  const who = inspectorsFor_(ss, loan.qrCode);
+  const okLink = buildApprovalLink_('inspect_ok', loanId);
+  const issueLink = buildApprovalLink_('inspect_issue', loanId);
+  const days = daysSinceReturn_(loan);
+
+  const subject = `[KTTV&HDH] 🔍 ${isReminder ? `NHẮC (đã ${days} ngày) — ` : ''}` +
+    `Kiểm tra thiết bị trả: ${loan.equipName} (${loan.qrCode})`;
+  let body = `Người mượn đã khai trả thiết bị. Vui lòng KIỂM TRA thiết bị trước khi xác nhận nhận lại.\n\n`;
+  body += `  Thiết bị       : ${loan.equipName} (${loan.qrCode})\n`;
+  body += `  Người mượn     : ${loan.borrower}${loan.email ? ' — ' + loan.email : ''}\n`;
+  body += `  Ngày khai trả  : ${formatDateVN_(loan.returnDate, 'dd/MM/yyyy HH:mm')}\n`;
+  if (loan.condIn) body += `  Tình trạng khai: ${loan.condIn}\n`;
+  body += `  Mã giao dịch   : ${loanId}\n\n`;
+  if (who.fallback) body += `(Thiết bị chưa có "Email CB quản lý" trong Master_Data — email gửi PTK.)\n\n`;
+  body += `→ Hoạt động tốt, nhận lại: ${okLink}\n→ Có sự cố: ${issueLink}\n\n`;
+  body += `Link có hạn ${CONFIG.APPROVAL_LINK_TTL_DAYS} ngày, mở ra sẽ hỏi xác nhận trước khi ghi nhận.\n\n`;
+  body += `— Hệ thống quản lý TB Khoa KTTV&HDH`;
+  MailApp.sendEmail(who.emails.join(','), subject, body,
+    { htmlBody: buildInspectionRequestHtml_(loan, who, okLink, issueLink, isReminder ? days : 0) });
+  return true;
+}
+
+function buildInspectionRequestHtml_(loan, who, okLink, issueLink, reminderDays) {
+  const esc = escapeHtml_;
+  const tone = EMAIL_TONE.amber;
+  const intro = emailP_(`Người mượn ${emailStrong_(loan.borrower || 'N/A')} đã khai trả thiết bị. ` +
+    `Vui lòng ${emailStrong_('kiểm tra thiết bị hoạt động bình thường', tone)} rồi xác nhận nhận lại, ` +
+    'hoặc báo sự cố nếu có.', true);
+  const fallback = who.fallback
+    ? emailP_(`<em style="color:#6b7280">Thiết bị chưa có "Email CB quản lý" trong Master_Data` +
+      `${who.names ? ' (CB quản lý: ' + esc(who.names) + ')' : ''} — email này gửi Phó Trưởng khoa.</em>`)
+    : '';
+  const blocks = [
+    emailBlock_(emailPill_(reminderDays ? `⏰ NHẮC — CHƯA KIỂM TRA ${reminderDays} NGÀY` : '🔍 CẦN KIỂM TRA', tone) +
+      intro + fallback, 24),
+    emailBlock_(emailHighlight_('📦 Đã khai trả', formatDateVN_(loan.returnDate, 'dd/MM/yyyy HH:mm'),
+      loan.condIn ? 'Người trả khai: ' + loan.condIn : '', tone)),
+    emailBlock_(emailDetails_([
+      ['Thiết bị', emailEquip_(loan.equipName, loan.qrCode)],
+      ['Người mượn', emailStrong_(loan.borrower)],
+      ['Email', esc(loan.email)],
+      ['Đơn vị', esc(loan.unit)],
+      ['Ngày mượn', esc(formatDateVN_(loan.borrowDate))],
+      ['Hạn trả', esc(formatDateVN_(loan.dueDate))],
+      ['Mã giao dịch', emailMono_(loan.loanId)]
+    ])),
+    emailBlock_(emailButtonRow_([
+      emailButton_(okLink, '✅ Hoạt động tốt', EMAIL_TONE.green),
+      emailButton_(issueLink, '⚠️ Có sự cố', EMAIL_TONE.red)
+    ]), 24),
+    emailBlock_(emailCaption_('Link mở trang xác nhận — chỉ ghi nhận sau khi bấm nút xác nhận. ' +
+      `Hạn dùng ${CONFIG.APPROVAL_LINK_TTL_DAYS} ngày.`), 10)
+  ];
+  return emailLayout_({ heading: 'Kiểm tra thiết bị khi nhận lại', tone: tone, blocks: blocks,
+    support: 'Cần hỗ trợ' });
+}
+
+/** Trang xác nhận kiểm tra / khắc phục (GET link trong email) — chưa ghi gì. */
+function renderInspectionPage_(action, loanId, issuedAt, sig) {
+  const ss = SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID);
+  const loan = loanInfo_(ss, loanId);
+  const title = 'Kiểm tra thiết bị — KTTV&HDH';
+  if (!loan) {
+    return approvalPage_(approvalMessageHtml_('⚠️', '#c62828', 'Không tìm thấy giao dịch ' + loanId, ''), title);
+  }
+  const expected = action === 'resolve' ? LOAN_STATUS.ISSUE : LOAN_STATUS.INSPECTING;
+  if (loan.status !== expected) {
+    return approvalPage_(approvalMessageHtml_('ℹ️', '#2F5496', 'Khoản này đã được xử lý trước đó',
+      loan.inspection || 'Trạng thái: ' + loan.status), title);
+  }
+
+  const looks = {
+    inspect_ok: { color: '#2e7d32', label: '✅ Xác nhận: hoạt động tốt, đã nhận lại',
+      noteLabel: 'Ghi chú (nếu có)', notePh: 'VD: đủ phụ kiện, đã vệ sinh' },
+    inspect_issue: { color: '#c62828', label: '⚠️ Gửi báo cáo sự cố',
+      noteLabel: 'Mô tả sự cố (bắt buộc)', notePh: 'Triệu chứng, bộ phận hỏng, phụ kiện thiếu…' },
+    resolve: { color: '#2F5496', label: '🔧 Xác nhận đã khắc phục — cho mượn lại',
+      noteLabel: 'Đã xử lý thế nào (nếu có)', notePh: 'VD: thay pin, hiệu chuẩn lại' }
+  }[action];
+  const who = action === 'resolve' ? { names: '' } : inspectorsFor_(ss, loan.qrCode);
+  const defaultName = who.names && !/[,;]/.test(who.names) ? who.names : '';
+  const field = 'width:100%;box-sizing:border-box;padding:10px;border:1px solid #d1d5db;border-radius:8px;' +
+    'font-size:14px;font-family:inherit;margin-top:4px';
+  const label = 'display:block;margin-top:14px;font-size:13px;font-weight:600;color:#374151';
+  const line = (k, v) => v ? `<div style="margin-top:6px">${k}: <strong>${escapeHtml_(v)}</strong></div>` : '';
+  const severity = action === 'inspect_issue'
+    ? `<label style="${label}">Mức độ</label><select id="sev" style="${field}">` +
+      INSPECT_SEVERITIES.map(s => `<option>${escapeHtml_(s)}</option>`).join('') + `</select>`
+    : '';
+  const args = [action, loanId, issuedAt, sig].map(v => JSON.stringify(String(v)).replace(/</g, '\\u003c'));
+  return approvalPage_(`
+    <h2 style="margin:0 0 4px;font-size:20px">${escapeHtml_(loan.equipName)}</h2>
+    <p style="font-size:13px;color:#888;font-family:monospace;margin:0 0 16px">${escapeHtml_(loan.qrCode)}</p>
+    <div style="background:#f8f9fa;border-radius:8px;padding:12px;font-size:13px;color:#555;text-align:left">
+      ${line('👤 Người mượn', loan.borrower)}
+      ${line('📦 Khai trả', formatDateVN_(loan.returnDate, 'dd/MM/yyyy HH:mm'))}
+      ${line('📝 Tình trạng khai', loan.condIn)}
+      ${action === 'resolve' ? line('⚠️ Sự cố', loan.inspection) : ''}
+      ${line('🔖 Mã giao dịch', loanId)}
+    </div>
+    <div style="text-align:left">
+      <label style="${label}">${action === 'resolve' ? 'Người xác nhận' : 'Người kiểm tra'} (bắt buộc)</label>
+      <input id="who" style="${field}" value="${escapeHtml_(defaultName)}" placeholder="Họ và tên">
+      ${severity}
+      <label style="${label}">${looks.noteLabel}</label>
+      <textarea id="note" rows="3" style="${field}" placeholder="${escapeHtml_(looks.notePh)}"></textarea>
+      <div id="err" style="color:#c62828;font-size:13px;margin-top:8px"></div>
+    </div>
+    <button id="go" style="margin-top:16px;width:100%;padding:14px;border:none;border-radius:8px;
+            background:${looks.color};color:white;font-size:15px;font-weight:700;cursor:pointer">${looks.label}</button>
+    <script>
+      document.getElementById('go').addEventListener('click', function () {
+        var btn = this;
+        var who = document.getElementById('who').value.trim();
+        var note = document.getElementById('note').value.trim();
+        var sevEl = document.getElementById('sev');
+        var err = document.getElementById('err');
+        if (!who) { err.textContent = 'Vui lòng nhập họ tên.'; return; }
+        if (${JSON.stringify(action === 'inspect_issue')} && !note) { err.textContent = 'Vui lòng mô tả sự cố.'; return; }
+        err.textContent = '';
+        btn.disabled = true;
+        btn.textContent = 'Đang xử lý...';
+        google.script.run
+          .withSuccessHandler(function (html) { document.getElementById('box').innerHTML = html; })
+          .withFailureHandler(function () {
+            btn.disabled = false;
+            btn.textContent = 'Lỗi kết nối — bấm để thử lại';
+          })
+          .confirmInspectionFromPage(${args.join(', ')}, who, note, sevEl ? sevEl.value : '');
+      });
+    </script>`, title);
+}
+
+/**
+ * Gọi từ trang kiểm tra qua google.script.run. KHÔNG tin tham số từ trình duyệt:
+ * kiểm lại chữ ký, độ dài, mức độ; chỉ ghi khi khoản còn đúng trạng thái.
+ * @return {string} HTML kết quả.
+ */
+function confirmInspectionFromPage(action, loanId, issuedAt, sig, inspector, note, severity) {
+  if (INSPECT_ACTIONS.indexOf(action) < 0 ||
+      !verifyApprovalLink_(action, String(loanId), String(issuedAt), String(sig))) {
+    return approvalMessageHtml_('⚠️', '#c62828', 'Link không hợp lệ hoặc đã hết hạn',
+      'Dùng menu "Gửi lại email kiểm tra đang chờ" trong Google Sheet để nhận link mới.');
+  }
+  const who = String(inspector == null ? '' : inspector).trim().slice(0, 100);
+  const text = String(note == null ? '' : note).trim().slice(0, 800);
+  const sev = INSPECT_SEVERITIES.indexOf(severity) >= 0 ? severity : INSPECT_SEVERITIES[0];
+  if (!who) return approvalMessageHtml_('⚠️', '#c62828', 'Thiếu tên người kiểm tra', 'Mở lại link và nhập họ tên.');
+  if (action === 'inspect_issue' && !text) {
+    return approvalMessageHtml_('⚠️', '#c62828', 'Thiếu mô tả sự cố', 'Mở lại link và mô tả sự cố.');
+  }
+
+  const outcome = applyInspection_(action, String(loanId), who, text, sev);
+  if (!outcome.ok) return approvalMessageHtml_('ℹ️', '#2F5496', outcome.message, outcome.detail || '');
+  const base = `${outcome.loan.equipName} (${outcome.loan.qrCode}) — ${outcome.dateStr}.`;
+  const mailNote = outcome.mailError ? ` Chưa gửi được email: ${outcome.mailError}` : '';
+  if (action === 'inspect_ok') {
+    return approvalMessageHtml_('✅', '#2e7d32', 'ĐÃ NHẬN LẠI THIẾT BỊ',
+      base + ' Thiết bị sẵn sàng cho mượn.' + (outcome.loan.email && !outcome.mailError
+        ? ` Đã báo cho người mượn (${outcome.loan.email}).` : '') + mailNote);
+  }
+  if (action === 'inspect_issue') {
+    return approvalMessageHtml_('⚠️', '#c62828', 'ĐÃ GHI NHẬN SỰ CỐ',
+      base + ' Đã ghi Log_Bao_Hong và báo Phó Trưởng khoa. Thiết bị tạm khóa mượn tới khi khắc phục.' + mailNote);
+  }
+  return approvalMessageHtml_('🔧', '#2F5496', 'ĐÃ KHẮC PHỤC', base + ' Thiết bị đã mở lại cho mượn.' + mailNote);
+}
+
+/** Ghi kết quả vào cột V trong vùng khóa (chỉ khi còn đúng trạng thái), rồi gửi email / ghi Log_Bao_Hong. */
+function applyInspection_(action, loanId, inspector, note, severity) {
+  const ss = SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID);
+  const expected = action === 'resolve' ? LOAN_STATUS.ISSUE : LOAN_STATUS.INSPECTING;
+  const dateStr = formatDateVN_(new Date(), 'dd/MM/yyyy HH:mm');
+  const lock = LockService.getScriptLock();
+  lock.waitLock(LOCK_WAIT_MS);
+  let loan;
+  try {
+    const { sheet } = readLogData_(ss);
+    ensureLogSchema_(sheet);
+    loan = loanInfo_(ss, loanId);
+    if (!loan) return { ok: false, message: 'Không tìm thấy giao dịch ' + loanId };
+    if (loan.status !== expected) {
+      return { ok: false, message: 'Khoản này đã được xử lý trước đó', detail: loan.inspection };
+    }
+    const text = action === 'inspect_ok'
+      ? `${INSPECT_OK_PREFIX} — ${inspector} (${dateStr})${note ? ': ' + note : ''}`
+      : action === 'inspect_issue'
+        ? `${INSPECT_ISSUE_PREFIX} [${severity}] — ${inspector} (${dateStr}): ${note}`
+        : `${INSPECT_RESOLVED_PREFIX} — ${inspector} (${dateStr})${note ? ': ' + note : ''} | ${loan.inspection}`;
+    sheet.getRange(loan.index + 1, LOG_COL.INSPECTION + 1).setValue(asText_(text));
+    SpreadsheetApp.flush();
+    Logger.log(`✓ Kiểm tra nhận lại ${loanId}: ${text}`);
+  } finally {
+    lock.releaseLock();
+  }
+
+  const outcome = { ok: true, loan: loan, dateStr: dateStr };
+  try {
+    if (action === 'inspect_ok') {
+      if (loan.email) {
+        MailApp.sendEmail(loan.email, `[KTTV&HDH] ✅ Đã nhận lại thiết bị: ${loan.equipName} (${loan.qrCode})`,
+          `Kính gửi thầy/cô ${loan.borrower},\n\nCán bộ quản lý đã kiểm tra và nhận lại thiết bị ` +
+          `${loan.equipName} (${loan.qrCode}) lúc ${dateStr}. Khoản mượn ${loanId} đã hoàn tất.\n\n` +
+          `Cảm ơn thầy/cô.\n\n— Hệ thống quản lý TB Khoa KTTV&HDH`,
+          { htmlBody: buildReturnReceivedHtml_(loan, inspector, dateStr) });
+      }
+    } else if (action === 'inspect_issue') {
+      recordInspectionIssue_(ss, loan, inspector, note, severity, dateStr);
+    } else {
+      markDamageResolved_(ss, loanId, inspector, dateStr);
+    }
+  } catch (err) {
+    outcome.mailError = err.message;
+    Logger.log('⚠️ applyInspection_ sau khi ghi: ' + err.message);
+  }
+  return outcome;
+}
+
+const INSPECT_SOURCE_PREFIX = 'kiem-tra:';
+
+/** Sự cố khi nhận lại → dòng Log_Bao_Hong (chống trùng theo Mã giao dịch) + email PTK có nút khắc phục. */
+function recordInspectionIssue_(ss, loan, inspector, note, severity, dateStr) {
+  const sheet = ensureDamageSheet_(ss);
+  const row = [
+    asText_(loan.qrCode), asText_(loan.equipName), asText_(inspector), new Date(), asText_(severity),
+    asText_(note), asText_(`Phát hiện khi kiểm tra nhận lại — người mượn: ${loan.borrower} (giao dịch ${loan.loanId})`),
+    '', '', 'Mới — chờ xử lý', INSPECT_SOURCE_PREFIX + loan.loanId
+  ];
+  const rowNum = appendUniqueRow_(sheet, DAMAGE_SOURCE_COL, row[DAMAGE_SOURCE_COL], row);
+  const resolveLink = buildApprovalLink_('resolve', loan.loanId);
+  let body = `CB quản lý phát hiện SỰ CỐ khi kiểm tra thiết bị nhận lại.\n\n`;
+  body += `  Thiết bị     : ${loan.equipName} (${loan.qrCode})\n  Mức độ       : ${severity}\n`;
+  body += `  Mô tả        : ${note}\n  Người kiểm tra: ${inspector} (${dateStr})\n`;
+  body += `  Người mượn   : ${loan.borrower}${loan.email ? ' — ' + loan.email : ''}\n  Mã giao dịch : ${loan.loanId}\n`;
+  if (rowNum > 0) body += `  Log_Bao_Hong : dòng ${rowNum}\n`;
+  body += `\nThiết bị đang TẠM KHÓA MƯỢN. Sau khi khắc phục:\n→ ${resolveLink}\n`;
+  body += `Nếu thiết bị không dùng được nữa, cập nhật tình trạng trong Master_Data thành "Hỏng".\n\n`;
+  body += `— Hệ thống quản lý TB Khoa KTTV&HDH`;
+  MailApp.sendEmail(CONFIG.ADMIN_EMAIL, `[KTTV&HDH] ⚠️ Sự cố khi nhận lại: ${loan.equipName} (${loan.qrCode})`, body,
+    { htmlBody: buildInspectionIssueHtml_(loan, inspector, note, severity, dateStr, resolveLink, rowNum) });
+}
+
+/** Đã khắc phục → cập nhật "Trạng thái xử lý" của dòng Log_Bao_Hong tương ứng (nếu có). */
+function markDamageResolved_(ss, loanId, who, dateStr) {
+  const sheet = ss.getSheetByName(CONFIG.SHEETS.LOG_HONG);
+  if (!sheet) return;
+  const data = sheet.getDataRange().getValues();
+  const index = data.findIndex((r, i) => i > 0 && r[DAMAGE_SOURCE_COL] === INSPECT_SOURCE_PREFIX + loanId);
+  if (index < 0) return;
+  sheet.getRange(index + 1, DAMAGE_HEADERS.indexOf('Trạng thái xử lý') + 1)
+    .setValue(asText_(`Đã khắc phục — ${who} (${dateStr})`));
+}
+
+function buildReturnReceivedHtml_(loan, inspector, dateStr) {
+  const tone = EMAIL_TONE.green;
+  const blocks = [
+    emailBlock_(emailPill_('✅ ĐÃ NHẬN LẠI THIẾT BỊ', tone) +
+      emailP_(emailGreeting_(loan.borrower), true) +
+      emailP_(`Cán bộ quản lý đã ${emailStrong_('kiểm tra và nhận lại', tone)} thiết bị thầy/cô mượn. ` +
+        'Khoản mượn đã hoàn tất — cảm ơn thầy/cô.'), 24),
+    emailBlock_(emailDetails_([
+      ['Thiết bị', emailEquip_(loan.equipName, loan.qrCode)],
+      ['Ngày mượn', escapeHtml_(formatDateVN_(loan.borrowDate))],
+      ['Ngày trả', escapeHtml_(formatDateVN_(loan.returnDate, 'dd/MM/yyyy HH:mm'))],
+      ['Người kiểm tra', emailStrong_(inspector)],
+      ['Xác nhận lúc', escapeHtml_(dateStr)],
+      ['Mã giao dịch', emailMono_(loan.loanId)]
+    ]))
+  ];
+  return emailLayout_({ heading: 'Đã nhận lại thiết bị', tone: tone, blocks: blocks, support: 'Cần hỗ trợ' });
+}
+
+function buildInspectionIssueHtml_(loan, inspector, note, severity, dateStr, resolveLink, rowNum) {
+  const tone = EMAIL_TONE.red;
+  const blocks = [
+    emailBlock_(emailPill_('⚠️ SỰ CỐ KHI NHẬN LẠI', tone) +
+      emailP_(`${emailStrong_(inspector)} phát hiện sự cố khi kiểm tra thiết bị nhận lại. ` +
+        `Thiết bị ${emailStrong_('tạm khóa mượn', tone)} tới khi xác nhận đã khắc phục.`, true), 24),
+    emailBlock_(emailNotice_(severity, note, tone)),
+    emailBlock_(emailDetails_([
+      ['Thiết bị', emailEquip_(loan.equipName, loan.qrCode)],
+      ['Người mượn', emailStrong_(loan.borrower)],
+      ['Email', escapeHtml_(loan.email)],
+      ['Ngày trả', escapeHtml_(formatDateVN_(loan.returnDate, 'dd/MM/yyyy HH:mm'))],
+      ['Kiểm tra lúc', escapeHtml_(dateStr)],
+      ['Log_Bao_Hong', rowNum > 0 ? escapeHtml_('dòng ' + rowNum) : ''],
+      ['Mã giao dịch', emailMono_(loan.loanId)]
+    ])),
+    emailBlock_(emailButtonRow_([emailButton_(resolveLink, '🔧 Đã khắc phục — cho mượn lại', 'primary')]), 24),
+    emailBlock_(emailCaption_('Không dùng được nữa → cập nhật tình trạng trong Master_Data thành "Hỏng". ' +
+      `Link có hạn ${CONFIG.APPROVAL_LINK_TTL_DAYS} ngày.`), 10)
+  ];
+  return emailLayout_({ heading: 'Sự cố khi nhận lại thiết bị', tone: tone, blocks: blocks });
+}
+
+/**
+ * Chạy hằng ngày (gọi từ checkOverdueReturns): khoản chờ kiểm tra đã INSPECTION_REMIND_DAYS ngày
+ * → nhắc lại CB quản lý, sau đó cứ 2 ngày nhắc 1 lần; gửi PTK danh sách nếu có nhắc.
+ */
+function checkPendingInspections_() {
+  const ss = SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID);
+  const { data } = readLogData_(ss);
+  const reminded = [];
+  for (let i = 1; i < data.length; i++) {
+    if (loanStatus_(data[i]) !== LOAN_STATUS.INSPECTING) continue;
+    const loanId = String(data[i][LOG_COL.LOAN_ID] || '');
+    if (!loanId) continue;
+    const loan = loanInfo_(ss, loanId);
+    const days = daysSinceReturn_(loan);
+    const late = days - CONFIG.INSPECTION_REMIND_DAYS;
+    if (late < 0 || late % 2 !== 0) continue;
+    if (sendInspectionRequest_(ss, loanId, true)) {
+      reminded.push(`  • ${loan.equipName} (${loan.qrCode}) — khai trả ${formatDateVN_(loan.returnDate)}, ` +
+        `chờ ${days} ngày — gửi: ${inspectorsFor_(ss, loan.qrCode).emails.join(', ')}`);
+    }
+  }
+  if (reminded.length) {
+    MailApp.sendEmail(CONFIG.ADMIN_EMAIL, `[KTTV&HDH] 🔍 ${reminded.length} thiết bị trả chưa được kiểm tra`,
+      `Đã nhắc lại cán bộ quản lý kiểm tra các thiết bị sau:\n\n${reminded.join('\n')}\n\n` +
+      `Thiết bị đang khóa mượn tới khi được kiểm tra.\n\n— Hệ thống quản lý TB Khoa KTTV&HDH`);
+  }
+  return reminded.length;
+}
+
+/** Menu: gửi lại email kiểm tra cho mọi khoản đang chờ (link mới) — VD sau khi điền "Email CB quản lý". */
+function resendPendingInspections() {
+  const ss = SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID);
+  const { data } = readLogData_(ss);
+  let sent = 0;
+  data.forEach((r, i) => {
+    if (i > 0 && r[LOG_COL.LOAN_ID] && loanStatus_(r) === LOAN_STATUS.INSPECTING &&
+        sendInspectionRequest_(ss, String(r[LOG_COL.LOAN_ID]), false)) sent++;
+  });
+  const msg = `Đã gửi lại ${sent} email kiểm tra thiết bị đang chờ.`;
+  Logger.log(msg);
+  try { SpreadsheetApp.getActiveSpreadsheet().toast(msg, 'Quản lý TB', 10); } catch (err) { /* ngoài UI */ }
+  return sent;
 }
 
 
@@ -1802,6 +2279,17 @@ function onFormSubmitMaintenance(e) {
   MailApp.sendEmail(CONFIG.ADMIN_EMAIL, `[KTTV&HDH] 🔧 Bảo trì: ${row[1]} (${qrCode})`, body);
 }
 
+/** Sheet Log_Bao_Hong (tạo + header nếu chưa có). */
+function ensureDamageSheet_(ss) {
+  const sheet = ss.getSheetByName(CONFIG.SHEETS.LOG_HONG) || ss.insertSheet(CONFIG.SHEETS.LOG_HONG);
+  if (!sheet.getRange(1, 1).getValue()) {
+    sheet.getRange(1, 1, 1, DAMAGE_HEADERS.length).setValues([DAMAGE_HEADERS])
+      .setFontWeight('bold').setBackground('#FFEBEE');
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
 function onFormSubmitDamage(e) {
   const find = namedValueFinder_(e.namedValues);
   const whenCell = rawValueFinder_(formCellValues_(e))(['thời điểm phát hiện']);
@@ -1809,12 +2297,7 @@ function onFormSubmitDamage(e) {
   if (!qrCode) throw new Error('Phản hồi báo hỏng thiếu mã QR');
 
   const ss = SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID);
-  const sheet = ss.getSheetByName(CONFIG.SHEETS.LOG_HONG) || ss.insertSheet(CONFIG.SHEETS.LOG_HONG);
-  if (!sheet.getRange(1, 1).getValue()) {
-    sheet.getRange(1, 1, 1, DAMAGE_HEADERS.length).setValues([DAMAGE_HEADERS])
-      .setFontWeight('bold').setBackground('#FFEBEE');
-    sheet.setFrozenRows(1);
-  }
+  const sheet = ensureDamageSheet_(ss);
 
   const master = getMasterRecord_(ss, qrCode);
   const report = {
@@ -2063,9 +2546,9 @@ function generateAnnualUsageReport(year) {
       const qr = (logData[i][0] || '').toString().trim();
       if (!qr) continue;
 
-      // Chỉ khoản thực sự bàn giao (đã duyệt hoặc đã trả); bỏ chờ duyệt / bị từ chối
+      // Chỉ khoản thực sự bàn giao (đã duyệt / đã trả / chờ kiểm tra / có sự cố); bỏ chờ duyệt / bị từ chối
       const status = loanStatus_(logData[i]);
-      if (status !== LOAN_STATUS.APPROVED && status !== LOAN_STATUS.RETURNED) continue;
+      if (status === LOAN_STATUS.PENDING || status === LOAN_STATUS.REJECTED) continue;
 
       // Giữ giờ bắt đầu thật nếu ô là Date (khai báo tại chỗ tính theo giờ, không theo ngày)
       const rawStart = logData[i][LOG_COL.BORROW_DATE];
@@ -2518,14 +3001,14 @@ function verifyApprovalLink_(action, loanId, issuedAt, sig) {
 // Bước 2 — bấm nút: google.script.run gọi confirmApprovalFromPage(), kiểm lại chữ ký,
 //          chỉ ghi khi giao dịch còn CHỜ DUYỆT (link dùng được đúng 1 lần).
 
-function approvalPage_(innerHtml) {
+function approvalPage_(innerHtml, title) {
   return HtmlService.createHtmlOutput(`
     <html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
     <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#f0f2f5;
                  margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center">
       <div id="box" style="background:white;border-radius:16px;padding:32px 28px;max-width:440px;width:90%;
                   box-shadow:0 4px 16px rgba(0,0,0,.1);text-align:center">${innerHtml}</div>
-    </body></html>`).setTitle('Phê duyệt mượn thiết bị — KTTV&HDH');
+    </body></html>`).setTitle(title || 'Phê duyệt mượn thiết bị — KTTV&HDH');
 }
 
 function approvalMessageHtml_(icon, color, title, detail) {
@@ -2942,6 +3425,17 @@ function doGet(e) {
     return renderApprovalConfirmPage_(action, loanId, params.t, params.sig);
   }
 
+  // Kiểm tra nhận lại / khắc phục sự cố (CB quản lý / PTK bấm link trong email) → trang xác nhận
+  if (INSPECT_ACTIONS.indexOf(action) >= 0) {
+    const loanId = String(params.loan || '').trim();
+    if (!verifyApprovalLink_(action, loanId, params.t, params.sig)) {
+      return approvalPage_(approvalMessageHtml_('⚠️', '#c62828', 'Link không hợp lệ hoặc đã hết hạn',
+        'Dùng menu "Gửi lại email kiểm tra đang chờ" trong Google Sheet để nhận link mới.'),
+        'Kiểm tra thiết bị — KTTV&HDH');
+    }
+    return renderInspectionPage_(action, loanId, params.t, params.sig);
+  }
+
   if (action === 'allStatus') return jsonOutput_(getAllBorrowStatuses_());
 
   if (action === 'history') {
@@ -2990,7 +3484,7 @@ function getUsageHistory_(qrCode) {
         returnDate: formatDateVN_(parseDate_(row[LOG_COL.RETURN_DATE])),
         usageHours: (hours === '' || hours == null) ? null : Number(hours),
         status: status,
-        isActive: status === LOAN_STATUS.PENDING || status === LOAN_STATUS.APPROVED || isOnsiteInUse_(row, now)
+        isActive: isActiveStatus_(status) || isOnsiteInUse_(row, now)
       });
     }
     return history;
@@ -3038,7 +3532,7 @@ function getAllUsageLog_(limit) {
       returnDate: formatDateVN_(parseDate_(row[LOG_COL.RETURN_DATE])),
       usageHours: (hours === '' || hours == null) ? null : Number(hours),
       status: status,
-      isActive: status === LOAN_STATUS.PENDING || status === LOAN_STATUS.APPROVED || isOnsiteInUse_(row, now),
+      isActive: isActiveStatus_(status) || isOnsiteInUse_(row, now),
       isOverdue: status === LOAN_STATUS.APPROVED && !!dueDate && dueDate < today
     });
   }
@@ -3117,5 +3611,8 @@ function onOpen() {
     .addItem('📧 Gửi lại email phê duyệt đang chờ', 'resendPendingApprovals')
     .addItem('🔑 Tạo mã truy cập Nhật ký mới', 'generateLogAccessCode')
     .addItem('📘 Tạo cột Link hướng dẫn sử dụng (Master_Data)', 'ensureGuideColumn')
+    .addSeparator()
+    .addItem('📧 Tạo cột Email CB quản lý (Master_Data)', 'ensureManagerEmailColumn')
+    .addItem('🔍 Gửi lại email kiểm tra đang chờ', 'resendPendingInspections')
     .addToUi();
 }

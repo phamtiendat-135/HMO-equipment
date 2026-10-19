@@ -1,0 +1,20 @@
+# Session Summary — 19/10/2026
+
+## 08:49 — git pull (máy cơ quan)
+
+- `git pull`: a1f37fa → ad21026 (fast-forward, 1 commit từ máy nhà 15/10 22:37: chỉ thêm ghi chú "Máy nhà — git pull" vào `SESSION_SUMMARY_2026-10-15.md`). Không xung đột.
+- Không có thay đổi code mới từ máy nhà. Không sửa file code, không chạy test, không deploy.
+- Việc còn lại vẫn như mục "Chốt phiên" của `SESSION_SUMMARY_2026-10-15.md` (thử tại chỗ, quyết định giới hạn @hus.edu.vn của form tại chỗ, thử mượn ≥ 100 tr, kiểm tra khoản Máy tạo sóng, điền link hướng dẫn Master_Data!T).
+
+## 09:19 — Thêm bước "Kiểm tra thiết bị khi nhận lại" (chưa deploy)
+
+**Yêu cầu:** khi người mượn trả, CB quản lý thiết bị phải kiểm tra (hoạt động tốt / báo sự cố) trước khi coi là đã trả.
+**Quyết định người dùng (đều theo khuyến nghị):** email gửi CB quản lý từng thiết bị (cột mới "Email CB quản lý" trong Master_Data, trống → PTK); chờ kiểm tra thì chưa cho mượn; có sự cố thì khóa mượn tới khi PTK xác nhận khắc phục; nhắc sau 2 ngày.
+
+**Đã làm:**
+- `Google_Apps_Script.js`: cột V "Kiểm tra nhận lại" (schema v3), trạng thái `inspecting`/`issue` trong `loanStatus_` + `holdsStock_` + `isActiveStatus_`; `recordReturn_` ghi "⏳ Chờ kiểm tra" thay vì đóng; `onFormSubmitReturn` gửi `sendInspectionRequest_`; module mới: `inspectorsFor_`, `loanInfo_`, `buildInspectionRequestHtml_`, `renderInspectionPage_`, `confirmInspectionFromPage`, `applyInspection_`, `recordInspectionIssue_` (Log_Bao_Hong), `markDamageResolved_`, `buildReturnReceivedHtml_`, `buildInspectionIssueHtml_`, `checkPendingInspections_` (gọi từ `checkOverdueReturns`), `resendPendingInspections`; `ensureMasterColumn_` dùng chung + `ensureManagerEmailColumn`; `getMasterRecord_` đọc `managerName`/`managerEmails`; `ensureDamageSheet_`; `doGet` route `inspect_ok`/`inspect_issue`/`resolve`; menu 2 mục mới; báo cáo năm tính cả khoản chờ kiểm tra/sự cố; `pickLoanToClose_` báo rõ khi khai trả lần 2.
+- `index.html` = `QR_Landing_Page.html`: badge + nhãn lịch sử cho inspecting/issue; `sw.js` v12 → v13.
+- Tests: backend 83/83 (+12 test kiểm tra nhận lại, sửa test schema v2→v3; 12 test mới FAIL trên code HEAD), frontend 28/28 (+3). Render mẫu 4 email + trang kiểm tra bằng Edge headless, đã xem ảnh.
+- CLAUDE.md cập nhật bảng hàm + changes log.
+
+**Chưa làm:** commit/push, deploy Apps Script (sẽ là v16). Sau deploy người dùng cần: menu "📧 Tạo cột Email CB quản lý" → điền email từng thiết bị (trống → về PTK); nên sửa lời cảm ơn của form trả trên Google Forms ("Cảm ơn bạn!") thành "Đã ghi nhận khai trả — CB quản lý sẽ kiểm tra thiết bị".

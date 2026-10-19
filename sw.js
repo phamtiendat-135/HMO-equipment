@@ -4,7 +4,7 @@
  */
 
 const CACHE_PREFIX = 'hmo-equipment-';
-const CACHE_NAME = CACHE_PREFIX + 'v12';
+const CACHE_NAME = CACHE_PREFIX + 'v13';
 const SHELL_ASSETS = [
   '/HMO-equipment/',
   '/HMO-equipment/index.html',

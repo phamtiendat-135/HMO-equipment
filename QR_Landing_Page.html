@@ -1315,7 +1315,9 @@ const LOAN_STATUS_LABELS = {
   approved: '<span class="history-status active">Đang sử dụng</span>',
   returned: '<span class="history-status">Đã trả</span>',
   rejected: '<span class="history-status overdue">Từ chối</span>',
-  onsite: '<span class="history-status">Tại chỗ</span>'
+  onsite: '<span class="history-status">Tại chỗ</span>',
+  inspecting: '<span class="history-status active">Chờ kiểm tra</span>',
+  issue: '<span class="history-status overdue">Có sự cố</span>'
 };
 function loanStatusLabel(entry) {
   if (entry.isOverdue) return '<span class="history-status overdue">Quá hạn</span>';
@@ -1421,7 +1423,11 @@ function fetchBorrowStatus(qrCode) {
       } else {
         // Hết — disable nút
         let text = '';
-        if (qty === 1) {
+        if (qty === 1 && (bs.status === 'inspecting' || bs.status === 'issue')) {
+          // Đã trả, chờ CB quản lý kiểm tra / đang xử lý sự cố — chưa cho mượn tiếp
+          badge.className = 'avail-badge avail-busy';
+          text = bs.status === 'inspecting' ? '⏳ Đã trả — chờ cán bộ kiểm tra' : '⚠️ Đang xử lý sự cố';
+        } else if (qty === 1) {
           text = bs.status === 'pending' ? '🟠 Đang giữ chỗ (chờ duyệt)'
             : bs.status === 'onsite' ? '🔵 Đang sử dụng tại chỗ' : '🔴 Đang được mượn';
           if (bs.borrower) text += ' — ' + bs.borrower;
