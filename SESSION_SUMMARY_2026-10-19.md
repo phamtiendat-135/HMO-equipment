@@ -69,3 +69,12 @@
 - ✅ Deploy **v17**: `list-deployments` → `@17`; `clasp pull` vào thư mục tạm → khớp repo; API live trả đúng. Commit `61c62de` đã push.
 - Tài liệu: viết lại `HUONG_DAN_TRIEN_KHAI.md` (v2.0: kiến trúc, Sheet A–V, 5 form, trang tra cứu, tem, clasp, cấu hình, test, lịch, menu, sự cố, file, checklist) và `QUY_TRINH_QUAN_LY_THIET_BI.md` (v2.0 dự thảo: QT-02A/B/C, vòng đời, bảng email, QT-03/04/05 sửa theo hệ thống, phụ lục C mới — 20 TB chưa có CB đều "Không hoạt động" theo xlsx, cần đối chiếu Sheet thật). Cập nhật CLAUDE.md, trạng thái trong REVIEW.
 - Còn lại: `QUY_TRINH_SU_DUNG_THIET_BI.docx/.pdf`, kịch bản video, D6, D8 (HPC), điền Email CB quản lý.
+
+## 10:14 — Viết lại QUY_TRINH_SU_DUNG_THIET_BI.docx/.pdf v2.0; D8 giữ nguyên
+
+- Anh quyết định D8: HPC giữ nguyên (dùng qua tài khoản, ít người dùng, không khai báo giờ) — sẽ nhờ CB quản lý. Video để tối anh làm.
+- `QUY_TRINH_SU_DUNG_THIET_BI.docx`: dựng lại bằng docx-js (script ngoài repo, scratchpad `qtsd/build.js`) giữ đúng định dạng v1.0 (Arial, bảng tiêu đề #2F5496, dòng xen kẽ #F2F7FC, header/footer). Nội dung v2.0 (dự thảo 19/10, ngày ban hành để trống): I–II; III cơ cấu thêm "CB quản lý thiết bị"; IV trang tra cứu + 6 nút + cài app; V mượn mang đi; VI sử dụng tại chỗ; VII trả + kiểm tra nhận lại; VIII email người mượn / CB nhận; IX bảo trì; X báo hỏng & sự cố; XI quy định chung (HPC qua tài khoản, kiểm kê làm tay, lịch sử/nhật ký); hiệu lực + chữ ký; XII thao tác nhanh (5 khối) ở trang riêng để in.
+- Kiểm tra: `validate.py` → All validations PASSED; xuất PDF bằng Microsoft Word (COM), 7 trang; dựng ảnh từng trang bằng PyMuPDF (cài vào scratchpad) và đã xem — sửa tiêu đề mồ côi (keepNext) và trang 6 trống (đưa chữ ký lên trước XII). PDF ~4,3 MB do nhúng font emoji.
+- `QUY_TRINH_QUAN_LY_THIET_BI.md`: sửa câu HPC theo D8, bỏ ưu tiên "chốt phương án HPC". CLAUDE.md + REVIEW cập nhật trạng thái.
+- Không sửa code, không deploy trong mục này.
+- Còn lại: kịch bản video (tối), D6 (Đào tạo/NCKH), đối chiếu số liệu phụ lục C với Sheet thật, điền Email CB quản lý; các tài liệu khác (TAI_LIEU_CHUYEN_GIAO, THUYET_TRINH, áp phích A4) chưa rà.

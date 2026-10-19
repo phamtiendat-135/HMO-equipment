@@ -41,7 +41,7 @@ QR Label on device
 | `TAI_LIEU_CHUYEN_GIAO.docx` | Tài liệu chuyển giao hệ thống | ✅ Hoàn thành |
 | `QUY_TRINH_QUAN_LY_THIET_BI.md` | SOP **v2.0 dự thảo (19/10)** — QT-01, QT-02A mượn mang đi, QT-02B tại chỗ, QT-02C trả + kiểm tra nhận lại, QT-03→05, bảng nhắc việc/email | ✅ Cập nhật theo v17 |
 | `HUONG_DAN_TRIEN_KHAI.md` | **Hướng dẫn triển khai & vận hành kỹ thuật v2.0 (19/10)** — kiến trúc, Sheet A–V, 5 form, clasp, menu, lịch, xử lý sự cố | ✅ Cập nhật theo v17 |
-| `QUY_TRINH_SU_DUNG_THIET_BI.docx` / `.pdf` | Quy trình sử dụng thiết bị | Reference document |
+| `QUY_TRINH_SU_DUNG_THIET_BI.docx` / `.pdf` | Quy trình quản lý & sử dụng (văn bản ban hành) **v2.0 dự thảo (19/10)** — dựng lại bằng docx-js giữ định dạng v1.0; PDF xuất bằng Word (có emoji → ~4,3 MB) | ✅ Cập nhật theo v17 |
 | `hmo_deployment_workflow.svg` | Sơ đồ quy trình triển khai | Reference document |
 
 ## Equipment Classification
@@ -259,7 +259,7 @@ Trước khi kết thúc MỌI phiên làm việc trong workspace này, tạo ho
 
 - ✅ Deploy **version 17** (xác minh `@17`, code trên Google khớp repo): email "✅ Đã ghi nhận mượn" cho TB < 100 tr (`sendAutoAcceptedEmail_`, `buildDecisionEmail_(…, autoAccepted)`); nhắc quá hạn từ ngày SAU hạn trả (`OVERDUE_DAYS=1`, trước đó gửi "quá 0 ngày"); báo hỏng gửi PTK + Email CB quản lý (`withManagers_`); nhắc bảo trì gửi thêm từng CB (`sendMaintenanceToManagers_`); nhắc bảo trì tính theo ngày lịch (trước hụt 1 ngày).
 - Viết lại `HUONG_DAN_TRIEN_KHAI.md` và `QUY_TRINH_QUAN_LY_THIET_BI.md` (v2.0) theo `REVIEW_TAI_LIEU_2026-10-19.md` (D1a: TB < 100 tr tự ghi nhận). Chưa làm: `QUY_TRINH_SU_DUNG_THIET_BI.docx/.pdf`, kịch bản video (motion graphic).
-- Còn mở: D6 (mục Đào tạo/NCKH), D8 (thống kê giờ dùng HPC qua mạng).
+- Viết lại `QUY_TRINH_SU_DUNG_THIET_BI.docx/.pdf` v2.0 (12 mục, trang cuối = Thao tác nhanh để in). D8: giữ nguyên — HPC dùng qua tài khoản, không thống kê giờ (ít người dùng). Còn mở: D6 (Đào tạo/NCKH), kịch bản video.
 
 ## Deploy Apps Script (clasp)
 

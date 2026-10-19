@@ -137,7 +137,7 @@ Bước 4 là **thao tác ngoài hệ thống** (chưa có bước "bàn giao" t
 
 Dùng nhiều ngày thì khai báo mỗi ngày. Thiết bị phát hiện hỏng trong lúc dùng: báo theo QT-04.
 
-**HPC / server:** sử dụng qua **tài khoản truy cập từ xa** do CB mảng Tính toán cấp, không chia sẻ tài khoản; không dùng nút mượn / tại chỗ. Phương án thống kê giờ sử dụng HPC **đang xây dựng** (lấy từ nhật ký hệ thống tính toán).
+**HPC / server:** sử dụng qua **tài khoản truy cập từ xa** do CB mảng Tính toán cấp, không chia sẻ tài khoản; không dùng nút mượn / tại chỗ. Hiện **không thống kê giờ sử dụng HPC** trên hệ thống (ít người dùng); CB quản lý theo dõi qua tài khoản được cấp.
 
 ---
 
@@ -291,7 +291,6 @@ Chuyển dữ liệu từ Google Sheets sang hệ thống DATAI; **tem QR giữ 
 3. Lập hồ sơ thanh lý 12 thiết bị (phần mềm) không còn hoạt động.
 4. Đánh giá 4 thiết bị hỏng: Server Dell PE R720, máy đo kim loại nặng HM1000, máy phân tích dầu OCMA-310, máy đo độ đục LISST.
 5. Xác minh tình trạng AWAC Nortek 2007 (ID 5617), liên hệ TT ĐLHTKMT.
-6. Chốt phương án thống kê giờ sử dụng HPC.
 
 ---
 
