@@ -38,3 +38,17 @@
 
 - Khuyến nghị: CHƯA thêm. Nút không thêm bước cho ai nhưng lợi ích nhỏ (CB đã nhận email lúc khai trả + nhắc sau 2 ngày + menu gửi lại), lại thêm rủi ro bấm nhầm và cần chống spam. Xem lại sau đợt chạy thử nếu CB phản ánh.
 - Không thay đổi file code, không chạy test, không deploy.
+
+## 09:35 — Chốt phiên 19/10
+
+- Anh Đạt chọn: giữ quy trình kiểm tra **chỉ qua email** (không thêm nút trên trang quét), tạm dừng ở đây; anh tự thử và điền email cán bộ sau.
+- Không thay đổi file code, không chạy test, không deploy trong mục này.
+
+**Trạng thái cuối (đã xác minh trong phiên):** Apps Script deployment `@16` (code trên Google khớp repo); GitHub `main` đồng bộ, Pages phục vụ `sw.js` v13.
+
+**Việc còn lại cho anh Đạt:**
+1. Menu "📧 Tạo cột Email CB quản lý (Master_Data)" → điền email từng thiết bị (trống → email kiểm tra về PTK; 20 TB chưa có CB quản lý). Có khoản đang chờ thì dùng menu "🔍 Gửi lại email kiểm tra đang chờ".
+2. Sửa lời cảm ơn form trả trên Google Forms ("Cảm ơn bạn!" → "Đã ghi nhận khai trả — cán bộ quản lý sẽ kiểm tra thiết bị").
+3. Thử 1 vòng: mượn TB < 100 tr → trả → quét lại thấy "⏳ Đã trả — chờ cán bộ kiểm tra" → bấm ✅/⚠️ trong email → xoá dòng thử (Log_Muon_Tra, Log_Bao_Hong).
+4. Còn từ 15/10: thử "🔬 Sử dụng tại chỗ"; quyết định giới hạn @hus.edu.vn của form tại chỗ; thử mượn ≥ 100 tr; định dạng G:H dòng cũ; điền link hướng dẫn Master_Data!T.
+5. Xem lại sau đợt chạy thử: có cần nút "Kiểm tra nhận lại" trên trang quét không.
