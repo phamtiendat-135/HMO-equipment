@@ -11,3 +11,4 @@
 - `Kich_ban_video_HMO_Eq.docx` (bản cũ 03/06) giữ nguyên, chưa xoá.
 - Không sửa code, không chạy test, không deploy.
 - Theo yêu cầu "viết md thôi": thay bản Word bằng `KICH_BAN_MOTION_GRAPHIC_HMO_Eq.md` (cùng nội dung), đã `git rm` file .docx.
+- Bỏ tên thật trong video: cán bộ quản lý đổi thành tên giả định "Trần Thị Mai"; outro ghi "Hỗ trợ: Văn phòng Khoa KTTV&HDH"; lưu ý thay tên cán bộ thật trên ảnh chụp app; Phó Trưởng khoa chỉ ghi chức danh. Giữ tên và email anh Đạt ở mục 7 và mục 10 (liên hệ với bên dựng, không hiện trong video).

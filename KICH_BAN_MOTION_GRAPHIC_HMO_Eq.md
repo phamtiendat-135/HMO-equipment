@@ -39,7 +39,7 @@ Dùng **đúng các dữ liệu dưới đây** ở mọi cảnh để câu chuy
 |---|---|
 | Thiết bị | **Máy đo đa chỉ tiêu chất lượng nước** (Horiba U-52G) · mã **HMO-OBS-8693** · phòng **P401-T3** · số lượng 3 · nhóm OBS |
 | Giá trị | 140 triệu đồng/chiếc (từ 100 triệu trở lên nên cần Phó Trưởng khoa duyệt). **Không cần hiển thị giá trong video.** |
-| Cán bộ quản lý thiết bị | Trịnh Minh Ngọc |
+| Cán bộ quản lý thiết bị (nhân vật giả định) | **Trần Thị Mai** |
 | Người mượn (nhân vật giả định) | **Nguyễn Văn An**, Bộ môn Thủy văn và Tài nguyên nước · email `an.nguyen@example.com` (email giả) |
 | Mục đích mượn | Khảo sát chất lượng nước sông Nhuệ |
 | Ngày mượn / hạn trả | Mượn **20/10/2026** · hạn trả **24/10/2026** · email nhắc trả đến ngày **22/10** ("còn 2 ngày") |
@@ -67,7 +67,7 @@ Dùng **đúng các dữ liệu dưới đây** ở mọi cảnh để câu chuy
 | 13 | 2:12–2:22 | Nếu có sự cố | Nhánh khác: chạm **⚠️ Có sự cố** → nhập mô tả → nhãn ⚠️ "Đang xử lý sự cố" (không mượn được) → sau khi sửa, nhãn về 🟢. | Có sự cố: tạm khóa mượn<br>tới khi khắc phục xong | Bỏ được nếu cần rút ngắn. |
 | 14 | 2:22–2:32 | Báo hỏng & lịch sử | Lướt qua nút **⚠️ Báo hỏng**, **🔧 Ghi bảo trì**, rồi **🕘 Lịch sử sử dụng** mở danh sách (tên người mượn đã che bớt, ví dụ "Nguyễn V. A."). | Phát hiện hỏng? Báo ngay<br>Xem lịch sử sử dụng | Bỏ được nếu cần rút ngắn. |
 | 15 | 2:32–2:42 | Cài như ứng dụng | 3 điện thoại nhỏ cạnh nhau: Android (menu ⋮ → "Thêm vào màn hình chính"), iPhone (nút Chia sẻ ⬆ → "Thêm vào MH chính"), máy tính (biểu tượng ⊕ cài đặt). Kết thúc: biểu tượng app **"HMO Thiết bị"** trên màn hình chính. | Thêm vào màn hình chính,<br>chỉ cần làm 1 lần | Cảnh này cũng xuất riêng thành clip ngắn (mục 8). |
-| 16 | 2:42–2:50 | Outro | 4 từ hiện lần lượt, cách nhau bằng dấu chấm cam: **Quét · Mượn · Trả · Kiểm tra**. Logo HMO. | **Quét · Mượn · Trả · Kiểm tra**<br>Hỗ trợ: datpt@hus.edu.vn | Nhạc kết. |
+| 16 | 2:42–2:50 | Outro | 4 từ hiện lần lượt, cách nhau bằng dấu chấm cam: **Quét · Mượn · Trả · Kiểm tra**. Logo HMO. | **Quét · Mượn · Trả · Kiểm tra**<br>Hỗ trợ: Văn phòng Khoa KTTV&HDH | Nhạc kết. |
 
 ## 5. Phiên bản rút gọn (~2:00)
 
@@ -92,7 +92,7 @@ Dùng **đúng các dữ liệu dưới đây** ở mọi cảnh để câu chuy
 | Tư liệu | Ở đâu | Ghi chú |
 |---|---|---|
 | Logo HMO | `HMO_logo.jpg` (thư mục dự án) | Dùng nguyên bản, không đổi màu. |
-| Ảnh chụp app thật (khổ iPhone, nét cao) | `design_assets/flyer_cai_app/`: 01 biểu tượng app · 02 trang chủ · 03 trang thiết bị · 04 khối nút · 05 trang thiết bị đầy đủ | Ảnh 05 có mục **Đào tạo / Nghiên cứu KH** ở cuối trang: **cắt bỏ, không đưa vào video** (chức năng chưa hoạt động). |
+| Ảnh chụp app thật (khổ iPhone, nét cao) | `design_assets/flyer_cai_app/`: 01 biểu tượng app · 02 trang chủ · 03 trang thiết bị · 04 khối nút · 05 trang thiết bị đầy đủ | Ảnh có **tên cán bộ quản lý thật**: thay bằng tên giả định ở mục 3. Ảnh 05 có mục **Đào tạo / Nghiên cứu KH** ở cuối trang: **cắt bỏ, không đưa vào video** (chức năng chưa hoạt động). |
 | App thật để chụp thêm | https://phamtiendat-135.github.io/HMO-equipment/?id=HMO-OBS-8693 | Mở trên điện thoại hoặc trình duyệt ở chế độ điện thoại. Chỉ xem, **không bấm gửi form**. |
 | Ảnh chụp các email | Xin TS. Phạm Tiến Đạt gửi. Email thật có thông tin người mượn, cần che hoặc đổi sang dữ liệu mẫu ở mục 3. | Có thể vẽ lại email theo ảnh mẫu, giữ đúng chữ ở mục 6. |
 | Ảnh bước cài app trên điện thoại | Menu Chrome (Android), bảng Chia sẻ Safari (iPhone) | Nếu chưa có ảnh: vẽ mô phỏng đơn giản, không làm giả thành ảnh chụp. |
@@ -107,7 +107,7 @@ Dùng **đúng các dữ liệu dưới đây** ở mọi cảnh để câu chuy
 
 ## 9. Lưu ý quan trọng
 
-- **Không dùng tên, email, số điện thoại thật** của người mượn; chỉ dùng dữ liệu mẫu ở mục 3.
+- **Không dùng tên thật của bất kỳ ai** (người mượn, cán bộ quản lý, Phó Trưởng khoa) và không dùng email, số điện thoại thật trong video. Chỉ dùng dữ liệu mẫu ở mục 3; Phó Trưởng khoa chỉ ghi chức danh, không ghi tên.
 - **Không đưa vào video:** mục Đào tạo / Nghiên cứu KH; mã truy cập "Nhật ký sử dụng — toàn Khoa"; địa chỉ Google Sheet; nút "📋 Đăng ký mượn" của bản cũ (không còn).
 - Không dùng lại cảnh quay tay cầm điện thoại và slide intro/outro của kịch bản cũ (03/06/2026); có thể giữ màu sắc và chữ.
 - Gửi **bản nháp (animatic) cảnh 1–8** để Khoa duyệt phong cách trước khi làm toàn bộ.
