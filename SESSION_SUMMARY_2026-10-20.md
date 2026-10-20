@@ -10,3 +10,4 @@
 - Kiểm tra: xuất PDF bằng Word và xem trang 1 và 3. Script tạo file nằm ở scratchpad (`make_video_script.py`), không đưa vào repo.
 - `Kich_ban_video_HMO_Eq.docx` (bản cũ 03/06) giữ nguyên, chưa xoá.
 - Không sửa code, không chạy test, không deploy.
+- Theo yêu cầu "viết md thôi": thay bản Word bằng `KICH_BAN_MOTION_GRAPHIC_HMO_Eq.md` (cùng nội dung), đã `git rm` file .docx.
