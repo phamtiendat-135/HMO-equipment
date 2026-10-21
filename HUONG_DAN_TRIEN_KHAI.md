@@ -92,12 +92,13 @@ Các cột S–V do hệ thống tự thêm (cấu trúc phiên bản 3, cờ `L
 | # | Form | Nút trên trang tra cứu | Ai mở được | Câu hỏi "chữ ký" — **không đổi tên** |
 |---|---|---|---|---|
 | 1 | Đăng ký mượn thiết bị (mượn mang đi) | 📦 Mượn mang đi | Ai cũng mở (thu email) | "Ngày mượn", "Ngày dự kiến trả" |
-| 2 | Khai báo sử dụng tại chỗ | 🔬 Sử dụng tại chỗ | **Chỉ tài khoản @hus.edu.vn** | "Họ và tên người sử dụng", "Số giờ sử dụng (dự kiến)" (0,5–24) |
+| 2 | Khai báo sử dụng tại chỗ | 🔬 Sử dụng tại chỗ | Ai cũng mở (thu email) | "Họ và tên người sử dụng", "Số giờ sử dụng (dự kiến)" (0,5–24) |
 | 3 | Xác nhận trả thiết bị | ✅ Xác nhận trả | Ai cũng mở | "Tình trạng thiết bị khi trả", "Họ và tên người trả", "Phụ kiện trả kèm" |
 | 4 | Ghi nhận bảo trì & hiệu chuẩn | 🔧 Ghi bảo trì | Ai cũng mở | "Loại công việc", "Ngày thực hiện" |
 | 5 | Báo hỏng thiết bị | ⚠️ Báo hỏng | Ai cũng mở | "Mức độ hỏng", "Mô tả sự cố", "Người phát hiện" |
 
 - Hệ thống nhận ra form nào bằng **tên câu hỏi** (`FORM_SIGNATURES` trong `Google_Apps_Script.js`). Đổi tên câu hỏi thì phải sửa code, nếu không phản hồi sẽ bị bỏ qua (PTK nhận email "Không nhận diện được phản hồi form").
+- Form tạo bằng script trong tài khoản trường mặc định **chỉ cho người @hus.edu.vn**. Tạo xong phải vào **Cài đặt → Câu trả lời**: tắt giới hạn tổ chức, chọn thu email "Do người trả lời nhập" (form tại chỗ đã mở ngày 21/10/2026).
 - Cả 5 form gửi phản hồi về **Sheet master**; trigger `onFormSubmitDispatch` bắt chung.
 - Tạo form mới bằng script `Create_Google_Forms.js` (dán vào **một dự án Apps Script riêng**). Ví dụ `createOnsiteFormOnly()` chỉ tạo form tại chỗ. **Không chạy `createAllForms()`**: hàm này tạo lại cả 4 form cũ thành bản trùng.
 - Nên sửa lời cảm ơn của form 3 thành: "Đã ghi nhận khai trả — cán bộ quản lý sẽ kiểm tra thiết bị."

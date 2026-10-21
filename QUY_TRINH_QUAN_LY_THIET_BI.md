@@ -130,7 +130,7 @@ Bước 4 là **thao tác ngoài hệ thống** (chưa có bước "bàn giao" t
 
 | Bước | Thao tác | Người thực hiện |
 |---|---|---|
-| 1 | Quét QR → **🔬 Sử dụng tại chỗ** → đăng nhập **email trường (@hus.edu.vn)** → điền: họ tên, đơn vị, mục đích, **số giờ sử dụng** (0,5–24 giờ) | Người sử dụng |
+| 1 | Quét QR → **🔬 Sử dụng tại chỗ** → điền (không cần đăng nhập): họ tên, email, đơn vị, mục đích, **số giờ sử dụng** (0,5–24 giờ) | Người sử dụng |
 | 2 | Hệ thống kiểm tra như QT-02A (mã, tình trạng, còn trống, số giờ hợp lệ). **Không cần duyệt.** Thời gian bắt đầu = lúc gửi khai báo | Hệ thống |
 | 3 | Trang tra cứu hiện **"🔵 Đang sử dụng tại chỗ — đến HH:mm"**; thiết bị được giữ chỗ tới giờ kết thúc. PTK nhận email thông báo | Hệ thống |
 | 4 | Hết giờ: **tự kết thúc**, không cần xác nhận trả. Giờ sử dụng được tính vào báo cáo | Hệ thống |

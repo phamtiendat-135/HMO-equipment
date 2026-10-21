@@ -25,3 +25,8 @@
 - Kiểm tra: mở form tại chỗ (`1FAIpQLSeOh3Py…/viewform`) khi không đăng nhập → **HTTP 401**, tức form VẪN giới hạn tài khoản @hus.edu.vn. Người dùng cần tự tắt trong Google Forms: Cài đặt → Câu trả lời → tắt "Chỉ cho phép người dùng trong HUS…" (giống 4 form đã mở ngày 30/09). Chưa xác minh sau khi tắt.
 - Các tài liệu SOP/HUONG_DAN/QUY_TRINH v2.0 vẫn ghi D5a (form tại chỗ cần email trường), chưa sửa.
 - Người dùng báo đã mở form tại chỗ. Kiểm tra lại khi không đăng nhập: **HTTP 200**, có đủ câu hỏi ("Họ và tên người sử dụng", "Số giờ sử dụng"), ô Email do người trả lời tự nhập, mã HMO-OBS-8693 điền sẵn. Chỉ còn link tùy chọn "Đăng nhập vào Google để lưu tiến trình" (form mượn cũng có). Không gửi thử form.
+
+## Sửa tài liệu v2.0: form tại chỗ không cần đăng nhập
+- `QUY_TRINH_SU_DUNG_THIET_BI.docx`: 2 chỗ (mục VI bước 2: "Điền họ tên, email, đơn vị, mục đích, số giờ sử dụng (0,5 – 24 giờ); không cần đăng nhập"; trang Thao tác nhanh: bỏ "(email trường)"). Sửa đúng run chữ, giữ định dạng. Xuất lại PDF bằng Word (7 trang, vẫn có emoji Segoe UI Emoji, nhẹ hơn: 4,3 MB → 330 KB). Đã kiểm tra text PDF không còn "email trường" và đã xem trang 3.
+- `QUY_TRINH_QUAN_LY_THIET_BI.md` (QT-02B bước 1), `HUONG_DAN_TRIEN_KHAI.md` (bảng 5 form: "Ai cũng mở (thu email)"; thêm lưu ý form tạo bằng script mặc định bị giới hạn @hus.edu.vn, phải tắt trong Cài đặt → Câu trả lời), `CLAUDE.md` (ghi đã mở công khai 21/10).
+- `REVIEW_TAI_LIEU_2026-10-19.md` (mục D5) giữ nguyên vì là biên bản lịch sử.
