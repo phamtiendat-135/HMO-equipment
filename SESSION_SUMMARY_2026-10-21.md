@@ -30,3 +30,4 @@
 - `QUY_TRINH_SU_DUNG_THIET_BI.docx`: 2 chỗ (mục VI bước 2: "Điền họ tên, email, đơn vị, mục đích, số giờ sử dụng (0,5 – 24 giờ); không cần đăng nhập"; trang Thao tác nhanh: bỏ "(email trường)"). Sửa đúng run chữ, giữ định dạng. Xuất lại PDF bằng Word (7 trang, vẫn có emoji Segoe UI Emoji, nhẹ hơn: 4,3 MB → 330 KB). Đã kiểm tra text PDF không còn "email trường" và đã xem trang 3.
 - `QUY_TRINH_QUAN_LY_THIET_BI.md` (QT-02B bước 1), `HUONG_DAN_TRIEN_KHAI.md` (bảng 5 form: "Ai cũng mở (thu email)"; thêm lưu ý form tạo bằng script mặc định bị giới hạn @hus.edu.vn, phải tắt trong Cài đặt → Câu trả lời), `CLAUDE.md` (ghi đã mở công khai 21/10).
 - `REVIEW_TAI_LIEU_2026-10-19.md` (mục D5) giữ nguyên vì là biên bản lịch sử.
+- Chốt phiên: working tree sạch, `main` = `origin/main` (d3ae74b). Mọi thay đổi trong phiên đã được push.
