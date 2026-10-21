@@ -19,3 +19,8 @@
   - Form: Google Form mượn thật (`embedded=true` đặt trước `usp=pp_url` thì mới giữ mã điền sẵn), chỉ mở xem, không gửi.
 - Kiểm tra: xem ảnh chụp và PDF; zxing-cpp giải mã được 2 mã QR trên PDF (`?id=HMO-OBS-8693` và trang tra cứu).
 - Script dựng ở scratchpad (`flyer/render_emails.cjs`, `flyer/build_flyer.py`), không đưa vào repo. Không sửa code hệ thống, không chạy test, không deploy.
+
+## Bỏ yêu cầu đăng nhập @hus.edu.vn ở phần "Dùng tại chỗ"
+- Theo yêu cầu: đã bỏ dòng "Form này cần đăng nhập email trường @hus.edu.vn" khỏi flyer (bước 7; dựng lại HTML và xuất lại PDF 1 trang, kiểm tra text PDF không còn "hus") và khỏi kịch bản video (cảnh 10).
+- Kiểm tra: mở form tại chỗ (`1FAIpQLSeOh3Py…/viewform`) khi không đăng nhập → **HTTP 401**, tức form VẪN giới hạn tài khoản @hus.edu.vn. Người dùng cần tự tắt trong Google Forms: Cài đặt → Câu trả lời → tắt "Chỉ cho phép người dùng trong HUS…" (giống 4 form đã mở ngày 30/09). Chưa xác minh sau khi tắt.
+- Các tài liệu SOP/HUONG_DAN/QUY_TRINH v2.0 vẫn ghi D5a (form tại chỗ cần email trường), chưa sửa.
