@@ -24,3 +24,4 @@
 - Theo yêu cầu: đã bỏ dòng "Form này cần đăng nhập email trường @hus.edu.vn" khỏi flyer (bước 7; dựng lại HTML và xuất lại PDF 1 trang, kiểm tra text PDF không còn "hus") và khỏi kịch bản video (cảnh 10).
 - Kiểm tra: mở form tại chỗ (`1FAIpQLSeOh3Py…/viewform`) khi không đăng nhập → **HTTP 401**, tức form VẪN giới hạn tài khoản @hus.edu.vn. Người dùng cần tự tắt trong Google Forms: Cài đặt → Câu trả lời → tắt "Chỉ cho phép người dùng trong HUS…" (giống 4 form đã mở ngày 30/09). Chưa xác minh sau khi tắt.
 - Các tài liệu SOP/HUONG_DAN/QUY_TRINH v2.0 vẫn ghi D5a (form tại chỗ cần email trường), chưa sửa.
+- Người dùng báo đã mở form tại chỗ. Kiểm tra lại khi không đăng nhập: **HTTP 200**, có đủ câu hỏi ("Họ và tên người sử dụng", "Số giờ sử dụng"), ô Email do người trả lời tự nhập, mã HMO-OBS-8693 điền sẵn. Chỉ còn link tùy chọn "Đăng nhập vào Google để lưu tiến trình" (form mượn cũng có). Không gửi thử form.
