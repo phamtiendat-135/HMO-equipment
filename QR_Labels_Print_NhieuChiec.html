@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Tem QR thiết bị nhiều chiếc - Khoa KTTV&HDH</title>
+<style>
+@page { size: A4; margin: 10mm; }
+@media print { 
+  .no-print { display: none !important; }
+  body { background: white !important; }
+  .room-section { page-break-before: always; }
+  .room-section:first-of-type { page-break-before: auto; }
+}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { font-family: Arial, sans-serif; background: #f5f5f5; color: #333; }
+.header { background: #2F5496; color: white; padding: 20px 30px; text-align: center; }
+.header h1 { font-size: 20px; font-weight: 500; }
+.header p { font-size: 13px; opacity: 0.8; margin-top: 4px; }
+.instructions { background: #fff3cd; border: 1px solid #ffc107; padding: 15px 20px; margin: 15px; border-radius: 8px; font-size: 13px; line-height: 1.6; }
+.instructions strong { color: #856404; }
+.stats { display: flex; gap: 12px; padding: 15px 15px 0; flex-wrap: wrap; }
+.stat-card { flex: 1; min-width: 120px; background: white; border-radius: 8px; padding: 12px 16px; text-align: center; border: 1px solid #e0e0e0; }
+.stat-card .num { font-size: 24px; font-weight: 700; color: #2F5496; }
+.stat-card .lbl { font-size: 11px; color: #888; margin-top: 2px; }
+.room-section { margin: 15px; }
+.room-title { background: #2F5496; color: white; padding: 10px 16px; border-radius: 8px 8px 0 0; font-size: 15px; font-weight: 500; display: flex; justify-content: space-between; align-items: center; }
+.room-title .count { background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 12px; font-size: 12px; }
+.qr-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; background: white; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px; }
+.qr-card { padding: 12px; border: 0.5px dashed #ccc; display: flex; gap: 10px; align-items: center; min-height: 110px; }
+.qr-stamp { width: 96px; flex-shrink: 0; text-align: center; }
+.qr-stamp img { width: 80px; height: 80px; display: block; margin: 0 auto; }
+.qr-stamp-code { font-size: 10px; font-weight: 700; font-family: monospace; color: #000; line-height: 1.2; }
+.qr-stamp-unit { font-size: 10px; font-weight: 700; color: #fff; background: #1a3a6b; border-radius: 3px; padding: 0 4px; display: inline-block; margin-top: 1px; }
+.qr-stamp-model { font-size: 9px; font-weight: 600; color: #000; line-height: 1.2; margin-top: 1px; word-break: break-word; }
+.qr-info { flex: 1; min-width: 0; }
+.qr-code-text { font-size: 11px; font-weight: 700; font-family: monospace; color: #2F5496; margin-bottom: 3px; letter-spacing: 0.5px; }
+.qr-name { font-size: 11px; line-height: 1.3; color: #333; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.qr-meta { font-size: 9px; color: #888; }
+.cat-badge { display: inline-block; font-size: 9px; font-weight: 600; padding: 1px 6px; border-radius: 3px; color: white; margin-right: 4px; }
+.cut-line { border: none; border-top: 1px dashed #ccc; margin: 0; }
+.footer { text-align: center; padding: 15px; font-size: 11px; color: #999; }
+</style>
+</head>
+<body>
+<div class="header no-print">
+  <h1>TEM QR CHO THIẾT BỊ NHIỀU CHIẾC — MỖI CHIẾC MỘT TEM</h1>
+  <p>Trường Đại học Khoa học Tự nhiên — ĐHQGHN | Tạo ngày 21/10/2026</p>
+</div>
+
+<div class="instructions no-print">
+  <strong>Hướng dẫn in:</strong> Ctrl+P → A4, tỉ lệ 100%, bỏ chọn Đầu trang/chân trang, bật Đồ họa nền. Cắt theo nét đứt.
+  <br><strong>Ý nghĩa:</strong> mọi tem cùng mã có <b>cùng một mã QR</b> (mở cùng một trang). Dòng "Chiếc k/N" chỉ để nhận biết và kiểm kê; hệ thống không theo dõi riêng từng chiếc.
+  <br>Tem "Chiếc 1/N" thay cho tem đã dán ở đợt 1 (có thể giữ tem cũ và bỏ tem 1/N).
+</div>
+
+<div class="room-section">
+  <div class="room-title">
+    <span>Thiết bị nhiều chiếc (GPS cầm tay, GPS S631, máy đo độ ẩm đất, máy đo chất lượng nước)</span>
+    <span class="count">15 tem</span>
+  </div>
+  <div class="qr-grid">
+    <div class="qr-card">
+      <div class="qr-stamp"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACYElEQVR4nO2ZwW0cMQxFn8wBcuR04FKoDlyS4ZJSQABtKdsBdQygwc9Bs05OCyMB4hVgngTwMF/S5+enpoh7cTzdTcNX/t/yKAEsgRiuAbiGz2uJ8dn4PoA/JFmGqZna8AYhySTl4+N/AkqpcBn9FQIY/kav9LI9CL6P5L3hbwPsWun1/3//X/O90mspteyYtP337/9t/sZ/ydQm54Gl+H8ppdAr/ZVeN7CMrdejlLI/BL77oVsMpgQJb/NSJD38+aOMATflkdRwDVDGKvoPDG94U2JqyjA1JfgK569miUln84W5sIwV6nfyJ5ShjNNFEPM61uCPpudpw9v4YzuTSAvgTwaM08iFqUFAKFlFfyCYhHFBSGctr8Gfef5+awOJSUoW4j8uXJrm2Rtgp6NYgj/gmrswvS8a3lbhvyWmNghLxmS+NyVr6I9kGcPbVM4p/sqYLmgF/KdnOwnjGq7ZyNbgjzRcyrjtQkw5ylikfsMyZvHOtjVcsx2vwJ8n4Hhuo5fRqyVlD7tWJVuva8wviSW47KxZpn/ANZboXxm4pmxO52DJLOEV6vcJLrqWb9fXY+fYz+e4+f5QSn0EfPfjfdqamjNuRJqMWuH8+bmzefuWlJ2tV/zNrpVejv0x8N2Nm+2M4bpNwe8jzAr876WUsoElG9Bfj+c216OvwX9JlliiDOU5iJ126LPxfSRfSp2af+yUHVyDS9kxtYfAdy9+v9Qez99Nl+gvBQbYuNBffnw2vg/Ov/O1QWpSO4f3jFX0c2Iuz29lB2LARgBr6GcC2PvAwvk7CV/i/bx8/T/91Pwv/xYWphm5adQAAAAASUVORK5CYII=" alt="HMO-OBS-8688"><div class="qr-stamp-code">HMO-OBS-8688</div><div class="qr-stamp-unit">Chiếc 1/6</div><div class="qr-stamp-model">GPSMAP 64sc</div></div>
+      <div class="qr-info">
+        <div class="qr-name">Thiết bị GPS cầm tay</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2023 | P206-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <div class="qr-stamp"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACYElEQVR4nO2ZwW0cMQxFn8wBcuR04FKoDlyS4ZJSQABtKdsBdQygwc9Bs05OCyMB4hVgngTwMF/S5+enpoh7cTzdTcNX/t/yKAEsgRiuAbiGz2uJ8dn4PoA/JFmGqZna8AYhySTl4+N/AkqpcBn9FQIY/kav9LI9CL6P5L3hbwPsWun1/3//X/O90mspteyYtP337/9t/sZ/ydQm54Gl+H8ppdAr/ZVeN7CMrdejlLI/BL77oVsMpgQJb/NSJD38+aOMATflkdRwDVDGKvoPDG94U2JqyjA1JfgK569miUln84W5sIwV6nfyJ5ShjNNFEPM61uCPpudpw9v4YzuTSAvgTwaM08iFqUFAKFlFfyCYhHFBSGctr8Gfef5+awOJSUoW4j8uXJrm2Rtgp6NYgj/gmrswvS8a3lbhvyWmNghLxmS+NyVr6I9kGcPbVM4p/sqYLmgF/KdnOwnjGq7ZyNbgjzRcyrjtQkw5ylikfsMyZvHOtjVcsx2vwJ8n4Hhuo5fRqyVlD7tWJVuva8wviSW47KxZpn/ANZboXxm4pmxO52DJLOEV6vcJLrqWb9fXY+fYz+e4+f5QSn0EfPfjfdqamjNuRJqMWuH8+bmzefuWlJ2tV/zNrpVejv0x8N2Nm+2M4bpNwe8jzAr876WUsoElG9Bfj+c216OvwX9JlliiDOU5iJ126LPxfSRfSp2af+yUHVyDS9kxtYfAdy9+v9Qez99Nl+gvBQbYuNBffnw2vg/Ov/O1QWpSO4f3jFX0c2Iuz29lB2LARgBr6GcC2PvAwvk7CV/i/bx8/T/91Pwv/xYWphm5adQAAAAASUVORK5CYII=" alt="HMO-OBS-8688"><div class="qr-stamp-code">HMO-OBS-8688</div><div class="qr-stamp-unit">Chiếc 2/6</div><div class="qr-stamp-model">GPSMAP 64sc</div></div>
+      <div class="qr-info">
+        <div class="qr-name">Thiết bị GPS cầm tay</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2023 | P206-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <div class="qr-stamp"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACYElEQVR4nO2ZwW0cMQxFn8wBcuR04FKoDlyS4ZJSQABtKdsBdQygwc9Bs05OCyMB4hVgngTwMF/S5+enpoh7cTzdTcNX/t/yKAEsgRiuAbiGz2uJ8dn4PoA/JFmGqZna8AYhySTl4+N/AkqpcBn9FQIY/kav9LI9CL6P5L3hbwPsWun1/3//X/O90mspteyYtP337/9t/sZ/ydQm54Gl+H8ppdAr/ZVeN7CMrdejlLI/BL77oVsMpgQJb/NSJD38+aOMATflkdRwDVDGKvoPDG94U2JqyjA1JfgK569miUln84W5sIwV6nfyJ5ShjNNFEPM61uCPpudpw9v4YzuTSAvgTwaM08iFqUFAKFlFfyCYhHFBSGctr8Gfef5+awOJSUoW4j8uXJrm2Rtgp6NYgj/gmrswvS8a3lbhvyWmNghLxmS+NyVr6I9kGcPbVM4p/sqYLmgF/KdnOwnjGq7ZyNbgjzRcyrjtQkw5ylikfsMyZvHOtjVcsx2vwJ8n4Hhuo5fRqyVlD7tWJVuva8wviSW47KxZpn/ANZboXxm4pmxO52DJLOEV6vcJLrqWb9fXY+fYz+e4+f5QSn0EfPfjfdqamjNuRJqMWuH8+bmzefuWlJ2tV/zNrpVejv0x8N2Nm+2M4bpNwe8jzAr876WUsoElG9Bfj+c216OvwX9JlliiDOU5iJ126LPxfSRfSp2af+yUHVyDS9kxtYfAdy9+v9Qez99Nl+gvBQbYuNBffnw2vg/Ov/O1QWpSO4f3jFX0c2Iuz29lB2LARgBr6GcC2PvAwvk7CV/i/bx8/T/91Pwv/xYWphm5adQAAAAASUVORK5CYII=" alt="HMO-OBS-8688"><div class="qr-stamp-code">HMO-OBS-8688</div><div class="qr-stamp-unit">Chiếc 3/6</div><div class="qr-stamp-model">GPSMAP 64sc</div></div>
+      <div class="qr-info">
+        <div class="qr-name">Thiết bị GPS cầm tay</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2023 | P206-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <div class="qr-stamp"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACYElEQVR4nO2ZwW0cMQxFn8wBcuR04FKoDlyS4ZJSQABtKdsBdQygwc9Bs05OCyMB4hVgngTwMF/S5+enpoh7cTzdTcNX/t/yKAEsgRiuAbiGz2uJ8dn4PoA/JFmGqZna8AYhySTl4+N/AkqpcBn9FQIY/kav9LI9CL6P5L3hbwPsWun1/3//X/O90mspteyYtP337/9t/sZ/ydQm54Gl+H8ppdAr/ZVeN7CMrdejlLI/BL77oVsMpgQJb/NSJD38+aOMATflkdRwDVDGKvoPDG94U2JqyjA1JfgK569miUln84W5sIwV6nfyJ5ShjNNFEPM61uCPpudpw9v4YzuTSAvgTwaM08iFqUFAKFlFfyCYhHFBSGctr8Gfef5+awOJSUoW4j8uXJrm2Rtgp6NYgj/gmrswvS8a3lbhvyWmNghLxmS+NyVr6I9kGcPbVM4p/sqYLmgF/KdnOwnjGq7ZyNbgjzRcyrjtQkw5ylikfsMyZvHOtjVcsx2vwJ8n4Hhuo5fRqyVlD7tWJVuva8wviSW47KxZpn/ANZboXxm4pmxO52DJLOEV6vcJLrqWb9fXY+fYz+e4+f5QSn0EfPfjfdqamjNuRJqMWuH8+bmzefuWlJ2tV/zNrpVejv0x8N2Nm+2M4bpNwe8jzAr876WUsoElG9Bfj+c216OvwX9JlliiDOU5iJ126LPxfSRfSp2af+yUHVyDS9kxtYfAdy9+v9Qez99Nl+gvBQbYuNBffnw2vg/Ov/O1QWpSO4f3jFX0c2Iuz29lB2LARgBr6GcC2PvAwvk7CV/i/bx8/T/91Pwv/xYWphm5adQAAAAASUVORK5CYII=" alt="HMO-OBS-8688"><div class="qr-stamp-code">HMO-OBS-8688</div><div class="qr-stamp-unit">Chiếc 4/6</div><div class="qr-stamp-model">GPSMAP 64sc</div></div>
+      <div class="qr-info">
+        <div class="qr-name">Thiết bị GPS cầm tay</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2023 | P206-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <div class="qr-stamp"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACYElEQVR4nO2ZwW0cMQxFn8wBcuR04FKoDlyS4ZJSQABtKdsBdQygwc9Bs05OCyMB4hVgngTwMF/S5+enpoh7cTzdTcNX/t/yKAEsgRiuAbiGz2uJ8dn4PoA/JFmGqZna8AYhySTl4+N/AkqpcBn9FQIY/kav9LI9CL6P5L3hbwPsWun1/3//X/O90mspteyYtP337/9t/sZ/ydQm54Gl+H8ppdAr/ZVeN7CMrdejlLI/BL77oVsMpgQJb/NSJD38+aOMATflkdRwDVDGKvoPDG94U2JqyjA1JfgK569miUln84W5sIwV6nfyJ5ShjNNFEPM61uCPpudpw9v4YzuTSAvgTwaM08iFqUFAKFlFfyCYhHFBSGctr8Gfef5+awOJSUoW4j8uXJrm2Rtgp6NYgj/gmrswvS8a3lbhvyWmNghLxmS+NyVr6I9kGcPbVM4p/sqYLmgF/KdnOwnjGq7ZyNbgjzRcyrjtQkw5ylikfsMyZvHOtjVcsx2vwJ8n4Hhuo5fRqyVlD7tWJVuva8wviSW47KxZpn/ANZboXxm4pmxO52DJLOEV6vcJLrqWb9fXY+fYz+e4+f5QSn0EfPfjfdqamjNuRJqMWuH8+bmzefuWlJ2tV/zNrpVejv0x8N2Nm+2M4bpNwe8jzAr876WUsoElG9Bfj+c216OvwX9JlliiDOU5iJ126LPxfSRfSp2af+yUHVyDS9kxtYfAdy9+v9Qez99Nl+gvBQbYuNBffnw2vg/Ov/O1QWpSO4f3jFX0c2Iuz29lB2LARgBr6GcC2PvAwvk7CV/i/bx8/T/91Pwv/xYWphm5adQAAAAASUVORK5CYII=" alt="HMO-OBS-8688"><div class="qr-stamp-code">HMO-OBS-8688</div><div class="qr-stamp-unit">Chiếc 5/6</div><div class="qr-stamp-model">GPSMAP 64sc</div></div>
+      <div class="qr-info">
+        <div class="qr-name">Thiết bị GPS cầm tay</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2023 | P206-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <div class="qr-stamp"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACYElEQVR4nO2ZwW0cMQxFn8wBcuR04FKoDlyS4ZJSQABtKdsBdQygwc9Bs05OCyMB4hVgngTwMF/S5+enpoh7cTzdTcNX/t/yKAEsgRiuAbiGz2uJ8dn4PoA/JFmGqZna8AYhySTl4+N/AkqpcBn9FQIY/kav9LI9CL6P5L3hbwPsWun1/3//X/O90mspteyYtP337/9t/sZ/ydQm54Gl+H8ppdAr/ZVeN7CMrdejlLI/BL77oVsMpgQJb/NSJD38+aOMATflkdRwDVDGKvoPDG94U2JqyjA1JfgK569miUln84W5sIwV6nfyJ5ShjNNFEPM61uCPpudpw9v4YzuTSAvgTwaM08iFqUFAKFlFfyCYhHFBSGctr8Gfef5+awOJSUoW4j8uXJrm2Rtgp6NYgj/gmrswvS8a3lbhvyWmNghLxmS+NyVr6I9kGcPbVM4p/sqYLmgF/KdnOwnjGq7ZyNbgjzRcyrjtQkw5ylikfsMyZvHOtjVcsx2vwJ8n4Hhuo5fRqyVlD7tWJVuva8wviSW47KxZpn/ANZboXxm4pmxO52DJLOEV6vcJLrqWb9fXY+fYz+e4+f5QSn0EfPfjfdqamjNuRJqMWuH8+bmzefuWlJ2tV/zNrpVejv0x8N2Nm+2M4bpNwe8jzAr876WUsoElG9Bfj+c216OvwX9JlliiDOU5iJ126LPxfSRfSp2af+yUHVyDS9kxtYfAdy9+v9Qez99Nl+gvBQbYuNBffnw2vg/Ov/O1QWpSO4f3jFX0c2Iuz29lB2LARgBr6GcC2PvAwvk7CV/i/bx8/T/91Pwv/xYWphm5adQAAAAASUVORK5CYII=" alt="HMO-OBS-8688"><div class="qr-stamp-code">HMO-OBS-8688</div><div class="qr-stamp-unit">Chiếc 6/6</div><div class="qr-stamp-model">GPSMAP 64sc</div></div>
+      <div class="qr-info">
+        <div class="qr-name">Thiết bị GPS cầm tay</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2023 | P206-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <div class="qr-stamp"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACXUlEQVR4nO2ZQcojRwyFv/rVkKUa5gBzFPkGOZLxkXID+Sj/AQbUy0CZl0WVnUAY54cs7IIRvdPmqerp1ZO6iWdx+3iahl/5/5dHBWAFBEQHXN3HtUR/Nb4v4A9JVoGnKbsnhCSTVO+PfwMaAVcBxA36twvH7xy7/Xg9vq/gB/C8ffujg33u/Tj93dSvxvfV/HG2z3Nrp7Zj0vav/Kvx/TQm/5UPzgPr8P8Drq01jvN2nDhOG1jFdpxurbX9LfA9D81IwJQm4TkuRdLbnz+q6AB0T1xS4uqgikX0H6tQIaUVplSFKVXgK5z/AyqPi1BnFLXE+YdVdFd3DRfRie6J5wr8+cDztl83rnD9c7/boc+zFap3wPcfIWX37NPIhSmHkVOxiP7AYIsnLggp8RzlrIA/umd3SSlJhUmzqCXwS+Pkp3n2BEwa3wL4i+7ZiftDrFELnovwP6zAc+hnH8z3VLGG/ks2WmAoP9E9VTFc0Ar4p2ebhPnHQ7YGf6RODNm5SyjdpYo1+ldpBa5HId2FZ1+FPzXMG1bTM6tijAOr6P9gjs2eZfiH6Uhfje8r+jnOf+x/8LRitPAK/fsBV462uVRM/+k59g+tnd4B3/O4Sz0aCwefuzhctkD/znz7nm2n7WzHCb/Y54mj3fa3wffzmKZnjmA5n11iGf0vGOKp+8w4Hq915t9hge6Y5yA2bmEJ/BBWmNSZy8MOi/ifRz461990UUVrDTBdON5fP+95v9x/vlzGdfTjvL0Rvmd5KSE2rm1nVLERwBr6WQA2d4YxBkmrwJfYn7df/09fmv8LQwMYPO3jqPgAAAAASUVORK5CYII=" alt="HMO-OBS-8689"><div class="qr-stamp-code">HMO-OBS-8689</div><div class="qr-stamp-unit">Chiếc 1/2</div><div class="qr-stamp-model">S631</div></div>
+      <div class="qr-info">
+        <div class="qr-name">Thiết bị định vị vệ tinh</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2023 | P206-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <div class="qr-stamp"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACXUlEQVR4nO2ZQcojRwyFv/rVkKUa5gBzFPkGOZLxkXID+Sj/AQbUy0CZl0WVnUAY54cs7IIRvdPmqerp1ZO6iWdx+3iahl/5/5dHBWAFBEQHXN3HtUR/Nb4v4A9JVoGnKbsnhCSTVO+PfwMaAVcBxA36twvH7xy7/Xg9vq/gB/C8ffujg33u/Tj93dSvxvfV/HG2z3Nrp7Zj0vav/Kvx/TQm/5UPzgPr8P8Drq01jvN2nDhOG1jFdpxurbX9LfA9D81IwJQm4TkuRdLbnz+q6AB0T1xS4uqgikX0H6tQIaUVplSFKVXgK5z/AyqPi1BnFLXE+YdVdFd3DRfRie6J5wr8+cDztl83rnD9c7/boc+zFap3wPcfIWX37NPIhSmHkVOxiP7AYIsnLggp8RzlrIA/umd3SSlJhUmzqCXwS+Pkp3n2BEwa3wL4i+7ZiftDrFELnovwP6zAc+hnH8z3VLGG/ks2WmAoP9E9VTFc0Ar4p2ebhPnHQ7YGf6RODNm5SyjdpYo1+ldpBa5HId2FZ1+FPzXMG1bTM6tijAOr6P9gjs2eZfiH6Uhfje8r+jnOf+x/8LRitPAK/fsBV462uVRM/+k59g+tnd4B3/O4Sz0aCwefuzhctkD/znz7nm2n7WzHCb/Y54mj3fa3wffzmKZnjmA5n11iGf0vGOKp+8w4Hq915t9hge6Y5yA2bmEJ/BBWmNSZy8MOi/ifRz461990UUVrDTBdON5fP+95v9x/vlzGdfTjvL0Rvmd5KSE2rm1nVLERwBr6WQA2d4YxBkmrwJfYn7df/09fmv8LQwMYPO3jqPgAAAAASUVORK5CYII=" alt="HMO-OBS-8689"><div class="qr-stamp-code">HMO-OBS-8689</div><div class="qr-stamp-unit">Chiếc 2/2</div><div class="qr-stamp-model">S631</div></div>
+      <div class="qr-info">
+        <div class="qr-name">Thiết bị định vị vệ tinh</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2023 | P206-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <div class="qr-stamp"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACbElEQVR4nO2ZQcrjSgyEv04bspRhDvAfRb7BHCn8R5obKEfJAQa6lw9k6i3amX9geCHwFknDaGEM2pS7q6SSXMSj2E8P0/A3///yqAHUBniaEjCljWvxfDW+J/C7pNoci6pIC3BJVVJ7f/wLUHC4qn8H3yG/fdK/09f68/X4nsEPYLF//HCotzX79iXqV+N7Nt+3eruUspWVKi1/5F+N7z/j4P8gvKTmwDz8P8G1lELf6NvStwVq86VveyllfQt8j0NHBCBFlbAYlyLp7c8fNc/xZoFJCkwJaj5D/T8BtXmCGrqVBXTbzgq4YvEW+B7GYA54clzE6MK1+Rz67RfuyM8NcPqGxf7xOYt+geEc8pCDq3lVzHD+SJGQuBrgVQEOrsYc9UeBaRQfTOBSYDE+Zwr8aUrTvecynljMgb9RG9gdswVQ745iBvyuIVU7LBCmOig0Cf7aqApJtZGD+RZqTFJ/lHhapClHF7NQ8+GCZsAfVb8RxpSmMQ7Pwp+0o+wcVRTSpOaT6HfUn5BitK00YZGz8Gf45OE/2+i8/mXqXo3vSf9znP+97YIz5PxqfE/xR6GGdHxCbQwJz6DfE0DfFtO+sq/HOm7sH0rZ3gPfoxhsT4thm9MEPgpRnUC/J2BfOTfOirKy9A37rLeNXvb1PfA9DN3XPmlKi6PtHiPMDPzvpZSyHMMj9Mv+EbWxQPb35/9p+AQgeznfLmrXeitlJWEO/jQHr43aHI7lYcJE/ge8joFdMfafCZPM7/e8ff5TLuMFU21kvyxvhO9Rfji3hWtZAc++LTjT8B+g/hpY+PU7aYr9efn7//Sl+X8BxCkQVdJcPfIAAAAASUVORK5CYII=" alt="HMO-OBS-8692"><div class="qr-stamp-code">HMO-OBS-8692</div><div class="qr-stamp-unit">Chiếc 1/4</div><div class="qr-stamp-model">SMM1</div></div>
+      <div class="qr-info">
+        <div class="qr-name">Máy đo độ ẩm đất</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2023 | P401-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <div class="qr-stamp"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACbElEQVR4nO2ZQcrjSgyEv04bspRhDvAfRb7BHCn8R5obKEfJAQa6lw9k6i3amX9geCHwFknDaGEM2pS7q6SSXMSj2E8P0/A3///yqAHUBniaEjCljWvxfDW+J/C7pNoci6pIC3BJVVJ7f/wLUHC4qn8H3yG/fdK/09f68/X4nsEPYLF//HCotzX79iXqV+N7Nt+3eruUspWVKi1/5F+N7z/j4P8gvKTmwDz8P8G1lELf6NvStwVq86VveyllfQt8j0NHBCBFlbAYlyLp7c8fNc/xZoFJCkwJaj5D/T8BtXmCGrqVBXTbzgq4YvEW+B7GYA54clzE6MK1+Rz67RfuyM8NcPqGxf7xOYt+geEc8pCDq3lVzHD+SJGQuBrgVQEOrsYc9UeBaRQfTOBSYDE+Zwr8aUrTvecynljMgb9RG9gdswVQ745iBvyuIVU7LBCmOig0Cf7aqApJtZGD+RZqTFJ/lHhapClHF7NQ8+GCZsAfVb8RxpSmMQ7Pwp+0o+wcVRTSpOaT6HfUn5BitK00YZGz8Gf45OE/2+i8/mXqXo3vSf9znP+97YIz5PxqfE/xR6GGdHxCbQwJz6DfE0DfFtO+sq/HOm7sH0rZ3gPfoxhsT4thm9MEPgpRnUC/J2BfOTfOirKy9A37rLeNXvb1PfA9DN3XPmlKi6PtHiPMDPzvpZSyHMMj9Mv+EbWxQPb35/9p+AQgeznfLmrXeitlJWEO/jQHr43aHI7lYcJE/ge8joFdMfafCZPM7/e8ff5TLuMFU21kvyxvhO9Rfji3hWtZAc++LTjT8B+g/hpY+PU7aYr9efn7//Sl+X8BxCkQVdJcPfIAAAAASUVORK5CYII=" alt="HMO-OBS-8692"><div class="qr-stamp-code">HMO-OBS-8692</div><div class="qr-stamp-unit">Chiếc 2/4</div><div class="qr-stamp-model">SMM1</div></div>
+      <div class="qr-info">
+        <div class="qr-name">Máy đo độ ẩm đất</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2023 | P401-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <div class="qr-stamp"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACbElEQVR4nO2ZQcrjSgyEv04bspRhDvAfRb7BHCn8R5obKEfJAQa6lw9k6i3amX9geCHwFknDaGEM2pS7q6SSXMSj2E8P0/A3///yqAHUBniaEjCljWvxfDW+J/C7pNoci6pIC3BJVVJ7f/wLUHC4qn8H3yG/fdK/09f68/X4nsEPYLF//HCotzX79iXqV+N7Nt+3eruUspWVKi1/5F+N7z/j4P8gvKTmwDz8P8G1lELf6NvStwVq86VveyllfQt8j0NHBCBFlbAYlyLp7c8fNc/xZoFJCkwJaj5D/T8BtXmCGrqVBXTbzgq4YvEW+B7GYA54clzE6MK1+Rz67RfuyM8NcPqGxf7xOYt+geEc8pCDq3lVzHD+SJGQuBrgVQEOrsYc9UeBaRQfTOBSYDE+Zwr8aUrTvecynljMgb9RG9gdswVQ745iBvyuIVU7LBCmOig0Cf7aqApJtZGD+RZqTFJ/lHhapClHF7NQ8+GCZsAfVb8RxpSmMQ7Pwp+0o+wcVRTSpOaT6HfUn5BitK00YZGz8Gf45OE/2+i8/mXqXo3vSf9znP+97YIz5PxqfE/xR6GGdHxCbQwJz6DfE0DfFtO+sq/HOm7sH0rZ3gPfoxhsT4thm9MEPgpRnUC/J2BfOTfOirKy9A37rLeNXvb1PfA9DN3XPmlKi6PtHiPMDPzvpZSyHMMj9Mv+EbWxQPb35/9p+AQgeznfLmrXeitlJWEO/jQHr43aHI7lYcJE/ge8joFdMfafCZPM7/e8ff5TLuMFU21kvyxvhO9Rfji3hWtZAc++LTjT8B+g/hpY+PU7aYr9efn7//Sl+X8BxCkQVdJcPfIAAAAASUVORK5CYII=" alt="HMO-OBS-8692"><div class="qr-stamp-code">HMO-OBS-8692</div><div class="qr-stamp-unit">Chiếc 3/4</div><div class="qr-stamp-model">SMM1</div></div>
+      <div class="qr-info">
+        <div class="qr-name">Máy đo độ ẩm đất</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2023 | P401-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <div class="qr-stamp"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACbElEQVR4nO2ZQcrjSgyEv04bspRhDvAfRb7BHCn8R5obKEfJAQa6lw9k6i3amX9geCHwFknDaGEM2pS7q6SSXMSj2E8P0/A3///yqAHUBniaEjCljWvxfDW+J/C7pNoci6pIC3BJVVJ7f/wLUHC4qn8H3yG/fdK/09f68/X4nsEPYLF//HCotzX79iXqV+N7Nt+3eruUspWVKi1/5F+N7z/j4P8gvKTmwDz8P8G1lELf6NvStwVq86VveyllfQt8j0NHBCBFlbAYlyLp7c8fNc/xZoFJCkwJaj5D/T8BtXmCGrqVBXTbzgq4YvEW+B7GYA54clzE6MK1+Rz67RfuyM8NcPqGxf7xOYt+geEc8pCDq3lVzHD+SJGQuBrgVQEOrsYc9UeBaRQfTOBSYDE+Zwr8aUrTvecynljMgb9RG9gdswVQ745iBvyuIVU7LBCmOig0Cf7aqApJtZGD+RZqTFJ/lHhapClHF7NQ8+GCZsAfVb8RxpSmMQ7Pwp+0o+wcVRTSpOaT6HfUn5BitK00YZGz8Gf45OE/2+i8/mXqXo3vSf9znP+97YIz5PxqfE/xR6GGdHxCbQwJz6DfE0DfFtO+sq/HOm7sH0rZ3gPfoxhsT4thm9MEPgpRnUC/J2BfOTfOirKy9A37rLeNXvb1PfA9DN3XPmlKi6PtHiPMDPzvpZSyHMMj9Mv+EbWxQPb35/9p+AQgeznfLmrXeitlJWEO/jQHr43aHI7lYcJE/ge8joFdMfafCZPM7/e8ff5TLuMFU21kvyxvhO9Rfji3hWtZAc++LTjT8B+g/hpY+PU7aYr9efn7//Sl+X8BxCkQVdJcPfIAAAAASUVORK5CYII=" alt="HMO-OBS-8692"><div class="qr-stamp-code">HMO-OBS-8692</div><div class="qr-stamp-unit">Chiếc 4/4</div><div class="qr-stamp-model">SMM1</div></div>
+      <div class="qr-info">
+        <div class="qr-name">Máy đo độ ẩm đất</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2023 | P401-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <div class="qr-stamp"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACRUlEQVR4nO2ZQYojSwxEX1oFf5l1g38U1c0a3yx9FN9AtWxQE3+hqu5hhjENf2EntCjsAm3CmaFQSG7iUXxcHqbhJ///8igALAAHT6Are12L57PxfQO/S7Jw0zCN7ANckkmK18d/AVrb4JY4OJD9yr6xt+VF8D2K5fjuA24Jdl9z376K+tn4vpvf39i31ra2YtLyR/7Z+P4aB/81pCFJ4cA8/P/UH//tAebQnzMSl4ZJ9FGXImkC/OEJpfzZJQ26EhQ+x/kHCdKgDwtMQ+GmoYA+w/lrJFh4diUA9WLhk9Svf7K9XETi2Qd9zMEfKaGcQx7l4CeFZsAfZB+JKwA3jTJyCubQHwmgD7roAq9arp8zBf7ESzlNUlCf0/A/sHC6LOoWBmBSPTPgd5Oyy85GTJcVhSbAfwHY28It923Z28d60719rOi+sW+vge9RnPwfx0u9h5cLevnzp8r2izBd2Y9GNgN/fm1YOlS0jFzVxbPxfYc/Fk4fpqOLZRd95Cz8Cco8n2NL2aEBzKL/1Xl/bbvgdOUk+Gv4BeycAqqEZ6jfC/DettbeFLyvdR2j9g+tzaD/4XlWq8KzC7yEyCao3wuwwALt39FWln2jX+2+sbeP9TXwPYzD9NT82MfRds+O8PLn/7V//lzeHs1rovlXsjgGdsXREeoWpsAPbuUfOJaHtRGaRT8r3teb6arw1hpgus7gn898v55/vlxrFsv9bYb9/4VavuH/3FtbAc99W3BgDv0MKPOmUzkPRzrF/rz9/H/61Px/99QeZebtuU4AAAAASUVORK5CYII=" alt="HMO-OBS-8693"><div class="qr-stamp-code">HMO-OBS-8693</div><div class="qr-stamp-unit">Chiếc 1/3</div><div class="qr-stamp-model">U-52G</div></div>
+      <div class="qr-info">
+        <div class="qr-name">Máy đo đa chỉ tiêu chất lượng nước</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2023 | P401-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <div class="qr-stamp"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACRUlEQVR4nO2ZQYojSwxEX1oFf5l1g38U1c0a3yx9FN9AtWxQE3+hqu5hhjENf2EntCjsAm3CmaFQSG7iUXxcHqbhJ///8igALAAHT6Are12L57PxfQO/S7Jw0zCN7ANckkmK18d/AVrb4JY4OJD9yr6xt+VF8D2K5fjuA24Jdl9z376K+tn4vpvf39i31ra2YtLyR/7Z+P4aB/81pCFJ4cA8/P/UH//tAebQnzMSl4ZJ9FGXImkC/OEJpfzZJQ26EhQ+x/kHCdKgDwtMQ+GmoYA+w/lrJFh4diUA9WLhk9Svf7K9XETi2Qd9zMEfKaGcQx7l4CeFZsAfZB+JKwA3jTJyCubQHwmgD7roAq9arp8zBf7ESzlNUlCf0/A/sHC6LOoWBmBSPTPgd5Oyy85GTJcVhSbAfwHY28It923Z28d60719rOi+sW+vge9RnPwfx0u9h5cLevnzp8r2izBd2Y9GNgN/fm1YOlS0jFzVxbPxfYc/Fk4fpqOLZRd95Cz8Cco8n2NL2aEBzKL/1Xl/bbvgdOUk+Gv4BeycAqqEZ6jfC/DettbeFLyvdR2j9g+tzaD/4XlWq8KzC7yEyCao3wuwwALt39FWln2jX+2+sbeP9TXwPYzD9NT82MfRds+O8PLn/7V//lzeHs1rovlXsjgGdsXREeoWpsAPbuUfOJaHtRGaRT8r3teb6arw1hpgus7gn898v55/vlxrFsv9bYb9/4VavuH/3FtbAc99W3BgDv0MKPOmUzkPRzrF/rz9/H/61Px/99QeZebtuU4AAAAASUVORK5CYII=" alt="HMO-OBS-8693"><div class="qr-stamp-code">HMO-OBS-8693</div><div class="qr-stamp-unit">Chiếc 2/3</div><div class="qr-stamp-model">U-52G</div></div>
+      <div class="qr-info">
+        <div class="qr-name">Máy đo đa chỉ tiêu chất lượng nước</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2023 | P401-T3
+        </div>
+      </div>
+    </div>
+
+    <div class="qr-card">
+      <div class="qr-stamp"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAACRUlEQVR4nO2ZQYojSwxEX1oFf5l1g38U1c0a3yx9FN9AtWxQE3+hqu5hhjENf2EntCjsAm3CmaFQSG7iUXxcHqbhJ///8igALAAHT6Are12L57PxfQO/S7Jw0zCN7ANckkmK18d/AVrb4JY4OJD9yr6xt+VF8D2K5fjuA24Jdl9z376K+tn4vpvf39i31ra2YtLyR/7Z+P4aB/81pCFJ4cA8/P/UH//tAebQnzMSl4ZJ9FGXImkC/OEJpfzZJQ26EhQ+x/kHCdKgDwtMQ+GmoYA+w/lrJFh4diUA9WLhk9Svf7K9XETi2Qd9zMEfKaGcQx7l4CeFZsAfZB+JKwA3jTJyCubQHwmgD7roAq9arp8zBf7ESzlNUlCf0/A/sHC6LOoWBmBSPTPgd5Oyy85GTJcVhSbAfwHY28It923Z28d60719rOi+sW+vge9RnPwfx0u9h5cLevnzp8r2izBd2Y9GNgN/fm1YOlS0jFzVxbPxfYc/Fk4fpqOLZRd95Cz8Cco8n2NL2aEBzKL/1Xl/bbvgdOUk+Gv4BeycAqqEZ6jfC/DettbeFLyvdR2j9g+tzaD/4XlWq8KzC7yEyCao3wuwwALt39FWln2jX+2+sbeP9TXwPYzD9NT82MfRds+O8PLn/7V//lzeHs1rovlXsjgGdsXREeoWpsAPbuUfOJaHtRGaRT8r3teb6arw1hpgus7gn898v55/vlxrFsv9bYb9/4VavuH/3FtbAc99W3BgDv0MKPOmUzkPRzrF/rz9/H/61Px/99QeZebtuU4AAAAASUVORK5CYII=" alt="HMO-OBS-8693"><div class="qr-stamp-code">HMO-OBS-8693</div><div class="qr-stamp-unit">Chiếc 3/3</div><div class="qr-stamp-model">U-52G</div></div>
+      <div class="qr-info">
+        <div class="qr-name">Máy đo đa chỉ tiêu chất lượng nước</div>
+        <div class="qr-meta">
+          <span class="cat-badge" style="background:#0F6E56">OBS</span>
+          2023 | P401-T3
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="footer no-print">
+  Khoa KTTV&HDH — ĐHKHTN — ĐHQGHN | Dự án DATAI | Phó TK: TS. Phạm Tiến Đạt
+</div>
+</body></html>
