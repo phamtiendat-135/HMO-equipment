@@ -221,21 +221,22 @@ function parseDate_(val) {
 // Mọi chỗ đọc/ghi Log_Muon_Tra dùng chung các hằng số và hàm dưới đây, để "đang mượn",
 // "giữ chỗ", "đã trả" chỉ có MỘT định nghĩa (review 28/09: P1-05, P1-07, P1-08).
 
-/** Chỉ số cột Log_Muon_Tra (0-based). S, T, U thêm từ 29/09/2026; V từ 19/10/2026. */
+/** Chỉ số cột Log_Muon_Tra (0-based). S, T, U thêm từ 29/09/2026; V từ 19/10/2026; W (link phiếu mượn) từ 27/10/2026. */
 const LOG_COL = {
   QR: 0, NAME: 1, BORROWER: 2, UNIT: 3, PURPOSE: 4, LOCATION: 5,
   BORROW_DATE: 6, DUE_DATE: 7, RETURN_DATE: 8, COND_OUT: 9, COND_IN: 10,
   ACCESSORIES: 11, APPROVAL: 12, NOTE: 13, OVERDUE: 14, EMAIL: 15,
-  HOURS: 16, REMINDED: 17, LOAN_ID: 18, BORROW_SOURCE: 19, RETURN_SOURCE: 20, INSPECTION: 21
+  HOURS: 16, REMINDED: 17, LOAN_ID: 18, BORROW_SOURCE: 19, RETURN_SOURCE: 20, INSPECTION: 21, SLIP: 22
 };
-const LOG_WIDTH = LOG_COL.INSPECTION + 1;
+const LOG_WIDTH = LOG_COL.SLIP + 1;
 const LOG_NEW_HEADERS = [
   [LOG_COL.LOAN_ID, 'Mã giao dịch'],
   [LOG_COL.BORROW_SOURCE, 'Nguồn phản hồi mượn'],
   [LOG_COL.RETURN_SOURCE, 'Nguồn phản hồi trả'],
-  [LOG_COL.INSPECTION, 'Kiểm tra nhận lại']
+  [LOG_COL.INSPECTION, 'Kiểm tra nhận lại'],
+  [LOG_COL.SLIP, 'Phiếu mượn']
 ];
-const LOG_SCHEMA_VERSION = '3';
+const LOG_SCHEMA_VERSION = '4';
 const PROP_LOG_SCHEMA = 'LOG_SCHEMA_VERSION';
 
 // ONSITE chỉ dùng khi hiển thị (displayStatus_); loanStatus_ coi khai báo tại chỗ là đã trả (có cột I).
@@ -1363,7 +1364,9 @@ function recordLoanRequest_(ss, req, sourceId) {
       borrowDate: borrowDate, dueDate: dueDate,
       onsite: onsite, hours: req.hours,
       needsApproval: needsApproval, rejectReason: rejectReason,
-      guideUrl: (master && master.guideUrl) || safeGuideUrl_(CONFIG.GUIDE_DEFAULT_URL)
+      guideUrl: (master && master.guideUrl) || safeGuideUrl_(CONFIG.GUIDE_DEFAULT_URL),
+      condition: req.condition, accessories: req.accessories,
+      managerName: master ? master.managerName : '', managerEmails: master ? master.managerEmails : []
     };
     const closeOnsite = onsite && !rejectReason;
 
@@ -1415,7 +1418,17 @@ function notifyLoanRequest_(loan) {
     else if (loan.onsite) sendOnsiteNoticeEmail_(loan);
     else {
       sendLoanRequestEmail_(loan);
-      if (!loan.needsApproval) sendAutoAcceptedEmail_(loan);
+      if (!loan.needsApproval) {
+        // Phiếu tạo TRƯỚC khi gửi email xác nhận để đính kèm; lỗi tạo phiếu không chặn email (issueLoanSlip_ không ném)
+        const slipData = slipDataFromLoan_(loan);
+        const slip = issueLoanSlip_(slipData);
+        // Mỗi email gửi độc lập: email người mượn lỗi không được làm mất phiếu của cán bộ quản lý (người in phiếu)
+        let firstError = null;
+        [() => sendAutoAcceptedEmail_(loan, slip), () => sendSlipToManagers_(slipData, slip)].forEach(send => {
+          try { send(); } catch (err) { firstError = firstError || err; }
+        });
+        if (firstError) throw firstError;
+      }
     }
   } catch (err) {
     throw new Error(`Đã ghi giao dịch ${loan.loanId} nhưng gửi email thất bại: ${err.message}. ` +
@@ -1427,14 +1440,16 @@ function notifyLoanRequest_(loan) {
  * TB dưới ngưỡng (tự ghi nhận, không cần duyệt): gửi người mượn email xác nhận cùng mẫu email đã duyệt —
  * hạn trả, nút thêm vào lịch, nút hướng dẫn sử dụng. Không có email người mượn thì bỏ qua.
  */
-function sendAutoAcceptedEmail_(loan) {
+function sendAutoAcceptedEmail_(loan, slip) {
   if (!loan.email) return;
   const mail = buildDecisionEmail_(true, {
     qrCode: loan.qrCode, equipName: loan.equipName, borrower: loan.borrower, purpose: loan.purpose,
     borrowDate: loan.borrowDate, dueDate: loan.dueDate, loanId: loan.loanId, guideUrl: loan.guideUrl,
-    dateStr: formatDateVN_(new Date(), 'dd/MM/yyyy HH:mm')
+    dateStr: formatDateVN_(new Date(), 'dd/MM/yyyy HH:mm'), hasSlip: !!slip
   }, true);
-  MailApp.sendEmail(loan.email, mail.subject, mail.body, { htmlBody: mail.htmlBody });
+  const options = { htmlBody: mail.htmlBody };
+  if (slip) options.attachments = [slip.pdf];
+  MailApp.sendEmail(loan.email, mail.subject, mail.body, options);
 }
 
 /** Email thông báo cho PTK khi có khai báo sử dụng tại chỗ — chỉ để biết, không có link duyệt. */
@@ -3398,6 +3413,7 @@ function buildDecisionEmail_(isApprove, o, autoAccepted) {
     body += `  ${(label === 'Hạn trả' ? 'HẠN TRẢ' : label).padEnd(13)}: ${value}\n`;
   });
   body += `\n${next}\n  ${equipLink}\n\n`;
+  if (isApprove && o.hasSlip) body += `${SLIP_EMAIL_NOTE}\n\n`;
   if (isApprove) body += `Hướng dẫn sử dụng: ${o.guideUrl || '(đang cập nhật)'}\n\n`;
   body += `${support}: ${CONFIG.ADMIN_EMAIL}\n\n— Hệ thống quản lý TB Khoa KTTV&HDH`;
 
@@ -3422,6 +3438,7 @@ function buildDecisionEmail_(isApprove, o, autoAccepted) {
   ])));
   blocks.push(emailBlock_(emailNote_(
     esc(next).replace('&quot;✅ Xác nhận trả&quot;', '<strong>“✅ Xác nhận trả”</strong>'))));
+  if (isApprove && o.hasSlip) blocks.push(emailBlock_(emailNote_(esc(SLIP_EMAIL_NOTE)), 12));
   const buttons = [emailButton_(equipLink, '🔎 Xem thiết bị', 'primary')];
   if (due) buttons.push(emailButton_(calendarLink_(o, equipLink), '📅 Thêm vào lịch'));
   blocks.push(emailBlock_(emailButtonRow_(buttons), 16));
@@ -3461,26 +3478,390 @@ function applyApprovalDecision_(action, loanId) {
       equipName: String(row[LOG_COL.NAME] || row[LOG_COL.QR]),
       borrower: String(row[LOG_COL.BORROWER] || ''), email: String(row[LOG_COL.EMAIL] || '').trim(),
       purpose: String(row[LOG_COL.PURPOSE] || ''),
-      borrowDate: parseDate_(row[LOG_COL.BORROW_DATE]), dueDate: parseDate_(row[LOG_COL.DUE_DATE])
+      borrowDate: parseDate_(row[LOG_COL.BORROW_DATE]), dueDate: parseDate_(row[LOG_COL.DUE_DATE]),
+      unit: String(row[LOG_COL.UNIT] || ''), location: String(row[LOG_COL.LOCATION] || ''),
+      condition: String(row[LOG_COL.COND_OUT] || ''), accessories: String(row[LOG_COL.ACCESSORIES] || ''),
+      approvedAt: new Date()
     };
     Logger.log(`✓ ${text} — giao dịch ${loanId} (${outcome.qrCode}) dòng ${index + 1}`);
   } finally {
     lock.releaseLock();
   }
 
+  // Duyệt xong → có ngay phiếu mượn. Tạo TRƯỚC email kết quả để đính kèm; lỗi tạo phiếu không chặn email.
+  let slip = null;
+  let slipData = null;
+  if (isApprove && loanSlipEnabled_()) {
+    slipData = slipDataFromOutcome_(outcome, lookupMasterSafe_(ss, outcome.qrCode));
+    slip = issueLoanSlip_(slipData);
+  }
+
   if (outcome.email) {
     try {
       if (isApprove) outcome.guideUrl = guideUrlFor_(ss, outcome.qrCode);
+      outcome.hasSlip = !!slip;
       const mail = buildDecisionEmail_(isApprove, outcome);
-      MailApp.sendEmail(outcome.email, mail.subject, mail.body, { htmlBody: mail.htmlBody });
+      const options = { htmlBody: mail.htmlBody };
+      if (slip) options.attachments = [slip.pdf];
+      MailApp.sendEmail(outcome.email, mail.subject, mail.body, options);
     } catch (err) {
       outcome.mailError = err.message;
       Logger.log('⚠️ Không gửi được email kết quả phê duyệt: ' + err.message);
     }
   }
+  try {
+    sendSlipToManagers_(slipData, slip);
+  } catch (err) {
+    Logger.log('⚠️ Không gửi được email phiếu mượn cho cán bộ quản lý: ' + err.message);
+  }
   return outcome;
 }
 
+/** Giờ duyệt từ cột M dạng "✅ Đã phê duyệt — PTK (dd/MM/yyyy HH:mm)"; không có → null. */
+function parseApprovalTime_(text) {
+  const m = /\((\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})\)/.exec(String(text || ''));
+  return m ? new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]), Number(m[4]), Number(m[5])) : null;
+}
+
+/**
+ * Tạo lại phiếu cho một dòng Log (phiếu mất / in sai). Chỉ dòng mượn mang đi đã được chấp nhận.
+ * Gửi phiếu mới cho cán bộ quản lý (người mượn đã nhận bản đầu), thay link cột W.
+ */
+function regenerateLoanSlipForRow_(ss, rowNum) {
+  if (!loanSlipEnabled_()) return { ok: false, message: 'Chưa tạo mẫu phiếu mượn (menu "Tạo mẫu phiếu mượn").' };
+  const { data } = readLogData_(ss);
+  const row = rowNum >= 2 ? data[rowNum - 1] : null;
+  const loanId = row ? String(row[LOG_COL.LOAN_ID] || '').trim() : '';
+  if (!row || !String(row[LOG_COL.QR]).trim() || !loanId) {
+    return { ok: false, message: 'Dòng này không có giao dịch mượn (chọn một dòng dữ liệu trong Log_Muon_Tra).' };
+  }
+  if (isOnsite_(row)) return { ok: false, message: 'Sử dụng tại chỗ không có phiếu mượn.' };
+  const status = loanStatus_(row);
+  if (status === LOAN_STATUS.PENDING) return { ok: false, message: 'Yêu cầu đang chờ phê duyệt, chưa có phiếu.' };
+  if (status === LOAN_STATUS.REJECTED) return { ok: false, message: 'Yêu cầu đã bị từ chối, không có phiếu.' };
+
+  const master = lookupMasterSafe_(ss, String(row[LOG_COL.QR]).trim());
+  const needsApproval = !!master && master.unitValue >= CONFIG.APPROVAL_THRESHOLD;
+  const d = {
+    loanId: loanId, qrCode: String(row[LOG_COL.QR]).trim(),
+    equipName: String(row[LOG_COL.NAME] || row[LOG_COL.QR]),
+    accessories: String(row[LOG_COL.ACCESSORIES] || ''), condition: String(row[LOG_COL.COND_OUT] || ''),
+    borrower: String(row[LOG_COL.BORROWER] || ''), unit: String(row[LOG_COL.UNIT] || ''),
+    email: String(row[LOG_COL.EMAIL] || '').trim(), purpose: String(row[LOG_COL.PURPOSE] || ''),
+    location: String(row[LOG_COL.LOCATION] || ''),
+    borrowDate: parseDate_(row[LOG_COL.BORROW_DATE]), dueDate: parseDate_(row[LOG_COL.DUE_DATE]),
+    managerName: master ? master.managerName : '', managerEmails: master ? master.managerEmails : [],
+    needsApproval: needsApproval,
+    approvedAt: needsApproval ? parseApprovalTime_(row[LOG_COL.APPROVAL]) : null
+  };
+  const slip = issueLoanSlip_(d);
+  if (!slip) return { ok: false, message: 'Không tạo được phiếu (xem email báo lỗi gửi PTK hoặc Executions trong Apps Script).' };
+  sendSlipToManagers_(d, slip);
+  return { ok: true, message: `Đã tạo lại phiếu cho giao dịch ${loanId}.`, docUrl: slip.docUrl };
+}
+
+/** Hàm menu: tạo lại phiếu cho dòng đang chọn trong Log_Muon_Tra. */
+function regenerateLoanSlip() {
+  const sheet = SpreadsheetApp.getActiveSheet();
+  if (sheet.getName() !== CONFIG.SHEETS.LOG_MUON) {
+    slipToast_(`Mở sheet ${CONFIG.SHEETS.LOG_MUON} và chọn một dòng giao dịch trước.`);
+    return;
+  }
+  const rowNum = SpreadsheetApp.getActiveRange().getRow();
+  if (rowNum < 2) {
+    slipToast_('Hãy chọn một dòng giao dịch (không phải dòng tiêu đề).');
+    return;
+  }
+  const result = regenerateLoanSlipForRow_(SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID), rowNum);
+  slipToast_(result.ok ? `✅ ${result.message} Đã gửi email cho cán bộ quản lý.` : '⚠️ ' + result.message);
+}
+
+/** Tra Master_Data cho phiếu; lỗi tra không chặn (phiếu vẫn tạo, chỉ thiếu tên/email cán bộ quản lý). */
+function lookupMasterSafe_(ss, qrCode) {
+  try {
+    return getMasterRecord_(ss, String(qrCode).trim());
+  } catch (err) {
+    Logger.log('lookupMasterSafe_: không tra được Master_Data — ' + err.message);
+    return null;
+  }
+}
+
+
+// ==================== PHIẾU MƯỢN THIẾT BỊ ====================
+// Mượn mang đi được chấp nhận → phiếu Word/PDF điền sẵn từ Google Doc mẫu (dấu {{TAG}}).
+// Thiết kế: docs/superpowers/specs/2026-10-27-phieu-muon-thiet-bi-design.md
+
+const SLIP_TAGS = ['SO_PHIEU', 'TEN_THIET_BI', 'MA_QR', 'PHU_KIEN', 'TINH_TRANG', 'NGUOI_MUON', 'DON_VI',
+  'EMAIL', 'MUC_DICH', 'DIA_DIEM', 'NGAY_MUON', 'HAN_TRA', 'DONG_PHE_DUYET', 'CAN_BO_BAN_GIAO'];
+const SLIP_EMPTY = '—';
+const SLIP_EMAIL_NOTE = '📄 Phiếu mượn thiết bị đính kèm (PDF). Thầy/cô in và ký trước khi nhận thiết bị.';
+
+/** Dòng ghi lại việc phê duyệt trên phiếu: TB dưới ngưỡng → không cần duyệt; từ ngưỡng → đã duyệt (kèm giờ nếu biết). */
+function slipApprovalLine_(needsApproval, approvedAt) {
+  if (!needsApproval) {
+    return `Thiết bị dưới ${CONFIG.APPROVAL_THRESHOLD} triệu đồng, không cần Phó Trưởng khoa phê duyệt.`;
+  }
+  return approvedAt
+    ? `Phó Trưởng khoa đã phê duyệt qua email lúc ${formatDateVN_(approvedAt, 'HH:mm dd/MM/yyyy')}.`
+    : 'Phó Trưởng khoa đã phê duyệt qua email.';
+}
+
+/** Giá trị điền cho từng dấu {{TAG}}. Ô trống in "—" (riêng ô ký cán bộ bàn giao để trống cho viết tay). */
+function slipValues_(d) {
+  const text = value => String(value == null ? '' : value).trim() || SLIP_EMPTY;
+  return {
+    SO_PHIEU: text(d.loanId),
+    TEN_THIET_BI: text(d.equipName),
+    MA_QR: text(d.qrCode),
+    PHU_KIEN: text(d.accessories),
+    TINH_TRANG: text(d.condition),
+    NGUOI_MUON: text(d.borrower),
+    DON_VI: text(d.unit),
+    EMAIL: text(d.email),
+    MUC_DICH: text(d.purpose),
+    DIA_DIEM: text(d.location),
+    NGAY_MUON: formatDateVN_(d.borrowDate) || SLIP_EMPTY,
+    HAN_TRA: formatDateVN_(d.dueDate) || SLIP_EMPTY,
+    DONG_PHE_DUYET: slipApprovalLine_(d.needsApproval, d.approvedAt),
+    CAN_BO_BAN_GIAO: String(d.managerName == null ? '' : d.managerName).trim()
+  };
+}
+
+/** Thoát \ và $ — Body.replaceText dùng regex và hiểu $1 / \ trong chuỗi thay thế. */
+function escapeSlipReplacement_(text) {
+  return String(text).replace(/[\\$]/g, '\\$&');
+}
+
+/** SlipData từ giao dịch mới ghi (`loan` của recordLoanRequest_) — luồng không cần duyệt. */
+function slipDataFromLoan_(loan) {
+  return {
+    loanId: loan.loanId, qrCode: loan.qrCode, equipName: loan.equipName,
+    accessories: loan.accessories, condition: loan.condition,
+    borrower: loan.borrower, unit: loan.unit, email: loan.email,
+    purpose: loan.purpose, location: loan.location,
+    borrowDate: loan.borrowDate, dueDate: loan.dueDate,
+    managerName: loan.managerName, managerEmails: loan.managerEmails,
+    needsApproval: false, approvedAt: null
+  };
+}
+
+/** SlipData từ kết quả duyệt (`outcome` của applyApprovalDecision_) — luồng từ 100 triệu, đã được PTK duyệt. */
+function slipDataFromOutcome_(outcome, master) {
+  return {
+    loanId: outcome.loanId, qrCode: outcome.qrCode, equipName: outcome.equipName,
+    accessories: outcome.accessories, condition: outcome.condition,
+    borrower: outcome.borrower, unit: outcome.unit, email: outcome.email,
+    purpose: outcome.purpose, location: outcome.location,
+    borrowDate: outcome.borrowDate, dueDate: outcome.dueDate,
+    managerName: master ? master.managerName : '', managerEmails: master ? master.managerEmails : [],
+    needsApproval: true, approvedAt: outcome.approvedAt
+  };
+}
+
+function slipAttachmentName_(d) {
+  return `PhieuMuon_${d.loanId}_${d.qrCode}`;
+}
+
+const PROP_SLIP_TEMPLATE = 'LOAN_SLIP_TEMPLATE_ID';
+const PROP_SLIP_FOLDER = 'LOAN_SLIP_FOLDER_ID';
+const SLIP_FOLDER_NAME = 'Phiếu mượn thiết bị';
+
+/** Tính năng phiếu chỉ chạy sau khi đã tạo mẫu (menu "Tạo mẫu phiếu mượn"); chưa có mẫu → mọi thứ như cũ. */
+function loanSlipEnabled_() {
+  return !!PropertiesService.getScriptProperties().getProperty(PROP_SLIP_TEMPLATE);
+}
+
+/** Thư mục lưu phiếu trong Drive: tạo ở lần đầu (hoặc khi thư mục cũ bị xóa), ID lưu Script Properties. */
+function slipFolder_() {
+  const props = PropertiesService.getScriptProperties();
+  const savedId = props.getProperty(PROP_SLIP_FOLDER);
+  if (savedId) {
+    try {
+      return DriveApp.getFolderById(savedId);
+    } catch (err) {
+      Logger.log('Không mở được thư mục phiếu đã lưu, tạo lại: ' + err.message);
+    }
+  }
+  const folder = DriveApp.createFolder(SLIP_FOLDER_NAME);
+  props.setProperty(PROP_SLIP_FOLDER, folder.getId());
+  return folder;
+}
+
+/**
+ * Sao chép Google Doc mẫu, điền các dấu {{TAG}}, xuất PDF + Word. Ném lỗi nếu Drive/Docs lỗi —
+ * người gọi (issueLoanSlip_) bắt để không làm hỏng giao dịch.
+ */
+function createLoanSlip_(d) {
+  const templateId = PropertiesService.getScriptProperties().getProperty(PROP_SLIP_TEMPLATE);
+  if (!templateId) throw new Error('Chưa có mẫu phiếu mượn (menu "Tạo mẫu phiếu mượn").');
+
+  const name = slipAttachmentName_(d);
+  const copy = DriveApp.getFileById(templateId).makeCopy(name, slipFolder_());
+  const values = slipValues_(d);
+  const doc = DocumentApp.openById(copy.getId());
+  const body = doc.getBody();
+  SLIP_TAGS.forEach(tag => body.replaceText('\\{\\{' + tag + '\\}\\}', escapeSlipReplacement_(values[tag])));
+  doc.saveAndClose();
+
+  const pdf = copy.getAs('application/pdf').setName(name + '.pdf');
+  const docx = UrlFetchApp.fetch(`https://docs.google.com/document/d/${copy.getId()}/export?format=docx`,
+    { headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() } }).getBlob().setName(name + '.docx');
+  return { docUrl: copy.getUrl(), pdf: pdf, docx: docx };
+}
+
+/** Ghi link phiếu vào cột W của dòng có Mã giao dịch này (trong vùng khóa). */
+function recordSlipLink_(loanId, docUrl) {
+  const ss = SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID);
+  const lock = LockService.getScriptLock();
+  lock.waitLock(LOCK_WAIT_MS);
+  try {
+    const { sheet } = readLogData_(ss);
+    ensureLogSchema_(sheet); // sheet có thể chưa lên v4 (chưa có cột W) nếu chưa có lần ghi nào sau deploy
+    const index = findLoanIndex_(sheet.getDataRange().getValues(), loanId);
+    if (index < 0) throw new Error('Không tìm thấy giao dịch ' + loanId + ' để ghi link phiếu');
+    sheet.getRange(index + 1, LOG_COL.SLIP + 1).setValue(docUrl);
+    SpreadsheetApp.flush();
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * Tạo phiếu + ghi link vào Log. KHÔNG BAO GIỜ ném lỗi: phiếu hỏng không được làm hỏng giao dịch hay chặn email.
+ * Trả null khi tính năng còn ngủ hoặc tạo lỗi (lỗi → email báo PTK kèm cách tạo lại).
+ */
+function issueLoanSlip_(d) {
+  if (!loanSlipEnabled_()) return null;
+  let slip;
+  try {
+    slip = createLoanSlip_(d);
+  } catch (err) {
+    Logger.log(`⚠️ Không tạo được phiếu mượn ${d.loanId}: ${err.message}`);
+    notifySlipFailure_(d, err);
+    return null;
+  }
+  try {
+    recordSlipLink_(d.loanId, slip.docUrl);
+  } catch (err) {
+    Logger.log(`⚠️ Đã tạo phiếu ${d.loanId} nhưng không ghi được link vào Log: ${err.message}`);
+  }
+  return slip;
+}
+
+function notifySlipFailure_(d, err) {
+  try {
+    const body = `Không tạo được phiếu mượn thiết bị cho giao dịch ${d.loanId} (${d.equipName}, ${d.qrCode}).\n\n` +
+      `Nguyên nhân: ${err.message}\n\n` +
+      'Giao dịch mượn vẫn hợp lệ, email xác nhận vẫn đã gửi (không có file phiếu đính kèm).\n' +
+      'Cách tạo lại: mở Log_Muon_Tra, chọn dòng của giao dịch, menu "Quản lý TB" → "Tạo lại phiếu mượn (dòng đang chọn)".\n\n' +
+      '— Hệ thống quản lý TB Khoa KTTV&HDH';
+    MailApp.sendEmail(CONFIG.ADMIN_EMAIL, `[KTTV&HDH] ⚠️ Không tạo được phiếu mượn ${d.loanId}`, body);
+  } catch (mailErr) {
+    Logger.log('⚠️ Không gửi được email báo lỗi phiếu mượn: ' + mailErr.message);
+  }
+}
+
+/** Cán bộ quản lý của thiết bị; thiết bị chưa có email cán bộ → PTK. */
+function slipRecipients_(d) {
+  return d.managerEmails && d.managerEmails.length ? d.managerEmails : [CONFIG.ADMIN_EMAIL];
+}
+
+/** Email riêng cho cán bộ quản lý: phiếu PDF (để in) + Word (để sửa). Không có phiếu → không gửi. */
+function sendSlipToManagers_(d, slip) {
+  if (!slip) return;
+  const approval = slipApprovalLine_(d.needsApproval, d.approvedAt);
+  const subject = `[KTTV&HDH] 📄 Phiếu mượn thiết bị — ${d.equipName} (${d.qrCode})`;
+  const body = `Phiếu mượn thiết bị đã được tạo sẵn, đính kèm PDF (để in) và Word (để sửa).\n\n` +
+    `  Thiết bị     : ${d.equipName} (${d.qrCode})\n  Người mượn   : ${d.borrower}\n` +
+    `  Đơn vị       : ${d.unit || '—'}\n  Ngày mượn    : ${formatDateVN_(d.borrowDate)}\n` +
+    `  Hạn trả      : ${formatDateVN_(d.dueDate)}\n  Mã giao dịch : ${d.loanId}\n  Phê duyệt    : ${approval}\n\n` +
+    'In phiếu và để hai bên (cán bộ mượn thiết bị, cán bộ bàn giao) ký khi bàn giao thiết bị.\n\n' +
+    '— Hệ thống quản lý TB Khoa KTTV&HDH';
+  const esc = escapeHtml_;
+  const tone = EMAIL_TONE.blue;
+  const blocks = [
+    emailBlock_(emailPill_('📄 PHIẾU MƯỢN THIẾT BỊ', tone) +
+      emailP_(`${emailStrong_(d.borrower || 'Một cán bộ')} sắp nhận thiết bị. Phiếu đã được điền sẵn, ` +
+        'đính kèm PDF (để in) và Word (để sửa).', true), 24),
+    emailBlock_(emailDetails_([
+      ['Thiết bị', emailEquip_(d.equipName, d.qrCode)],
+      ['Người mượn', emailStrong_(d.borrower)],
+      ['Đơn vị', esc(d.unit)],
+      ['Ngày mượn', esc(formatDateVN_(d.borrowDate))],
+      ['Hạn trả', emailStrong_(formatDateVN_(d.dueDate), EMAIL_TONE.amber)],
+      ['Mã giao dịch', emailMono_(d.loanId)],
+      ['Phê duyệt', esc(approval)]
+    ])),
+    emailBlock_(emailNote_('In phiếu và để <strong>hai bên ký</strong> (cán bộ mượn thiết bị, cán bộ bàn giao) ' +
+      'khi bàn giao thiết bị.'), 16)
+  ];
+  const htmlBody = emailLayout_({ heading: 'Phiếu mượn thiết bị', tone: tone, blocks: blocks });
+  MailApp.sendEmail(slipRecipients_(d).join(','), subject, body,
+    { htmlBody: htmlBody, attachments: [slip.pdf, slip.docx] });
+}
+
+/**
+ * Dựng Google Doc mẫu phiếu (chạy 1 lần từ menu). Các chỗ điền là dấu {{TAG}} — sửa chữ/logo/căn lề tùy ý
+ * trong Google Docs, miễn giữ nguyên các dấu. Đã có mẫu → không tạo lại (không ghi đè mẫu đã sửa), chỉ trả link.
+ */
+function createLoanSlipTemplate() {
+  const props = PropertiesService.getScriptProperties();
+  const existingId = props.getProperty(PROP_SLIP_TEMPLATE);
+  if (existingId) {
+    const url = 'https://docs.google.com/document/d/' + existingId + '/edit';
+    Logger.log('Đã có mẫu phiếu mượn: ' + url);
+    slipToast_('Đã có mẫu phiếu mượn, không tạo lại: ' + url);
+    return url;
+  }
+  const doc = DocumentApp.create('MẪU — Phiếu mượn thiết bị (HMO)');
+  buildSlipTemplateBody_(doc.getBody());
+  doc.saveAndClose();
+  props.setProperty(PROP_SLIP_TEMPLATE, doc.getId());
+  Logger.log('✓ Đã tạo mẫu phiếu mượn: ' + doc.getUrl());
+  slipToast_('Đã tạo mẫu phiếu mượn. Từ giờ phiếu tự tạo khi mượn mang đi được chấp nhận.');
+  return doc.getUrl();
+}
+
+function slipToast_(msg) {
+  try { SpreadsheetApp.getActiveSpreadsheet().toast(msg, 'Quản lý TB', 10); } catch (err) { /* ngoài UI */ }
+}
+
+function buildSlipTemplateBody_(body) {
+  const align = DocumentApp.HorizontalAlignment;
+  const line = (text, alignment, bold) => {
+    const p = body.appendParagraph(text);
+    if (alignment) p.setAlignment(alignment);
+    p.setBold(!!bold);
+    return p;
+  };
+  const infoTable = rows => body.appendTable(rows.map(([label, tag]) => [label, '{{' + tag + '}}']));
+
+  body.appendTable([[
+    'ĐẠI HỌC QUỐC GIA HÀ NỘI\nTRƯỜNG ĐẠI HỌC KHOA HỌC TỰ NHIÊN\nKHOA KHÍ TƯỢNG THỦY VĂN VÀ HẢI DƯƠNG HỌC',
+    'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐộc lập – Tự do – Hạnh phúc'
+  ]]);
+  line('PHIẾU MƯỢN THIẾT BỊ', align.CENTER, true);
+  line('Mã giao dịch: {{SO_PHIEU}}', align.CENTER, false);
+
+  line('1. THIẾT BỊ', align.LEFT, true);
+  infoTable([['Tên thiết bị', 'TEN_THIET_BI'], ['Mã QR', 'MA_QR'],
+    ['Phụ kiện kèm theo', 'PHU_KIEN'], ['Tình trạng khi giao', 'TINH_TRANG']]);
+
+  line('2. CÁN BỘ MƯỢN THIẾT BỊ', align.LEFT, true);
+  infoTable([['Họ và tên', 'NGUOI_MUON'], ['Đơn vị / Bộ môn', 'DON_VI'], ['Email', 'EMAIL'],
+    ['Mục đích sử dụng', 'MUC_DICH'], ['Địa điểm sử dụng', 'DIA_DIEM'],
+    ['Ngày mượn', 'NGAY_MUON'], ['Hạn trả', 'HAN_TRA']]);
+
+  line('Phê duyệt: {{DONG_PHE_DUYET}}', align.LEFT, false);
+  line('Cán bộ mượn thiết bị có trách nhiệm bảo quản thiết bị, sử dụng đúng mục đích và hoàn trả đúng hạn.',
+    align.LEFT, false);
+  line('Hà Nội, ngày …… tháng …… năm 20……', align.RIGHT, false);
+  body.appendTable([
+    ['CÁN BỘ MƯỢN THIẾT BỊ\n(ký, ghi rõ họ tên)', 'CÁN BỘ BÀN GIAO\n(ký, ghi rõ họ tên)'],
+    ['\n\n\n\n{{NGUOI_MUON}}', '\n\n\n\n{{CAN_BO_BAN_GIAO}}']
+  ]);
+  body.editAsText().setFontFamily('Times New Roman').setFontSize(13);
+}
 
 // ==================== API ĐỌC CHO LANDING PAGE ====================
 
@@ -3704,5 +4085,8 @@ function onOpen() {
     .addSeparator()
     .addItem('📧 Tạo cột Email CB quản lý (Master_Data)', 'ensureManagerEmailColumn')
     .addItem('🔍 Gửi lại email kiểm tra đang chờ', 'resendPendingInspections')
+    .addSeparator()
+    .addItem('📄 Tạo mẫu phiếu mượn (chạy 1 lần)', 'createLoanSlipTemplate')
+    .addItem('📄 Tạo lại phiếu mượn (dòng đang chọn)', 'regenerateLoanSlip')
     .addToUi();
 }

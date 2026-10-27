@@ -94,7 +94,7 @@ function harness(logRows = [], opts = {}) {
     Date, Math, JSON, Set, Map, String, Number, Array, Object, parseInt, parseFloat, isNaN, Error, URL,
     Logger: { log: (...v) => logs.push(v.join(' ')) },
     SpreadsheetApp: { openById: () => ss, flush() {}, getUi: () => ({ alert() {}, ButtonSet: { OK: 1 } }) },
-    MailApp: { sendEmail: (...args) => { if (opts.mailFails) throw new Error('Synthetic mail quota failure'); mail.push(args); } },
+    MailApp: { sendEmail: (...args) => { if (opts.mailFails && (opts.mailFails === true || opts.mailFails(args))) throw new Error('Synthetic mail quota failure'); mail.push(args); } },
     PropertiesService: { getScriptProperties: () => ({ getProperty: k => props[k] || null, setProperty: (k, v) => { props[k] = v; } }) },
     CacheService: { getScriptCache: () => ({ get: k => cache[k] || null, put: (k, v) => { cache[k] = v; }, remove: k => { delete cache[k]; } }) },
     LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) },
@@ -107,7 +107,8 @@ function harness(logRows = [], opts = {}) {
       formatDate: fakeFormatDate
     },
     HtmlService: { createHtmlOutput: html => ({ html, setTitle() { return this; } }) },
-    ContentService: { MimeType: { JSON: 'json' }, createTextOutput: text => ({ text, setMimeType() { return this; } }) }
+    ContentService: { MimeType: { JSON: 'json' }, createTextOutput: text => ({ text, setMimeType() { return this; } }) },
+    ...(opts.globals || {})
   });
   vm.runInContext(SOURCE, ctx);
   return { ctx, sheets, log: sheets.Log_Muon_Tra, mail, logs, props, cache };
@@ -288,15 +289,15 @@ test('P1-07 đồng bộ sau khi trigger đã ghi → không tạo dòng trùng'
   h.ctx.syncFormResponsesToLog();
   assert.equal(h.log.rows.length, 2);
 });
-test('P1-07 nâng cấu trúc: dòng cũ được gán Mã giao dịch, thêm header S–V, chỉ chạy 1 lần', () => {
+test('P1-07 nâng cấu trúc: dòng cũ được gán Mã giao dịch, thêm header S–W, chỉ chạy 1 lần', () => {
   const h = harness([legacyLoan('A', ''), legacyLoan('B', '')]);
   h.ctx.onFormSubmitBorrow(formEvent(borrowFields({ 'Mã QR thiết bị': 'HMO-LAB-0002' })));
-  assert.deepEqual(h.log.rows[0].slice(18, 22),
-    ['Mã giao dịch', 'Nguồn phản hồi mượn', 'Nguồn phản hồi trả', 'Kiểm tra nhận lại']);
+  assert.deepEqual(h.log.rows[0].slice(18, 23),
+    ['Mã giao dịch', 'Nguồn phản hồi mượn', 'Nguồn phản hồi trả', 'Kiểm tra nhận lại', 'Phiếu mượn']);
   const ids = h.log.rows.slice(1).map(r => r[18]);
   assert.ok(ids.every(id => /^L\d{6}-[0-9A-F]{6}$/.test(id)), ids.join(','));
   assert.equal(new Set(ids).size, ids.length);
-  assert.equal(h.props.LOG_SCHEMA_VERSION, '3');
+  assert.equal(h.props.LOG_SCHEMA_VERSION, '4');
   assert.match(h.log.rows[1][14], /SEARCH\("chối"/, 'công thức quá hạn cũ được cập nhật');
 });
 
@@ -1144,6 +1145,443 @@ test('Giá: thiết bị 1 chiếc chỉ hiện một con số; báo cáo tháng
   r.ctx.monthlyReport();
   // 200 + 10 + 10 + 1920 = 2140 tr = 2.1 tỷ (cộng nguyên giá theo dòng, không chia số lượng)
   assert.match(r.mail[0][2], /Tổng giá trị: 2\.1 tỷ VNĐ/);
+});
+
+// ====================== Phiếu mượn thiết bị ======================
+/** SlipData mẫu cho test phiếu mượn. */
+function slipData(over = {}) {
+  return Object.assign({
+    loanId: 'L261027-A3F9C1', qrCode: QR, equipName: 'Máy đo chất lượng nước',
+    accessories: 'Pin sạc, cáp USB', condition: 'Hoạt động tốt',
+    borrower: 'Nguyễn Văn A', unit: 'BM Thủy văn', email: 'a@example.invalid',
+    purpose: 'Đo đạc', location: 'Hội An',
+    borrowDate: new Date(2026, 9, 28), dueDate: new Date(2026, 10, 2),
+    managerName: 'Trần Thị B', managerEmails: ['b@example.invalid'],
+    needsApproval: false, approvedAt: null
+  }, over);
+}
+test('Phiếu: dòng phê duyệt có 3 dạng', () => {
+  const f = harness().ctx.slipApprovalLine_;
+  assert.equal(f(false, null), 'Thiết bị dưới 100 triệu đồng, không cần Phó Trưởng khoa phê duyệt.');
+  assert.equal(f(true, new Date(2026, 9, 27, 8, 15)), 'Phó Trưởng khoa đã phê duyệt qua email lúc 08:15 27/10/2026.');
+  assert.equal(f(true, null), 'Phó Trưởng khoa đã phê duyệt qua email.');
+});
+test('Phiếu: slipValues_ đủ 14 dấu, ô trống in "—", không in undefined, ngày dd/MM/yyyy', () => {
+  const h = harness();
+  const v = h.ctx.slipValues_(slipData({ accessories: '', condition: '', managerName: '' }));
+  assert.deepEqual(Object.keys(v).sort(), [...run(h, 'SLIP_TAGS')].sort());
+  assert.equal(v.PHU_KIEN, '—');
+  assert.equal(v.TINH_TRANG, '—');
+  assert.equal(v.CAN_BO_BAN_GIAO, '', 'ô ký để trống, không in "—"');
+  assert.equal(v.NGAY_MUON, '28/10/2026');
+  assert.equal(v.HAN_TRA, '02/11/2026');
+  assert.equal(v.SO_PHIEU, 'L261027-A3F9C1');
+  assert.ok(!Object.values(v).some(x => /undefined|null/.test(x)));
+});
+test('Phiếu: escapeSlipReplacement_ thoát \\ và $; slipAttachmentName_ đúng quy ước', () => {
+  const h = harness();
+  assert.equal(h.ctx.escapeSlipReplacement_('a$1\\b'), 'a\\$1\\\\b');
+  assert.equal(h.ctx.slipAttachmentName_(slipData()), 'PhieuMuon_L261027-A3F9C1_' + QR);
+});
+
+/**
+ * Drive / Docs / UrlFetch / Script giả cho test phiếu. Ghi vào `state`:
+ * copies[] (id, name, folder), replacements[copyId][TAG] = chuỗi sau khi áp dụng NGỮ NGHĨA THAY THẾ CỦA JAVA
+ * (`\x` → x; `$` không thoát → ném lỗi, như Body.replaceText thật), fetches[] (url, headers).
+ * state.copyFails / fetchFails / folderMissing giả lỗi.
+ */
+function slipGlobals(state) {
+  Object.assign(state, { copies: [], replacements: {}, fetches: [], foldersCreated: 0, templatesCreated: 0, templateBody: [] });
+  const blob = name => ({ name, getName() { return this.name; }, setName(n) { this.name = n; return this; } });
+  const folder = { getId: () => 'FOLDER1' };
+  const javaReplacement = repl => {
+    let out = '';
+    for (let i = 0; i < repl.length; i++) {
+      if (repl[i] === '\\') out += repl[++i];
+      else if (repl[i] === '$') throw new Error('Illegal group reference: $ không được thoát');
+      else out += repl[i];
+    }
+    return out;
+  };
+  const docUrl = id => `https://docs.google.com/document/d/${id}/edit`;
+  const recorder = into => new Proxy(function () {}, {
+    get: (_, key) => key === 'toJSON' ? undefined : recorder(into),
+    apply: (_, __, args) => { into.push(JSON.stringify(args)); return recorder(into); }
+  });
+  return {
+    DriveApp: {
+      getFileById: () => ({
+        makeCopy: (name, dest) => {
+          if (state.copyFails) throw new Error('Drive down');
+          const id = 'COPY' + (state.copies.length + 1);
+          state.copies.push({ id, name, folder: dest && dest.getId() });
+          state.replacements[id] = {};
+          return { getId: () => id, getUrl: () => docUrl(id), getAs: () => blob(name) };
+        }
+      }),
+      getFolderById: () => { if (state.folderMissing) throw new Error('Folder not found'); return folder; },
+      createFolder: () => { state.foldersCreated++; return folder; }
+    },
+    DocumentApp: {
+      openById: id => ({
+        getBody: () => ({
+          replaceText: (pattern, repl) => {
+            const m = /^\\\{\\\{(\w+)\\\}\\\}$/.exec(pattern);
+            if (!m) throw new Error('Mẫu tìm không đúng dạng \\{\\{TAG\\}\\}: ' + pattern);
+            state.replacements[id][m[1]] = javaReplacement(repl);
+            return {};
+          }
+        }),
+        saveAndClose() {}
+      }),
+      HorizontalAlignment: { LEFT: 'LEFT', CENTER: 'CENTER', RIGHT: 'RIGHT' },
+      create: () => {
+        state.templatesCreated++;
+        return { getId: () => 'TEMPLATE1', getUrl: () => docUrl('TEMPLATE1'), getBody: () => recorder(state.templateBody), saveAndClose() {} };
+      }
+    },
+    UrlFetchApp: {
+      fetch: (url, options) => {
+        state.fetches.push({ url, headers: options && options.headers });
+        if (state.fetchFails) throw new Error('Export failed');
+        return { getBlob: () => blob('export') };
+      }
+    },
+    ScriptApp: { getOAuthToken: () => 'TOKEN' }
+  };
+}
+const slipHarness = (state, opts = {}) => harness(opts.logRows || [], {
+  props: Object.assign({ LOAN_SLIP_TEMPLATE_ID: 'TPL', APPROVAL_SECRET: 's' }, opts.props || {}),
+  globals: slipGlobals(state)
+});
+test('Phiếu: sao chép mẫu, điền đủ 14 dấu, xuất PDF và Word', () => {
+  const st = {}; const h = slipHarness(st);
+  const out = h.ctx.createLoanSlip_(slipData());
+  assert.equal(st.copies.length, 1);
+  assert.equal(st.copies[0].name, 'PhieuMuon_L261027-A3F9C1_' + QR);
+  assert.deepEqual(Object.keys(st.replacements[st.copies[0].id]).sort(), [...run(h, 'SLIP_TAGS')].sort());
+  assert.equal(st.replacements[st.copies[0].id].MA_QR, QR);
+  assert.match(out.pdf.getName(), /\.pdf$/);
+  assert.match(out.docx.getName(), /\.docx$/);
+  assert.match(out.docUrl, /^https:\/\/docs\.google\.com\/document\/d\//);
+  assert.match(st.fetches[0].url, /\/export\?format=docx$/);
+  assert.equal(st.fetches[0].headers.Authorization, 'Bearer TOKEN');
+});
+test('Phiếu: $1, \\ và {{MA_QR}} trong dữ liệu được in nguyên văn (không lỗi, không thay lồng)', () => {
+  const st = {}; const h = slipHarness(st);
+  const purpose = 'Giảm $1 và C:\\tmp {{MA_QR}}';
+  h.ctx.createLoanSlip_(slipData({ purpose }));
+  assert.equal(st.replacements[st.copies[0].id].MUC_DICH, purpose);
+});
+test('Phiếu: thư mục "Phiếu mượn thiết bị" tạo một lần rồi dùng lại; thư mục bị xóa → tạo lại', () => {
+  const st = {}; const h = slipHarness(st);
+  h.ctx.createLoanSlip_(slipData());
+  h.ctx.createLoanSlip_(slipData({ loanId: 'L261027-B' }));
+  assert.equal(st.foldersCreated, 1);
+  assert.equal(h.props.LOAN_SLIP_FOLDER_ID, 'FOLDER1');
+  assert.equal(st.copies[1].folder, 'FOLDER1');
+  st.folderMissing = true;
+  h.ctx.createLoanSlip_(slipData({ loanId: 'L261027-C' }));
+  assert.equal(st.foldersCreated, 2, 'thư mục bị xóa → tự tạo lại, không lỗi');
+});
+test('Phiếu: loanSlipEnabled_ chỉ bật khi đã có mẫu', () => {
+  assert.equal(harness().ctx.loanSlipEnabled_(), false);
+  assert.equal(slipHarness({}).ctx.loanSlipEnabled_(), true);
+});
+test('Phiếu: tính năng ngủ khi chưa có mẫu → không Drive, không email', () => {
+  const st = {}; const h = harness([], { globals: slipGlobals(st) });
+  assert.equal(h.ctx.issueLoanSlip_(slipData()), null);
+  assert.equal(st.copies.length, 0);
+  assert.equal(h.mail.length, 0);
+});
+test('Phiếu: Drive lỗi → trả null, không ném, PTK nhận email báo lỗi có mã giao dịch', () => {
+  const st = { copyFails: true }; const h = slipHarness(st);
+  assert.equal(h.ctx.issueLoanSlip_(slipData()), null);
+  assert.equal(h.mail.length, 1);
+  assert.equal(h.mail[0][0], 'datpt@hus.edu.vn');
+  assert.match(h.mail[0][1], /Không tạo được phiếu mượn L261027-A3F9C1/);
+  assert.match(h.mail[0][2], /Drive down/);
+});
+test('Phiếu: Drive lỗi và email báo lỗi cũng lỗi → vẫn không ném', () => {
+  const h = harness([], { props: { LOAN_SLIP_TEMPLATE_ID: 'TPL' }, mailFails: true, globals: slipGlobals({ copyFails: true }) });
+  assert.equal(h.ctx.issueLoanSlip_(slipData()), null);
+});
+test('Phiếu: thành công → ghi link vào cột W đúng dòng theo Mã giao dịch', () => {
+  const st = {}; const h = slipHarness(st);
+  delete h.props.LOAN_SLIP_TEMPLATE_ID; // ghi dòng Log trước, khi tính năng còn ngủ
+  h.ctx.onFormSubmitBorrow(formEvent(borrowFields({ 'Mã QR thiết bị': 'HMO-LAB-0002', 'Họ và tên người mượn': 'Người 1' })));
+  h.ctx.onFormSubmitBorrow(formEvent(borrowFields({ 'Mã QR thiết bị': 'HMO-LAB-0002', 'Họ và tên người mượn': 'Người 2' })));
+  h.props.LOAN_SLIP_TEMPLATE_ID = 'TPL';
+  const secondId = lastRow(h)[18];
+  const slip = h.ctx.issueLoanSlip_(slipData({ loanId: secondId, qrCode: 'HMO-LAB-0002' }));
+  assert.equal(h.log.rows[2][col(h).SLIP], slip.docUrl, 'dòng của người 2');
+  assert.ok(!h.log.rows[1][col(h).SLIP], 'dòng của người 1 không bị đụng');
+});
+test('Phiếu: email cán bộ quản lý đính kèm PDF + Word; không có email CB → gửi PTK; không có phiếu → không gửi', () => {
+  const st = {}; const h = slipHarness(st);
+  const slip = h.ctx.createLoanSlip_(slipData());
+  h.ctx.sendSlipToManagers_(slipData(), slip);
+  const m = h.mail[0];
+  assert.equal(m[0], 'b@example.invalid');
+  assert.match(m[1], /^\[KTTV&HDH\] 📄 Phiếu mượn thiết bị — Máy đo chất lượng nước \(HMO-OBS-8693\)$/);
+  assert.deepEqual(Array.from(m[3].attachments, a => a.getName()),
+    ['PhieuMuon_L261027-A3F9C1_' + QR + '.pdf', 'PhieuMuon_L261027-A3F9C1_' + QR + '.docx']);
+  assert.match(m[3].htmlBody, /Nguyễn Văn A/);
+  h.ctx.sendSlipToManagers_(slipData({ managerEmails: [] }), slip);
+  assert.equal(h.mail[1][0], 'datpt@hus.edu.vn');
+  h.ctx.sendSlipToManagers_(slipData(), null);
+  assert.equal(h.mail.length, 2);
+});
+test('Phiếu: createLoanSlipTemplate chứa đủ 14 dấu, lưu ID, gọi lần 2 không tạo mẫu mới', () => {
+  const st = {}; const h = harness([], { globals: slipGlobals(st) });
+  const url = h.ctx.createLoanSlipTemplate();
+  assert.equal(st.templatesCreated, 1);
+  assert.equal(h.props.LOAN_SLIP_TEMPLATE_ID, 'TEMPLATE1');
+  assert.match(url, /^https:\/\/docs\.google\.com\/document\/d\/TEMPLATE1/);
+  const content = st.templateBody.join('');
+  for (const tag of run(h, 'SLIP_TAGS')) assert.ok(content.includes('{{' + tag + '}}'), 'mẫu thiếu {{' + tag + '}}');
+  assert.match(content, /PHIẾU MƯỢN THIẾT BỊ/);
+  assert.match(content, /CÁN BỘ MƯỢN THIẾT BỊ/);
+  assert.match(content, /CÁN BỘ BÀN GIAO/);
+  h.ctx.createLoanSlipTemplate();
+  assert.equal(st.templatesCreated, 1, 'đã có mẫu → không tạo thêm (không ghi đè mẫu anh đã sửa)');
+});
+test('Phiếu: thiếu mẫu hoặc xuất Word lỗi → createLoanSlip_ ném lỗi (người gọi bắt)', () => {
+  assert.throws(() => harness([], { globals: slipGlobals({}) }).ctx.createLoanSlip_(slipData()), /mẫu/i);
+  const st = { fetchFails: true };
+  assert.throws(() => slipHarness(st).ctx.createLoanSlip_(slipData()), /Export failed/);
+});
+
+// ---- Nối phiếu vào luồng mượn dưới 100 triệu ----
+/** Thêm cột CB quản lý (tên + email) cho thiết bị HMO-LAB-0002 (10 tr × 2 chiếc → dưới ngưỡng). */
+function withLabManager(h, name, emails, rowIndex = 3) {
+  const rows = h.sheets.Master_Data.rows;
+  rows[0].push('CB quản lý hiện tại', 'Email CB quản lý');
+  rows[rowIndex].push(name, emails);
+  return h;
+}
+const labBorrow = (over = {}) => borrowFields(Object.assign({ 'Mã QR thiết bị': 'HMO-LAB-0002' }, over));
+test('Phiếu: dưới 100 tr → người mượn nhận PDF trong email xác nhận, CB nhận PDF+Word, cột W có link, đúng thứ tự', () => {
+  const st = {}; const h = withLabManager(slipHarness(st), 'Trần Thị B', 'b@example.invalid');
+  h.ctx.onFormSubmitBorrow(formEvent(labBorrow({ 'Phụ kiện kèm theo': 'Pin sạc', 'Tình trạng thiết bị khi mượn': 'Tốt' })));
+  assert.equal(st.copies.length, 1);
+  const rep = st.replacements[st.copies[0].id];
+  assert.equal(rep.PHU_KIEN, 'Pin sạc');
+  assert.equal(rep.TINH_TRANG, 'Tốt');
+  assert.equal(rep.CAN_BO_BAN_GIAO, 'Trần Thị B');
+  assert.match(rep.DONG_PHE_DUYET, /không cần Phó Trưởng khoa phê duyệt/);
+  const iMine = h.mail.findIndex(m => m[0] === 'a@example.invalid');
+  const iMgr = h.mail.findIndex(m => m[0] === 'b@example.invalid');
+  assert.ok(iMine >= 0 && iMgr > iMine, 'người mượn nhận trước, rồi tới cán bộ quản lý');
+  assert.deepEqual(Array.from(h.mail[iMine][3].attachments, a => a.getName()), [st.copies[0].name + '.pdf']);
+  assert.match(h.mail[iMine][3].htmlBody, /Phiếu mượn thiết bị đính kèm/);
+  assert.match(h.mail[iMine][2], /Phiếu mượn thiết bị đính kèm/);
+  assert.equal(h.mail[iMgr][3].attachments.length, 2);
+  assert.equal(lastRow(h)[col(h).SLIP], `https://docs.google.com/document/d/${st.copies[0].id}/edit`);
+});
+test('Phiếu: yêu cầu cần duyệt (200 tr), tự động từ chối, tại chỗ → không tạo phiếu', () => {
+  const cases = [
+    h => h.ctx.onFormSubmitBorrow(formEvent(borrowFields())),
+    h => h.ctx.onFormSubmitBorrow(formEvent(borrowFields({ 'Mã QR thiết bị': 'HMO-PC-0001' }))),
+    h => h.ctx.onFormSubmitOnsite(onsiteEvent({ 'Mã QR thiết bị': 'HMO-LAB-0002' }))
+  ];
+  for (const run1 of cases) {
+    const st = {}; const h = slipHarness(st);
+    run1(h);
+    assert.equal(st.copies.length, 0);
+    assert.ok(!lastRow(h)[col(h).SLIP]);
+    assert.ok(!h.mail.some(m => /Phiếu mượn thiết bị/.test(m[1])), 'không email phiếu');
+  }
+});
+test('Phiếu: Drive lỗi → email xác nhận vẫn gửi (không đính kèm), PTK nhận email báo lỗi, giao dịch vẫn ghi', () => {
+  const st = { copyFails: true }; const h = slipHarness(st);
+  h.ctx.onFormSubmitBorrow(formEvent(labBorrow()));
+  assert.equal(h.log.rows.length, 2);
+  const mine = h.mail.find(m => m[0] === 'a@example.invalid');
+  assert.match(mine[1], /✅ Đã ghi nhận mượn/);
+  assert.equal(mine[3].attachments, undefined);
+  assert.ok(!/Phiếu mượn thiết bị đính kèm/.test(mine[3].htmlBody));
+  assert.ok(h.mail.some(m => m[0] === 'datpt@hus.edu.vn' && /Không tạo được phiếu mượn L\d{6}-/.test(m[1])));
+});
+test('Phiếu: người mượn không có email → không lỗi, CB vẫn nhận phiếu', () => {
+  const st = {}; const h = withLabManager(slipHarness(st), 'Trần Thị B', 'b@example.invalid');
+  h.ctx.onFormSubmitBorrow(formEvent(labBorrow({ 'Email Address': '' })));
+  const mgr = h.mail.find(m => m[0] === 'b@example.invalid');
+  assert.equal(mgr[3].attachments.length, 2);
+  assert.ok(!h.mail.some(m => m[0] === ''), 'không gửi cho địa chỉ rỗng');
+});
+test('Phiếu: thiết bị không có CB quản lý → phiếu gửi PTK, ô ký CB để trống, không "undefined"', () => {
+  const st = {}; const h = slipHarness(st);
+  h.ctx.onFormSubmitBorrow(formEvent(labBorrow()));
+  const rep = st.replacements[st.copies[0].id];
+  assert.equal(rep.CAN_BO_BAN_GIAO, '');
+  assert.ok(!Object.values(rep).some(x => /undefined|null/.test(x)));
+  assert.ok(h.mail.some(m => m[0] === 'datpt@hus.edu.vn' && /📄 Phiếu mượn thiết bị/.test(m[1])));
+});
+test('Phiếu: tính năng ngủ → luồng mượn dưới 100 tr y như cũ (không đính kèm, không email phiếu)', () => {
+  const h = harness([], { globals: slipGlobals({}) });
+  h.ctx.onFormSubmitBorrow(formEvent(labBorrow()));
+  const mine = h.mail.find(m => m[0] === 'a@example.invalid');
+  assert.equal(mine[3].attachments, undefined);
+  assert.ok(!h.mail.some(m => /Phiếu mượn thiết bị —/.test(m[1])));
+});
+
+
+// ---- Nối phiếu vào luồng phê duyệt từ 100 triệu ----
+const approveSetup = (st, opts = {}) => {
+  const h = withLabManager(slipHarness(st), 'Trần Thị B', 'b@example.invalid', 1); // QR (200 tr) cần duyệt
+  h.ctx.onFormSubmitBorrow(formEvent(borrowFields(opts.fields || {})));
+  return { h, loanId: lastRow(h)[18] };
+};
+test('Phiếu: từ 100 tr — chưa có phiếu khi chờ duyệt, có ngay sau khi PTK duyệt, đúng một lần', () => {
+  const st = {}; const { h, loanId } = approveSetup(st, { fields: { 'Phụ kiện kèm theo': 'Cáp nguồn' } });
+  assert.equal(st.copies.length, 0, 'chờ duyệt → chưa có phiếu');
+  assert.ok(!lastRow(h)[col(h).SLIP]);
+  const r = h.ctx.applyApprovalDecision_('approve', loanId);
+  assert.ok(r.ok);
+  assert.equal(st.copies.length, 1);
+  const rep = st.replacements[st.copies[0].id];
+  assert.match(rep.DONG_PHE_DUYET, /^Phó Trưởng khoa đã phê duyệt qua email lúc \d{2}:\d{2} \d{2}\/\d{2}\/\d{4}\.$/);
+  assert.equal(rep.PHU_KIEN, 'Cáp nguồn');
+  assert.equal(rep.CAN_BO_BAN_GIAO, 'Trần Thị B');
+  const mine = h.mail.filter(m => m[0] === 'a@example.invalid').pop();
+  assert.match(mine[1], /✅ Đã duyệt mượn/);
+  assert.deepEqual(Array.from(mine[3].attachments, a => a.getName()), [st.copies[0].name + '.pdf']);
+  assert.match(mine[3].htmlBody, /Phiếu mượn thiết bị đính kèm/);
+  const mgr = h.mail.find(m => m[0] === 'b@example.invalid');
+  assert.equal(mgr[3].attachments.length, 2);
+  assert.equal(lastRow(h)[col(h).SLIP], `https://docs.google.com/document/d/${st.copies[0].id}/edit`);
+  const mailCount = h.mail.length;
+  const again = h.ctx.applyApprovalDecision_('approve', loanId);
+  assert.equal(again.ok, false);
+  assert.equal(st.copies.length, 1, 'bấm duyệt lần 2 không tạo phiếu thứ hai');
+  assert.equal(h.mail.length, mailCount, 'không gửi lại email');
+});
+test('Phiếu: PTK từ chối → không phiếu', () => {
+  const st = {}; const { h, loanId } = approveSetup(st);
+  assert.ok(h.ctx.applyApprovalDecision_('reject', loanId).ok);
+  assert.equal(st.copies.length, 0);
+  assert.ok(!lastRow(h)[col(h).SLIP]);
+  assert.ok(!h.mail.some(m => /Phiếu mượn thiết bị —/.test(m[1])));
+});
+test('Phiếu: duyệt khi Drive lỗi → trạng thái duyệt vẫn ghi, email "Đã duyệt" vẫn gửi (không đính kèm), PTK nhận email báo lỗi', () => {
+  const st = { copyFails: true }; const { h, loanId } = approveSetup(st);
+  const r = h.ctx.applyApprovalDecision_('approve', loanId);
+  assert.ok(r.ok);
+  assert.match(String(lastRow(h)[12]), /^✅ Đã phê duyệt/);
+  const mine = h.mail.filter(m => m[0] === 'a@example.invalid').pop();
+  assert.match(mine[1], /✅ Đã duyệt mượn/);
+  assert.equal(mine[3].attachments, undefined);
+  assert.ok(h.mail.some(m => m[0] === 'datpt@hus.edu.vn' && new RegExp('Không tạo được phiếu mượn ' + loanId).test(m[1])));
+});
+test('Phiếu: duyệt khi người mượn không có email → CB vẫn nhận phiếu', () => {
+  const st = {}; const { h, loanId } = approveSetup(st, { fields: { 'Email Address': '' } });
+  assert.ok(h.ctx.applyApprovalDecision_('approve', loanId).ok);
+  const mgr = h.mail.find(m => m[0] === 'b@example.invalid');
+  assert.equal(mgr[3].attachments.length, 2);
+  assert.ok(!h.mail.some(m => m[0] === ''));
+});
+test('Phiếu: tính năng ngủ → duyệt y như cũ (không đính kèm, không email phiếu)', () => {
+  const h = harness([], { props: { APPROVAL_SECRET: 's' }, globals: slipGlobals({}) });
+  h.ctx.onFormSubmitBorrow(formEvent(borrowFields()));
+  assert.ok(h.ctx.applyApprovalDecision_('approve', lastRow(h)[18]).ok);
+  const mine = h.mail.filter(m => m[0] === 'a@example.invalid').pop();
+  assert.equal(mine[3].attachments, undefined);
+  assert.ok(!h.mail.some(m => /Phiếu mượn thiết bị —/.test(m[1])));
+});
+
+// ---- Tạo lại phiếu (menu) ----
+const logSs = h => run(h, 'SpreadsheetApp.openById()');
+test('Tạo lại phiếu: dòng đã duyệt → ok, link cột W đổi, email chỉ gửi CB (không gửi lại người mượn)', () => {
+  const st = {}; const { h, loanId } = approveSetup(st);
+  h.ctx.applyApprovalDecision_('approve', loanId);
+  const oldLink = lastRow(h)[col(h).SLIP];
+  const toMine = () => h.mail.filter(m => m[0] === 'a@example.invalid').length;
+  const mineBefore = toMine(); const mgrBefore = h.mail.filter(m => m[0] === 'b@example.invalid').length;
+  const r = h.ctx.regenerateLoanSlipForRow_(logSs(h), 2);
+  assert.ok(r.ok, r.message);
+  assert.equal(st.copies.length, 2);
+  assert.notEqual(lastRow(h)[col(h).SLIP], oldLink);
+  assert.equal(lastRow(h)[col(h).SLIP], r.docUrl);
+  assert.equal(toMine(), mineBefore, 'người mượn không nhận lại');
+  assert.equal(h.mail.filter(m => m[0] === 'b@example.invalid').length, mgrBefore + 1);
+});
+test('Tạo lại phiếu: chờ duyệt / từ chối / tại chỗ / tính năng ngủ / dòng lạ → ok:false, không Drive', () => {
+  const pending = approveSetup({});
+  assert.equal(pending.h.ctx.regenerateLoanSlipForRow_(logSs(pending.h), 2).ok, false);
+  const rejSt = {}; const rej = approveSetup(rejSt);
+  rej.h.ctx.applyApprovalDecision_('reject', rej.loanId);
+  const rr = rej.h.ctx.regenerateLoanSlipForRow_(logSs(rej.h), 2);
+  assert.equal(rr.ok, false); assert.match(rr.message, /từ chối/);
+  const onSt = {}; const on = slipHarness(onSt);
+  on.ctx.onFormSubmitOnsite(onsiteEvent({ 'Mã QR thiết bị': 'HMO-LAB-0002' }));
+  const ro = on.ctx.regenerateLoanSlipForRow_(logSs(on), 2);
+  assert.equal(ro.ok, false); assert.match(ro.message, /tại chỗ/);
+  const ds = harness([], { globals: slipGlobals({}) });
+  ds.ctx.onFormSubmitBorrow(formEvent(labBorrow()));
+  const rd = ds.ctx.regenerateLoanSlipForRow_(logSs(ds), 2);
+  assert.equal(rd.ok, false); assert.match(rd.message, /mẫu phiếu/);
+  assert.equal(slipHarness({}).ctx.regenerateLoanSlipForRow_(logSs(slipHarness({})), 5).ok, false, 'dòng không có giao dịch');
+  assert.equal(rejSt.copies.length + onSt.copies.length, 0);
+});
+test('Tạo lại phiếu: từ 100 tr đọc giờ duyệt từ cột M; thiếu giờ → dòng "…đã phê duyệt qua email."; dưới 100 tr → không cần duyệt', () => {
+  const st = {}; const { h, loanId } = approveSetup(st);
+  h.ctx.applyApprovalDecision_('approve', loanId);
+  h.log.rows[1][12] = '✅ Đã phê duyệt — PTK (27/10/2026 08:15)';
+  assert.ok(h.ctx.regenerateLoanSlipForRow_(logSs(h), 2).ok);
+  assert.match(st.replacements[st.copies[1].id].DONG_PHE_DUYET, /lúc 08:15 27\/10\/2026\.$/);
+  h.log.rows[1][12] = '✅ Đã phê duyệt — PTK';
+  assert.ok(h.ctx.regenerateLoanSlipForRow_(logSs(h), 2).ok);
+  assert.equal(st.replacements[st.copies[2].id].DONG_PHE_DUYET, 'Phó Trưởng khoa đã phê duyệt qua email.');
+  const st2 = {}; const h2 = slipHarness(st2);
+  h2.ctx.onFormSubmitBorrow(formEvent(labBorrow()));
+  assert.ok(h2.ctx.regenerateLoanSlipForRow_(logSs(h2), 2).ok);
+  assert.match(st2.replacements[st2.copies[1].id].DONG_PHE_DUYET, /không cần Phó Trưởng khoa phê duyệt/);
+});
+test('Tạo lại phiếu: menu dùng dòng đang chọn của Log_Muon_Tra, báo kết quả bằng toast', () => {
+  const st = {}; const { h, loanId } = approveSetup(st);
+  h.ctx.applyApprovalDecision_('approve', loanId);
+  const toasts = []; let selectedRow = 2; let activeSheet = h.log;
+  const app = h.ctx.SpreadsheetApp;
+  app.getActiveSheet = () => activeSheet;
+  app.getActiveRange = () => ({ getRow: () => selectedRow });
+  app.getActiveSpreadsheet = () => ({ toast: msg => toasts.push(msg) });
+  h.ctx.regenerateLoanSlip();
+  assert.equal(st.copies.length, 2);
+  assert.match(toasts[0], /Đã tạo lại phiếu/);
+  selectedRow = 1; h.ctx.regenerateLoanSlip();
+  assert.match(toasts[1], /dòng giao dịch/);
+  activeSheet = h.sheets.Master_Data; selectedRow = 2; h.ctx.regenerateLoanSlip();
+  assert.match(toasts[2], /Log_Muon_Tra/);
+  assert.equal(st.copies.length, 2, 'dòng tiêu đề / sheet khác không tạo phiếu');
+});
+
+// ---- Đợt sửa sau review cuối ----
+test('Phiếu: email người mượn lỗi → CB quản lý VẪN nhận phiếu, lỗi vẫn báo ra ngoài', () => {
+  const st = {};
+  const h = harness([], {
+    props: { LOAN_SLIP_TEMPLATE_ID: 'TPL', APPROVAL_SECRET: 's' },
+    globals: slipGlobals(st),
+    mailFails: args => args[0] === 'a@example.invalid'
+  });
+  withLabManager(h, 'Trần Thị B', 'b@example.invalid');
+  assert.throws(() => h.ctx.onFormSubmitBorrow(formEvent(labBorrow())), /gửi email thất bại/);
+  const mgr = h.mail.find(m => m[0] === 'b@example.invalid');
+  assert.ok(mgr, 'CB quản lý phải nhận phiếu dù email người mượn lỗi');
+  assert.equal(mgr[3].attachments.length, 2);
+  assert.equal(h.log.rows.length, 2, 'giao dịch vẫn ghi');
+});
+test('Phiếu: sheet còn cấu trúc v3 (22 cột) khi duyệt yêu cầu cũ → tự nâng v4, ghi được link cột W', () => {
+  const st = {}; const { h, loanId } = approveSetup(st);
+  // Giả lập ngay sau deploy: sheet chưa nâng v4 (chưa có cột W), dòng chờ duyệt đã có từ trước
+  h.props.LOG_SCHEMA_VERSION = '3';
+  h.log.maxCols = 22;
+  h.log.rows[0].length = 22;
+  h.log.rows[1].length = 22;
+  assert.ok(h.ctx.applyApprovalDecision_('approve', loanId).ok);
+  assert.equal(h.log.rows[0][col(h).SLIP], 'Phiếu mượn', 'header cột W được thêm');
+  assert.equal(h.log.rows[1][col(h).SLIP], `https://docs.google.com/document/d/${st.copies[0].id}/edit`);
+  assert.equal(h.props.LOG_SCHEMA_VERSION, '4');
 });
 
 // ---------- Kết quả ----------
