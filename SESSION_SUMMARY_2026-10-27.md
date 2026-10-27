@@ -35,3 +35,5 @@
 **Chưa làm / việc còn lại:** ĐÃ commit và push lên GitHub `main` (61a2e82 code + test, 8940838 tài liệu; xác minh `main` khớp `origin/main`). CHƯA `clasp push`, CHƯA deploy, CHƯA sửa Google Sheets. Anh Đạt sẽ deploy ngày 28/10 trên máy cơ quan (máy đó cần `clasp` đã `clasp login`, hoặc dán code vào Apps Script thủ công). Quy trình deploy: test → `clasp push -f` → mở Sheet, menu "📄 Tạo mẫu phiếu mượn" (bấm "Cho phép" quyền Drive/Docs) → `clasp create-version` → `clasp update-deployment … -V <n>` → mượn thử 1 TB dưới 100 tr và 1 TB từ 100 tr; kiểm tra in thử phiếu (bố cục bảng/ô ký trong Google Docs thật chưa được nhìn thấy).
 
 **Sau deploy (anh Đạt yêu cầu đợi deploy xong mới làm):** thêm một dòng về phiếu mượn vào flyer A4 (`FLYER_HUONG_DAN_SU_DUNG_A4.html` + xuất lại PDF, bước 6), cảnh 8 của `KICH_BAN_MOTION_GRAPHIC_HMO_Eq.md`, và `QUY_TRINH_SU_DUNG_THIET_BI.docx/.pdf` (mục mượn mang đi + trang Thao tác nhanh). Flyer/áp phích sử dụng tại chỗ không cần sửa. Chưa sửa file nào trong số này.
+
+**Bổ sung (cuối phiên):** thêm `DEPLOY_PHIEU_MUON.md` ở thư mục gốc, checklist deploy từng bước để anh Đạt làm trên máy cơ quan sau `git pull`.
