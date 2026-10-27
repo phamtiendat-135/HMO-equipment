@@ -68,7 +68,7 @@ Tem QR trên thiết bị ──► Trang tra cứu (GitHub Pages, cài được
 
 Sửa Master_Data có hiệu lực **ngay**, không cần deploy.
 
-### 2.3 Log_Muon_Tra — cấu trúc A–V
+### 2.3 Log_Muon_Tra — cấu trúc A–W
 
 | Cột | Ý nghĩa | Cột | Ý nghĩa |
 |---|---|---|---|
@@ -82,8 +82,9 @@ Sửa Master_Data có hiệu lực **ngay**, không cần deploy.
 | H | Ngày dự kiến trả (tại chỗ: giờ kết thúc) | S | Mã giao dịch (`Lyymmdd-XXXXXX`) |
 | I | Ngày trả (khai trả / tại chỗ: giờ kết thúc) | T, U | Nguồn phản hồi mượn / trả (chống ghi trùng) |
 | J, K | Tình trạng khi mượn / khi trả | V | **Kiểm tra nhận lại** (⏳ Chờ kiểm tra · ✅ Hoạt động tốt · ⚠️ Có sự cố · 🔧 Đã khắc phục) |
+| | | W | **Phiếu mượn** (link Google Doc của phiếu mượn mang đi, hệ thống tự ghi; trống nếu chưa có phiếu) |
 
-Các cột S–V do hệ thống tự thêm (cấu trúc phiên bản 3, cờ `LOG_SCHEMA_VERSION` trong Script Properties). **Không xoá cột, không chèn cột giữa A–V.**
+Các cột S–W do hệ thống tự thêm (cấu trúc phiên bản 4, cờ `LOG_SCHEMA_VERSION` trong Script Properties). **Không xoá cột, không chèn cột giữa A–W.**
 
 ---
 
@@ -149,7 +150,7 @@ Code nằm trong `Google_Apps_Script.js`; cấu hình clasp có sẵn: `.clasp.j
 ```powershell
 cd D:\HMO_equipment\HMO-equipment
 node tests/backend_regression.cjs      # phải pass hết
-clasp push -f
+clasp push -f                          # lần đầu có phiếu: mở Sheet, menu 📄 Tạo mẫu phiếu mượn, bấm "Cho phép" (mục 7)
 clasp create-version "mô tả thay đổi"  # in ra: Created version N
 clasp update-deployment AKfycbwfXPsePpUOqJp6F4-c58gCwzJPsCyBDFN3JMGWTHuO_F_HR4uMYl9r9s7UWfdGCmHI_Q -V N
 ```
@@ -176,6 +177,9 @@ Trong Google Sheet master, menu **🔧 Quản lý TB**:
 1. **📘 Tạo cột Link hướng dẫn sử dụng (Master_Data)**, rồi dán link Google Site của từng thiết bị khi có.
 2. **📧 Tạo cột Email CB quản lý (Master_Data)**, rồi điền email cán bộ quản lý từng thiết bị.
 3. **🔑 Tạo mã truy cập Nhật ký mới**: gửi mã 8 số cho cán bộ cần xem Nhật ký toàn Khoa.
+4. **📄 Tạo mẫu phiếu mượn (chạy 1 lần)**: dựng Google Doc mẫu phiếu mượn thiết bị (lưu ID vào Script Properties `LOAN_SLIP_TEMPLATE_ID`). **Lần đầu Google hỏi quyền Drive/Docs → bấm "Cho phép".** Sau đó mở mẫu (link hiện trong thông báo và trong Executions) để chỉnh chữ, logo, căn lề; **giữ nguyên các dấu `{{...}}`** (14 dấu: `SO_PHIEU`, `TEN_THIET_BI`, `MA_QR`, `PHU_KIEN`, `TINH_TRANG`, `NGUOI_MUON`, `DON_VI`, `EMAIL`, `MUC_DICH`, `DIA_DIEM`, `NGAY_MUON`, `HAN_TRA`, `DONG_PHE_DUYET`, `CAN_BO_BAN_GIAO`). Chạy lại menu này khi đã có mẫu thì **không** tạo mẫu mới (không ghi đè mẫu đã sửa).
+
+**Phiếu mượn (mượn mang đi):** chỉ hoạt động sau bước 4. Chưa có mẫu thì hệ thống chạy y như trước (không phiếu, không email thêm). Khi đã có mẫu: thiết bị < 100 tr có phiếu ngay khi ghi nhận; ≥ 100 tr có phiếu ngay sau khi PTK bấm duyệt; từ chối / tự từ chối / sử dụng tại chỗ không có phiếu. Người mượn nhận **PDF** đính kèm email "Đã ghi nhận mượn" / "Đã duyệt"; **CB quản lý** (cột "Email CB quản lý", trống thì PTK) nhận email riêng "📄 Phiếu mượn thiết bị" kèm **PDF + Word**. File lưu trong thư mục Drive "Phiếu mượn thiết bị" (tự tạo), link ghi ở cột W của Log. Lỗi tạo phiếu **không** làm hỏng giao dịch: email xác nhận vẫn đi (thiếu file đính kèm), PTK nhận "⚠️ Không tạo được phiếu mượn …".
 
 Có thể chỉnh trong `CONFIG` (đầu `Google_Apps_Script.js`, sửa xong phải deploy):
 
@@ -236,6 +240,8 @@ Cài jsdom một lần, **ngoài repo**: `npm i jsdom@24.1.3` trong một thư m
 | 🔑 Tạo mã truy cập Nhật ký mới | Đổi mã khi cần (mã cũ hết hiệu lực) |
 | 📘 / 📧 Tạo cột Link hướng dẫn / Email CB quản lý | Một lần |
 | 🔍 Gửi lại email kiểm tra đang chờ | Sau khi điền email CB, hoặc CB báo không thấy email |
+| 📄 Tạo mẫu phiếu mượn (chạy 1 lần) | Mục 7 bước 4; chạy lại không tạo mẫu mới |
+| 📄 Tạo lại phiếu mượn (dòng đang chọn) | Chọn một dòng trong Log_Muon_Tra rồi bấm: tạo phiếu mới, đổi link cột W, gửi email cho CB quản lý (người mượn không nhận lại). Chỉ dòng mượn mang đi đã được chấp nhận |
 
 ### 9.3 Xử lý sự cố thường gặp
 
@@ -250,6 +256,8 @@ Cài jsdom một lần, **ngoài repo**: `npm i jsdom@24.1.3` trong một thư m
 | Người mượn khai nhầm hạn trả | Sửa cột **H** của dòng đó; nhắc trả theo ngày mới |
 | Điện thoại không thấy giao diện mới | Đóng hẳn app/trình duyệt rồi mở lại (kiểm tra đã tăng `CACHE_NAME` chưa) |
 | Thiết bị hỏng hẳn | Đổi cột tình trạng trong Master_Data thành "Hỏng" → hệ thống tự chặn mượn |
+| PTK nhận "⚠️ Không tạo được phiếu mượn …" | Đọc nguyên nhân trong email (hết quota Drive, mẫu bị xóa, chưa cấp quyền…). Sửa xong → chọn dòng giao dịch → menu **Tạo lại phiếu mượn** |
+| Mẫu phiếu bị xóa nhầm | Xóa dòng `LOAN_SLIP_TEMPLATE_ID` trong Script Properties rồi chạy menu **Tạo mẫu phiếu mượn** |
 
 ---
 

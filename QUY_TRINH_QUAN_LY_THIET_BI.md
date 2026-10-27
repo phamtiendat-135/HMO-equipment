@@ -115,12 +115,13 @@ Thiết bị **< 100 triệu**: hệ thống tự ghi nhận yêu cầu hợp l�
 | 2 | **Hệ thống tự kiểm tra**; **tự từ chối** (email báo người mượn + PTK) nếu: mã QR không có trong danh mục · thiết bị Hỏng / Không hoạt động · đã được mượn hoặc giữ chỗ hết · ngày trả không hợp lệ hoặc trước ngày mượn | Hệ thống |
 | 3a | **Thiết bị < 100 tr:** hệ thống **ghi nhận ngay**. Người mượn nhận email **"✅ Đã ghi nhận mượn"** (hạn trả, nút "Thêm vào lịch", nút "Hướng dẫn sử dụng"); PTK nhận email thông báo | Hệ thống |
 | 3b | **Thiết bị ≥ 100 tr:** trạng thái **Chờ duyệt** (đã giữ chỗ). PTK nhận email **"⚠️ Yêu cầu mượn cần phê duyệt"**, bấm **✅ Phê duyệt** hoặc **❌ Từ chối** → trang xác nhận → bấm xác nhận. Link dùng 1 lần, hạn 14 ngày. Người mượn nhận email kết quả (đã duyệt: có hạn trả, nút lịch, nút hướng dẫn) | Phó Trưởng khoa |
-| 4 | **Kiểm tra trước khi bàn giao:** thiết bị chính hoạt động, phụ kiện đủ (ví dụ ADCP 6527 kèm bộ rung điện 6532, giá lắp xuồng 6530), pin/nguồn, tài liệu. Bàn giao, người mượn ký nhận | CB quản lý thiết bị |
+| 3c | **Phiếu mượn thiết bị** được tự tạo ngay khi yêu cầu được chấp nhận (< 100 tr: ngay lúc ghi nhận; ≥ 100 tr: ngay sau khi PTK duyệt), điền sẵn từ form. Người mượn nhận bản **PDF** đính kèm email xác nhận để tự in; CB quản lý nhận email riêng kèm PDF + Word. Yêu cầu bị từ chối thì không có phiếu | Hệ thống |
+| 4 | **Kiểm tra trước khi bàn giao:** thiết bị chính hoạt động, phụ kiện đủ (ví dụ ADCP 6527 kèm bộ rung điện 6532, giá lắp xuồng 6530), pin/nguồn, tài liệu. **In phiếu mượn; cán bộ mượn thiết bị và cán bộ bàn giao cùng ký** (phiếu là chứng từ giấy của lần bàn giao) | CB quản lý thiết bị, người mượn |
 | 5 | Sử dụng đúng mục đích, đúng hạn | Người mượn |
 
 Ngưỡng 100 triệu tính theo **giá một chiếc** = nguyên giá ÷ số lượng (cột "Nguyên giá" trong danh mục ghi **tổng** của dòng tài sản, như sổ kế toán). Luôn qua Phó Trưởng khoa, ví dụ: AWAC600 Nortek 2021 (~1.216 tr), thiết bị định vị vệ tinh Hemisphere S631 (**960 tr/máy**, 2 máy, tổng 1.920 tr), ADCP FlowQuest (~471 tr/máy, 2 máy, tổng 941,6 tr), các bộ mô hình thí nghiệm (420 – 2.263 tr).
 
-Bước 4 là **thao tác ngoài hệ thống** (chưa có bước "bàn giao" trên hệ thống).
+Bước 4 là **thao tác ngoài hệ thống** (chưa có bước "đã bàn giao" trên hệ thống); phiếu đã ký do Khoa lưu bản giấy. Nếu phiếu không tạo được (hết quota, mẫu bị xóa), PTK nhận email báo lỗi và tạo lại bằng menu "Tạo lại phiếu mượn".
 
 ---
 
@@ -336,4 +337,5 @@ Theo `HMO_Master_Equipment_Database.xlsx`: **mọi thiết bị đang hoạt đ�
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
 | 1.0 | 28/04/2026 | Ban hành lần đầu |
+| 2.0 (dự thảo) | 27/10/2026 | Thêm phiếu mượn thiết bị (mượn mang đi): tự điền từ form, người mượn và CB quản lý nhận, hai bên ký khi bàn giao |
 | 2.0 (dự thảo) | 19/10/2026 | Tách mượn mang đi / sử dụng tại chỗ; hệ thống tự kiểm tra và từ chối; PTK duyệt qua email; TB < 100 tr tự ghi nhận; kiểm tra khi nhận lại và xử lý sự cố; bảng nhắc việc và email tự động; báo cáo hiệu quả sử dụng năm; Nhật ký toàn Khoa; bảo trì nhắc cả CB quản lý; cập nhật kiểm kê (làm tay), hạ tầng, phụ lục C |

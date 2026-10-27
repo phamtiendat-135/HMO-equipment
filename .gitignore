@@ -14,3 +14,6 @@ Thumbs.db
 
 # Claude Code local settings (quyen ca nhan, khong commit)
 .claude/settings.local.json
+
+# Visual companion (brainstorming)
+.superpowers/

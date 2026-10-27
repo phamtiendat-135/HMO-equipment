@@ -96,6 +96,9 @@ QR Label on device
 | `checkPendingInspections_()` | qua `checkOverdueReturns` (8h hằng ngày) | Khoản chờ kiểm tra ≥ 2 ngày → nhắc CB (rồi 2 ngày/lần) + báo PTK |
 | `resendPendingInspections()` / `ensureManagerEmailColumn()` | Manual (menu) | Gửi lại email kiểm tra đang chờ / tạo cột "Email CB quản lý" trong Master_Data |
 | `onFormSubmitMaintenance(e)` / `onFormSubmitDamage(e)` | qua dispatcher | Ghi `Log_Bao_Tri` / `Log_Bao_Hong`, báo admin |
+| `createLoanSlipTemplate()` | Manual (menu, 1 lần) | Dựng Google Doc mẫu phiếu mượn (14 dấu `{{...}}`), lưu `LOAN_SLIP_TEMPLATE_ID`; có mẫu rồi thì không tạo lại. **Chưa chạy = tính năng phiếu ngủ** |
+| `issueLoanSlip_(d)` / `createLoanSlip_(d)` | qua `notifyLoanRequest_` (< 100 tr) và `applyApprovalDecision_` (≥ 100 tr, sau khi duyệt) | Sao chép mẫu → điền → PDF + Word → ghi link cột W. **Không bao giờ ném lỗi**: lỗi → email PTK "Không tạo được phiếu mượn", giao dịch/email xác nhận vẫn đi |
+| `sendSlipToManagers_(d, slip)` / `regenerateLoanSlip()` | tự động / menu | Email PDF+Word cho CB quản lý (trống → PTK) / tạo lại phiếu cho dòng đang chọn trong Log |
 | `resendPendingApprovals()` | Manual (menu) | Gửi lại email phê duyệt cho mọi yêu cầu còn chờ (link mới) |
 | `confirmApprovalFromPage()` | google.script.run | Bước 2 phê duyệt: kiểm lại chữ ký, chỉ ghi khi còn CHỜ DUYỆT |
 | `syncFormResponsesToLog()` | Manual (menu) | Đồng bộ dữ liệu cũ từ Form Responses → Log_Muon_Tra |
@@ -267,6 +270,16 @@ Trước khi kết thúc MỌI phiên làm việc trong workspace này, tạo ho
 - Phát hiện: "Nguyên giá (tr.đ)" ghi TỔNG dòng tài sản (16 dòng có Số lượng > 1, VD Hemisphere S631: 2 máy = 1.920 tr → 960 tr/máy; ADCP 2 máy = 941,6 tr → ~471 tr/máy) nhưng email và ngưỡng duyệt dùng số tổng.
 - Quyết định (anh Đạt): GIỮ cột tổng (khớp sổ tài sản); code tính `unitValue = value / qty` trong `getMasterRecord_` → ngưỡng duyệt (`recordLoanRequest_`, `syncFormResponsesToLog`) và email (`equipValueText_`, `formatMillion_`: "960 triệu VNĐ/chiếc (tổng 2 chiếc: 1.920 triệu)"). Báo cáo tháng vẫn cộng tổng dòng. Không đổi kết quả duyệt của thiết bị nào hiện có.
 - ✅ Deploy **version 18** (xác minh `@18`, code trên Google khớp repo). Sửa số trong SOP, HUONG_DAN, QUY_TRINH_SU_DUNG (.docx/.pdf).
+
+## Changes Log (Session 27/10/2026 — Phiếu mượn thiết bị)
+
+- Thêm **phiếu mượn thiết bị** cho mượn mang đi (thiết kế: `docs/superpowers/specs/2026-10-27-phieu-muon-thiet-bi-design.md`, kế hoạch: `docs/superpowers/plans/2026-10-27-phieu-muon-thiet-bi.md`). Mẫu là Google Doc (sửa như Word, giữ các dấu `{{...}}`); hai ô ký: Cán bộ mượn thiết bị (trái) + Cán bộ bàn giao (phải); dòng phê duyệt ghi lại việc PTK duyệt (không có ô ký PTK); không in giá trị, không in điện thoại (form không thu).
+- Thời điểm: TB < 100 tr → ngay khi ghi nhận; TB ≥ 100 tr → ngay sau khi PTK duyệt. Từ chối / tự từ chối / tại chỗ → không phiếu. Người mượn nhận PDF (đính vào email "Đã ghi nhận mượn"/"Đã duyệt"); CB quản lý (cột "Email CB quản lý", trống → PTK) nhận email riêng kèm PDF + Word.
+- Log_Muon_Tra thêm cột **W "Phiếu mượn"** (link Google Doc; `LOG_SCHEMA_VERSION=4`).
+- **Tính năng ngủ cho tới khi chạy menu "📄 Tạo mẫu phiếu mượn"** (cần "Cho phép" quyền Drive/Docs lần đầu) → deploy code trước không làm lỗi trigger. Không sửa `appsscript.json` (Apps Script tự phát hiện quyền).
+- Menu "📄 Tạo lại phiếu mượn (dòng đang chọn)": chỉ gửi CB quản lý.
+- Test: `tests/backend_regression.cjs` 125 test (94 cũ + 31 mới; harness có thêm `opts.globals` và `slipGlobals` giả Drive/Docs).
+- ⚠️ **CHƯA deploy, CHƯA kiểm thử với Drive/Docs/email thật.** Việc còn lại: chạy test → `clasp push` → menu Tạo mẫu phiếu mượn (Cho phép) → `create-version` → `update-deployment` → mượn thử 1 TB < 100 tr và 1 TB ≥ 100 tr.
 
 ## Deploy Apps Script (clasp)
 
