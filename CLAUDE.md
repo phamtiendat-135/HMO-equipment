@@ -279,7 +279,7 @@ Trước khi kết thúc MỌI phiên làm việc trong workspace này, tạo ho
 - **Tính năng ngủ cho tới khi chạy menu "📄 Tạo mẫu phiếu mượn"** (cần "Cho phép" quyền Drive/Docs lần đầu) → deploy code trước không làm lỗi trigger. Không sửa `appsscript.json` (Apps Script tự phát hiện quyền).
 - Menu "📄 Tạo lại phiếu mượn (dòng đang chọn)": chỉ gửi CB quản lý.
 - Test: `tests/backend_regression.cjs` 125 test (94 cũ + 31 mới; harness có thêm `opts.globals` và `slipGlobals` giả Drive/Docs).
-- ⚠️ **CHƯA deploy, CHƯA kiểm thử với Drive/Docs/email thật.** Việc còn lại: chạy test → `clasp push` → menu Tạo mẫu phiếu mượn (Cho phép) → `create-version` → `update-deployment` → mượn thử 1 TB < 100 tr và 1 TB ≥ 100 tr.
+- ✅ Đã deploy **version 19** (28/10, xác minh `@19`, code trên Google khớp repo). ⚠️ **CHƯA kiểm thử với Drive/Docs/email thật.** Việc còn lại: menu Tạo mẫu phiếu mượn (Cho phép) → mượn thử 1 TB < 100 tr và 1 TB ≥ 100 tr → in thử PDF.
 
 ## Deploy Apps Script (clasp)
 
