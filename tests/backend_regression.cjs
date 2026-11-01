@@ -1191,7 +1191,8 @@ test('Phiếu: escapeSlipReplacement_ thoát \\ và $; slipAttachmentName_ đún
  * state.copyFails / fetchFails / folderMissing giả lỗi.
  */
 function slipGlobals(state) {
-  Object.assign(state, { copies: [], replacements: {}, fetches: [], foldersCreated: 0, templatesCreated: 0, templateBody: [] });
+  Object.assign(state, { copies: [], replacements: {}, fetches: [], foldersCreated: 0, templatesCreated: 0, templateBody: [],
+    children: state.children || [], removed: [] });
   const blob = name => ({ name, getName() { return this.name; }, setName(n) { this.name = n; return this; } });
   const folder = { getId: () => 'FOLDER1' };
   const javaReplacement = repl => {
@@ -1204,9 +1205,25 @@ function slipGlobals(state) {
     return out;
   };
   const docUrl = id => `https://docs.google.com/document/d/${id}/edit`;
-  const recorder = into => new Proxy(function () {}, {
-    get: (_, key) => key === 'toJSON' ? undefined : recorder(into),
-    apply: (_, __, args) => { into.push(JSON.stringify(args)); return recorder(into); }
+  // Ghi lại mọi lời gọi dạng `tênHàm[đối số JSON]`; trả về chính nó để chuỗi gọi liên tiếp không lỗi.
+  const recorder = (into, name = '') => new Proxy(function () {}, {
+    get: (_, key) => key === 'toJSON' ? undefined : recorder(into, String(key)),
+    apply: (_, __, args) => {
+      into.push(name + JSON.stringify(args));
+      if (name === 'getNumChildren') return 1; // ô bảng luôn có 1 đoạn
+      if (name === 'getType') return 'PARAGRAPH';
+      return recorder(into, name);
+    }
+  });
+  // Các phần tử cấp trang của Doc giả (để thử việc xóa đoạn trống thừa): state.children / state.removed.
+  const pageApi = () => ({
+    getNumChildren: () => state.children.length,
+    getChild: i => state.children[i],
+    removeChild: child => { state.removed.push(child); }
+  });
+  // Body giả của Doc mở lại: replaceText ghi vào replacements, mọi hàm khác chỉ ghi lại.
+  const recordingBody = (base, into) => new Proxy(base, {
+    get: (target, key) => key in target ? target[key] : (key === 'toJSON' ? undefined : recorder(into, String(key)))
   });
   return {
     DriveApp: {
@@ -1224,20 +1241,22 @@ function slipGlobals(state) {
     },
     DocumentApp: {
       openById: id => ({
-        getBody: () => ({
+        getBody: () => recordingBody(Object.assign(pageApi(), {
           replaceText: (pattern, repl) => {
             const m = /^\\\{\\\{(\w+)\\\}\\\}$/.exec(pattern);
             if (!m) throw new Error('Mẫu tìm không đúng dạng \\{\\{TAG\\}\\}: ' + pattern);
-            state.replacements[id][m[1]] = javaReplacement(repl);
+            (state.replacements[id] = state.replacements[id] || {})[m[1]] = javaReplacement(repl);
             return {};
           }
-        }),
-        saveAndClose() {}
+        }), state.templateBody),
+        saveAndClose() { state.saved = (state.saved || 0) + 1; }
       }),
-      HorizontalAlignment: { LEFT: 'LEFT', CENTER: 'CENTER', RIGHT: 'RIGHT' },
+      HorizontalAlignment: { LEFT: 'LEFT', CENTER: 'CENTER', RIGHT: 'RIGHT', JUSTIFY: 'JUSTIFY' },
+      VerticalAlignment: { TOP: 'TOP', CENTER: 'CENTER', BOTTOM: 'BOTTOM' },
+      ElementType: { PARAGRAPH: 'PARAGRAPH', TABLE: 'TABLE' },
       create: () => {
         state.templatesCreated++;
-        return { getId: () => 'TEMPLATE1', getUrl: () => docUrl('TEMPLATE1'), getBody: () => recorder(state.templateBody), saveAndClose() {} };
+        return { getId: () => 'TEMPLATE1', getUrl: () => docUrl('TEMPLATE1'), getBody: () => recordingBody(pageApi(), state.templateBody), saveAndClose() {} };
       }
     },
     UrlFetchApp: {
@@ -1345,6 +1364,101 @@ test('Phiếu: createLoanSlipTemplate chứa đủ 14 dấu, lưu ID, gọi lầ
   assert.match(content, /CÁN BỘ BÀN GIAO/);
   h.ctx.createLoanSlipTemplate();
   assert.equal(st.templatesCreated, 1, 'đã có mẫu → không tạo thêm (không ghi đè mẫu anh đã sửa)');
+});
+// Mock Docs chỉ ghi lại tên hàm + đối số, nên các test dưới đây kiểm CHỦ Ý định dạng đã được yêu cầu
+// (khổ giấy, viền, đậm/nghiêng, nền ô, font), không phải hình ảnh thật. Hình ảnh thật chỉ xem được trên Google Docs.
+const dungMau = () => {
+  const st = {}; const h = harness([], { globals: slipGlobals(st) });
+  h.ctx.createLoanSlipTemplate();
+  return { st, h, calls: st.templateBody };
+};
+const dem = (calls, entry) => calls.filter(c => c === entry).length;
+test('Phiếu: mẫu dựng trên khổ A4 dọc, lề chuẩn NĐ 30, một font Times New Roman', () => {
+  const { calls } = dungMau();
+  assert.equal(calls[0], 'clear[]', 'xóa sạch trước khi dựng (dựng lại không bị nhân đôi nội dung)');
+  for (const entry of ['setPageWidth[595.28]', 'setPageHeight[841.89]', 'setMarginTop[56.7]', 'setMarginBottom[56.7]',
+    'setMarginLeft[70.9]', 'setMarginRight[42.5]', 'setFontFamily["Times New Roman"]']) {
+    assert.ok(calls.includes(entry), 'mẫu thiếu ' + entry);
+  }
+});
+test('Phiếu: quốc hiệu nằm trong bảng KHÔNG VIỀN là bảng đầu tiên, có đủ 2 khối chữ', () => {
+  const { calls } = dungMau();
+  const i = calls.findIndex(c => c.startsWith('appendTable['));
+  assert.ok(calls[i].startsWith('appendTable[[["ĐẠI HỌC QUỐC GIA HÀ NỘI"'), 'bảng quốc hiệu phải là bảng đầu tiên của trang');
+  assert.equal(calls[i + 1], 'setBorderWidth[0]', 'bảng quốc hiệu không được có viền');
+  const header = calls.join('\n');
+  assert.match(header, /appendTable\[\[\["ĐẠI HỌC QUỐC GIA HÀ NỘI","CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM"\]\]\]/);
+  assert.match(header, /TRƯỜNG ĐH KHOA HỌC TỰ NHIÊN/);
+  assert.match(header, /KHOA KHÍ TƯỢNG THỦY VĂN/);
+  assert.match(header, /VÀ HẢI DƯƠNG HỌC/);
+  assert.match(header, /Độc lập – Tự do – Hạnh phúc/);
+});
+test('Phiếu: dựng mẫu KHÔNG phụ thuộc vị trí phần tử (lỗi null.setAlignment): tiêu đề là đoạn append, không getChild(1)', () => {
+  const { calls } = dungMau();
+  assert.ok(calls.includes('appendParagraph["PHIẾU MƯỢN THIẾT BỊ"]'), 'tiêu đề phải thêm bằng appendParagraph');
+  assert.ok(!calls.some(c => c.startsWith('insertTable[')), 'không chèn bảng theo chỉ số');
+  assert.ok(!calls.includes('getChild[1]'), 'không lấy phần tử cấp trang theo chỉ số cứng');
+});
+test('Phiếu: sau khi dựng, xóa đoạn trống thừa trên cùng; giữ đoạn cuối, đoạn có chữ và bảng', () => {
+  const para = text => ({ getType: () => 'PARAGRAPH', asParagraph: () => ({ getText: () => text }) });
+  const table = { getType: () => 'TABLE' };
+  const st = { children: [para(''), table, para('PHIẾU'), para('')] };
+  const h = harness([], { globals: slipGlobals(st) });
+  h.ctx.createLoanSlipTemplate();
+  assert.equal(st.removed.length, 1);
+  assert.equal(st.removed[0], st.children[0], 'chỉ đoạn trống ở đầu trang bị xóa');
+});
+test('Phiếu: Docs không cho xóa đoạn trống → chỉ ghi log, vẫn dựng xong mẫu (không ném lỗi)', () => {
+  const para = text => ({ getType: () => 'PARAGRAPH', asParagraph: () => ({ getText: () => text }) });
+  const st = { children: [para(''), para('x'), para('')] };
+  const h = harness([], { globals: slipGlobals(st) });
+  assert.doesNotThrow(() => h.ctx.removeSlipStrayParagraphs_({
+    getNumChildren: () => st.children.length, getChild: i => st.children[i],
+    removeChild: () => { throw new Error('không xóa được'); }
+  }));
+});
+test('Phiếu: ô bảng không có đoạn đầu → báo lỗi rõ chỗ hỏng (không phải "Cannot read properties of null")', () => {
+  const h = harness([], { globals: slipGlobals({}) });
+  const brokenCell = { getNumChildren: () => 1, getChild: () => ({ getType: () => 'TABLE' }) };
+  assert.throws(() => h.ctx.firstSlipCellParagraph_(brokenCell, 'Tên thiết bị'), /không có đoạn văn đầu tiên.*Tên thiết bị/);
+});
+test('Phiếu: bảng thông tin có viền mảnh, cột nhãn nền xám đậm chữ (4 dòng thiết bị + 7 dòng cán bộ mượn)', () => {
+  const { calls } = dungMau();
+  assert.equal(dem(calls, 'setBackgroundColor["#EDEDED"]'), 11);
+  assert.equal(dem(calls, 'setBorderWidth[0.75]'), 2, 'đúng 2 bảng thông tin có viền');
+  assert.equal(dem(calls, 'setBorderWidth[0]'), 2, 'chỉ quốc hiệu và khối chữ ký không viền');
+});
+test('Phiếu: hai ô ký cân nhau, có "(ký, ghi rõ họ tên)" nghiêng và chừa chỗ ký', () => {
+  const { calls } = dungMau();
+  assert.equal(calls.filter(c => c.includes('(ký, ghi rõ họ tên)')).length >= 1, true);
+  assert.equal(calls.filter(c => c.includes('"(ký, ghi rõ họ tên)"')).length, 2, 'một chú thích cho mỗi ô ký');
+  assert.ok(calls.includes('setSpacingBefore[64]'), 'chừa khoảng trống ký trước họ tên');
+  assert.ok(calls.includes('setItalic[true]'));
+  assert.ok(calls.includes('setColumnWidth[0,240]') && calls.includes('setColumnWidth[1,241]'));
+});
+test('Phiếu: mọi cột bảng cộng đúng bề rộng vùng in (481 pt) → không tràn lề', () => {
+  const { calls } = dungMau();
+  const widths = calls.filter(c => c.startsWith('setColumnWidth[')).map(c => JSON.parse(c.slice('setColumnWidth'.length)));
+  const total = {};
+  // bảng quốc hiệu, bảng thiết bị, bảng cán bộ, bảng ký: mỗi bảng đặt cột 0 rồi cột 1
+  for (let t = 0; t * 2 < widths.length; t++) total[t] = widths[t * 2][1] + widths[t * 2 + 1][1];
+  assert.equal(widths.length, 8);
+  Object.values(total).forEach(sum => assert.equal(sum, 481));
+});
+test('Phiếu: rebuildLoanSlipTemplate_ dựng lại ĐÚNG Google Doc mẫu đang có, không tạo mẫu mới, giữ đủ 14 dấu', () => {
+  const st = {}; const h = slipHarness(st);
+  const url = h.ctx.rebuildLoanSlipTemplate_();
+  assert.equal(url, 'https://docs.google.com/document/d/TPL/edit');
+  assert.equal(st.templatesCreated, 0);
+  assert.equal(st.saved, 1);
+  assert.equal(h.props.LOAN_SLIP_TEMPLATE_ID, 'TPL');
+  const content = st.templateBody.join('');
+  for (const tag of run(h, 'SLIP_TAGS')) assert.ok(content.includes('{{' + tag + '}}'), 'mẫu thiếu {{' + tag + '}}');
+});
+test('Phiếu: rebuildLoanSlipTemplate_ khi chưa có mẫu → ném lỗi rõ ràng, không đụng Drive', () => {
+  const st = {}; const h = harness([], { globals: slipGlobals(st) });
+  assert.throws(() => h.ctx.rebuildLoanSlipTemplate_(), /Chưa có mẫu/);
+  assert.equal(st.templatesCreated, 0);
 });
 test('Phiếu: thiếu mẫu hoặc xuất Word lỗi → createLoanSlip_ ném lỗi (người gọi bắt)', () => {
   assert.throws(() => harness([], { globals: slipGlobals({}) }).ctx.createLoanSlip_(slipData()), /mẫu/i);

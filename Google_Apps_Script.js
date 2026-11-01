@@ -3826,41 +3826,165 @@ function slipToast_(msg) {
   try { SpreadsheetApp.getActiveSpreadsheet().toast(msg, 'Quản lý TB', 10); } catch (err) { /* ngoài UI */ }
 }
 
+/**
+ * Dựng lại mẫu phiếu trong CHÍNH Google Doc mẫu đang có (giữ nguyên ID, nên không phải đổi gì ở Script Properties).
+ * Xóa toàn bộ nội dung cũ — mọi chỉnh sửa tay trong Google Docs sẽ mất. Phiếu đã phát hành không bị ảnh hưởng.
+ */
+function rebuildLoanSlipTemplate_() {
+  const templateId = PropertiesService.getScriptProperties().getProperty(PROP_SLIP_TEMPLATE);
+  if (!templateId) throw new Error('Chưa có mẫu phiếu mượn để dựng lại (chạy menu "Tạo mẫu phiếu mượn" trước).');
+  const doc = DocumentApp.openById(templateId);
+  buildSlipTemplateBody_(doc.getBody());
+  doc.saveAndClose();
+  return 'https://docs.google.com/document/d/' + templateId + '/edit';
+}
+
+/** Menu: hỏi xác nhận (vì ghi đè mẫu) rồi dựng lại mẫu theo định dạng chuẩn. */
+function rebuildLoanSlipTemplate() {
+  const ui = SpreadsheetApp.getUi();
+  const answer = ui.alert('Dựng lại mẫu phiếu mượn',
+    'Mẫu phiếu hiện tại sẽ được dựng lại theo định dạng chuẩn. Mọi chỉnh sửa tay trong Google Docs sẽ mất ' +
+    '(phiếu đã phát hành không bị ảnh hưởng). Tiếp tục?', ui.ButtonSet.YES_NO);
+  if (answer !== ui.Button.YES) return;
+  slipToast_('Đã dựng lại mẫu phiếu mượn: ' + rebuildLoanSlipTemplate_());
+}
+
+// Khổ A4 dọc, lề theo NĐ 30/2020: trái 2,5 cm (bảng rộng; chuẩn 3 cm), phải 1,5 cm, trên/dưới 2 cm.
+const SLIP_PAGE = { width: 595.28, height: 841.89, top: 56.7, bottom: 56.7, left: 70.9, right: 42.5 };
+const SLIP_CONTENT_WIDTH = 481; // pt, vừa vùng in (595,28 − 70,9 − 42,5 ≈ 481,9)
+const SLIP_FONT = 'Times New Roman';
+const SLIP_LABEL_BG = '#EDEDED';
+const SLIP_SIGN_GAP = 64; // pt chừa để ký tay
+
+/** Định dạng một đoạn: căn lề, giãn dòng, font. Đoạn phải có chữ (đoạn rỗng không đặt được kiểu chữ). */
+function styleSlipParagraph_(paragraph, s) {
+  paragraph.setAlignment(s.align || DocumentApp.HorizontalAlignment.LEFT)
+    .setSpacingBefore(s.before || 0).setSpacingAfter(s.after || 0).setLineSpacing(1);
+  paragraph.editAsText().setFontFamily(SLIP_FONT).setFontSize(s.size || 13)
+    .setBold(!!s.bold).setItalic(!!s.italic).setUnderline(!!s.underline);
+  return paragraph;
+}
+
+/**
+ * Điền các dòng vào một ô. Dòng đầu là đoạn có sẵn của ô (chữ đã đưa vào lúc tạo bảng), các dòng sau thêm mới.
+ * Mỗi dòng: { text, size, bold, italic, underline, align, before, after }.
+ */
+function fillSlipCell_(cell, lines, options) {
+  const o = options || {};
+  cell.setPaddingTop(o.padV == null ? 2 : o.padV).setPaddingBottom(o.padV == null ? 2 : o.padV)
+    .setPaddingLeft(o.padH == null ? 3 : o.padH).setPaddingRight(o.padH == null ? 3 : o.padH)
+    .setVerticalAlignment(DocumentApp.VerticalAlignment.CENTER);
+  if (o.background) cell.setBackgroundColor(o.background);
+  lines.forEach((spec, i) => {
+    styleSlipParagraph_(i === 0 ? firstSlipCellParagraph_(cell, spec.text) : cell.appendParagraph(spec.text), spec);
+  });
+}
+
+/** Đoạn đầu của ô. Báo lỗi nói rõ chỗ hỏng thay vì "Cannot read properties of null" khó hiểu. */
+function firstSlipCellParagraph_(cell, text) {
+  const first = cell.getNumChildren() > 0 ? cell.getChild(0) : null;
+  if (first && first.getType() === DocumentApp.ElementType.PARAGRAPH) return first.asParagraph();
+  throw new Error('Ô bảng trong mẫu phiếu không có đoạn văn đầu tiên (ô: "' + text + '")');
+}
+
+/**
+ * Sau body.clear() Google Docs luôn giữ lại một đoạn trống; ta dựng bằng append nên đoạn đó nằm ở ĐẦU trang,
+ * trên bảng quốc hiệu. Xóa mọi đoạn trống ở cấp trang, trừ đoạn cuối (Docs bắt buộc trang kết thúc bằng một đoạn).
+ */
+function removeSlipStrayParagraphs_(body) {
+  for (let i = body.getNumChildren() - 2; i >= 0; i--) {
+    const child = body.getChild(i);
+    if (child.getType() !== DocumentApp.ElementType.PARAGRAPH || child.asParagraph().getText() !== '') continue;
+    try {
+      body.removeChild(child);
+    } catch (err) { // chỉ là dòng trống thừa (không ảnh hưởng nội dung) → không để làm hỏng cả lần dựng mẫu
+      Logger.log('Không xóa được đoạn trống thừa ở vị trí ' + i + ': ' + err.message);
+    }
+  }
+}
+
+/** Bảng thông tin hai cột (nhãn | giá trị {{TAG}}), viền mảnh, cột nhãn nền xám đậm chữ. Dòng: [nhãn, tag, giá trị đậm?]. */
+function appendSlipInfoTable_(body, rows) {
+  const labelWidth = 150;
+  const table = body.appendTable(rows.map(([label, tag]) => [label, '{{' + tag + '}}']));
+  table.setBorderWidth(0.75).setBorderColor('#000000')
+    .setColumnWidth(0, labelWidth).setColumnWidth(1, SLIP_CONTENT_WIDTH - labelWidth);
+  rows.forEach(([label, tag, boldValue], i) => {
+    const row = table.getRow(i);
+    fillSlipCell_(row.getCell(0), [{ text: label, size: 12, bold: true }],
+      { background: SLIP_LABEL_BG, padV: 3, padH: 6 });
+    fillSlipCell_(row.getCell(1), [{ text: '{{' + tag + '}}', size: 12, bold: !!boldValue }], { padV: 3, padH: 6 });
+  });
+}
+
+/** Khối quốc hiệu – tên Khoa: bảng không viền, phần tử đầu tiên của trang. */
+function appendSlipLetterhead_(body) {
+  const align = DocumentApp.HorizontalAlignment;
+  const left = [
+    { text: 'ĐẠI HỌC QUỐC GIA HÀ NỘI', size: 11.5, align: align.CENTER },
+    { text: 'TRƯỜNG ĐH KHOA HỌC TỰ NHIÊN', size: 11.5, bold: true, align: align.CENTER },
+    { text: 'KHOA KHÍ TƯỢNG THỦY VĂN', size: 11.5, bold: true, align: align.CENTER },
+    { text: 'VÀ HẢI DƯƠNG HỌC', size: 11.5, bold: true, underline: true, align: align.CENTER }
+  ];
+  const right = [
+    { text: 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM', size: 12, bold: true, align: align.CENTER },
+    { text: 'Độc lập – Tự do – Hạnh phúc', size: 13, bold: true, underline: true, align: align.CENTER, before: 2 }
+  ];
+  const table = body.appendTable([[left[0].text, right[0].text]]);
+  table.setBorderWidth(0).setColumnWidth(0, 210).setColumnWidth(1, SLIP_CONTENT_WIDTH - 210);
+  const row = table.getRow(0);
+  fillSlipCell_(row.getCell(0), left, { padV: 0, padH: 2 });
+  fillSlipCell_(row.getCell(1), right, { padV: 0, padH: 2 });
+}
+
+/** Khối ký: hai ô cân nhau, không viền; họ tên in sẵn, chừa khoảng trống để ký tay phía trên. */
+function appendSlipSignatures_(body) {
+  const align = DocumentApp.HorizontalAlignment;
+  const table = body.appendTable([
+    ['CÁN BỘ MƯỢN THIẾT BỊ', 'CÁN BỘ BÀN GIAO'],
+    ['{{NGUOI_MUON}}', '{{CAN_BO_BAN_GIAO}}']
+  ]);
+  table.setBorderWidth(0).setColumnWidth(0, 240).setColumnWidth(1, SLIP_CONTENT_WIDTH - 240);
+  [['CÁN BỘ MƯỢN THIẾT BỊ', 'NGUOI_MUON'], ['CÁN BỘ BÀN GIAO', 'CAN_BO_BAN_GIAO']].forEach(([title, tag], col) => {
+    fillSlipCell_(table.getRow(0).getCell(col), [
+      { text: title, bold: true, align: align.CENTER },
+      { text: '(ký, ghi rõ họ tên)', italic: true, size: 12, align: align.CENTER }
+    ], { padH: 4 });
+    fillSlipCell_(table.getRow(1).getCell(col),
+      [{ text: '{{' + tag + '}}', bold: true, align: align.CENTER, before: SLIP_SIGN_GAP }], { padH: 4 });
+  });
+}
+
 function buildSlipTemplateBody_(body) {
   const align = DocumentApp.HorizontalAlignment;
-  const line = (text, alignment, bold) => {
-    const p = body.appendParagraph(text);
-    if (alignment) p.setAlignment(alignment);
-    p.setBold(!!bold);
-    return p;
-  };
-  const infoTable = rows => body.appendTable(rows.map(([label, tag]) => [label, '{{' + tag + '}}']));
+  const paragraph = (text, spec) => styleSlipParagraph_(body.appendParagraph(text), spec);
 
-  body.appendTable([[
-    'ĐẠI HỌC QUỐC GIA HÀ NỘI\nTRƯỜNG ĐẠI HỌC KHOA HỌC TỰ NHIÊN\nKHOA KHÍ TƯỢNG THỦY VĂN VÀ HẢI DƯƠNG HỌC',
-    'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐộc lập – Tự do – Hạnh phúc'
-  ]]);
-  line('PHIẾU MƯỢN THIẾT BỊ', align.CENTER, true);
-  line('Mã giao dịch: {{SO_PHIEU}}', align.CENTER, false);
+  body.clear();
+  body.setPageWidth(SLIP_PAGE.width).setPageHeight(SLIP_PAGE.height)
+    .setMarginTop(SLIP_PAGE.top).setMarginBottom(SLIP_PAGE.bottom)
+    .setMarginLeft(SLIP_PAGE.left).setMarginRight(SLIP_PAGE.right);
 
-  line('1. THIẾT BỊ', align.LEFT, true);
-  infoTable([['Tên thiết bị', 'TEN_THIET_BI'], ['Mã QR', 'MA_QR'],
+  appendSlipLetterhead_(body);
+  paragraph('PHIẾU MƯỢN THIẾT BỊ', { size: 16, bold: true, align: align.CENTER, before: 16, after: 2 });
+  paragraph('Mã giao dịch: {{SO_PHIEU}}', { italic: true, align: align.CENTER, after: 10 });
+
+  paragraph('1. THIẾT BỊ', { bold: true, before: 6, after: 3 });
+  appendSlipInfoTable_(body, [['Tên thiết bị', 'TEN_THIET_BI'], ['Mã QR', 'MA_QR'],
     ['Phụ kiện kèm theo', 'PHU_KIEN'], ['Tình trạng khi giao', 'TINH_TRANG']]);
 
-  line('2. CÁN BỘ MƯỢN THIẾT BỊ', align.LEFT, true);
-  infoTable([['Họ và tên', 'NGUOI_MUON'], ['Đơn vị / Bộ môn', 'DON_VI'], ['Email', 'EMAIL'],
+  paragraph('2. CÁN BỘ MƯỢN THIẾT BỊ', { bold: true, before: 12, after: 3 });
+  appendSlipInfoTable_(body, [['Họ và tên', 'NGUOI_MUON'], ['Đơn vị / Bộ môn', 'DON_VI'], ['Email', 'EMAIL'],
     ['Mục đích sử dụng', 'MUC_DICH'], ['Địa điểm sử dụng', 'DIA_DIEM'],
-    ['Ngày mượn', 'NGAY_MUON'], ['Hạn trả', 'HAN_TRA']]);
+    ['Ngày mượn', 'NGAY_MUON'], ['Hạn trả', 'HAN_TRA', true]]);
 
-  line('Phê duyệt: {{DONG_PHE_DUYET}}', align.LEFT, false);
-  line('Cán bộ mượn thiết bị có trách nhiệm bảo quản thiết bị, sử dụng đúng mục đích và hoàn trả đúng hạn.',
-    align.LEFT, false);
-  line('Hà Nội, ngày …… tháng …… năm 20……', align.RIGHT, false);
-  body.appendTable([
-    ['CÁN BỘ MƯỢN THIẾT BỊ\n(ký, ghi rõ họ tên)', 'CÁN BỘ BÀN GIAO\n(ký, ghi rõ họ tên)'],
-    ['\n\n\n\n{{NGUOI_MUON}}', '\n\n\n\n{{CAN_BO_BAN_GIAO}}']
-  ]);
-  body.editAsText().setFontFamily('Times New Roman').setFontSize(13);
+  paragraph('Phê duyệt: {{DONG_PHE_DUYET}}', { italic: true, before: 12 });
+  paragraph('Cán bộ mượn thiết bị có trách nhiệm bảo quản thiết bị, sử dụng đúng mục đích và hoàn trả đúng hạn.',
+    { align: align.JUSTIFY, before: 6 });
+  paragraph('Hà Nội, ngày …… tháng …… năm 20……', { italic: true, align: align.RIGHT, before: 14, after: 6 });
+  appendSlipSignatures_(body);
+
+  removeSlipStrayParagraphs_(body);
+  body.editAsText().setFontFamily(SLIP_FONT);
 }
 
 // ==================== API ĐỌC CHO LANDING PAGE ====================
@@ -4087,6 +4211,7 @@ function onOpen() {
     .addItem('🔍 Gửi lại email kiểm tra đang chờ', 'resendPendingInspections')
     .addSeparator()
     .addItem('📄 Tạo mẫu phiếu mượn (chạy 1 lần)', 'createLoanSlipTemplate')
+    .addItem('🎨 Dựng lại mẫu phiếu mượn (định dạng chuẩn)', 'rebuildLoanSlipTemplate')
     .addItem('📄 Tạo lại phiếu mượn (dòng đang chọn)', 'regenerateLoanSlip')
     .addToUi();
 }

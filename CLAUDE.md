@@ -98,6 +98,7 @@ QR Label on device
 | `onFormSubmitMaintenance(e)` / `onFormSubmitDamage(e)` | qua dispatcher | Ghi `Log_Bao_Tri` / `Log_Bao_Hong`, báo admin |
 | `createLoanSlipTemplate()` | Manual (menu, 1 lần) | Dựng Google Doc mẫu phiếu mượn (14 dấu `{{...}}`), lưu `LOAN_SLIP_TEMPLATE_ID`; có mẫu rồi thì không tạo lại. **Chưa chạy = tính năng phiếu ngủ** |
 | `issueLoanSlip_(d)` / `createLoanSlip_(d)` | qua `notifyLoanRequest_` (< 100 tr) và `applyApprovalDecision_` (≥ 100 tr, sau khi duyệt) | Sao chép mẫu → điền → PDF + Word → ghi link cột W. **Không bao giờ ném lỗi**: lỗi → email PTK "Không tạo được phiếu mượn", giao dịch/email xác nhận vẫn đi |
+| `rebuildLoanSlipTemplate()` / `rebuildLoanSlipTemplate_()` | Manual (menu "🎨 Dựng lại mẫu phiếu mượn", có hỏi xác nhận) | Dựng lại nội dung + định dạng (A4, lề NĐ 30, quốc hiệu không viền, bảng viền mảnh, 2 ô ký) trong CHÍNH Google Doc mẫu đang có (giữ ID). **Xóa mọi chỉnh sửa tay** trong mẫu; phiếu đã phát hành không đổi. Dùng sau khi sửa `buildSlipTemplateBody_` |
 | `sendSlipToManagers_(d, slip)` / `regenerateLoanSlip()` | tự động / menu | Email PDF+Word cho CB quản lý (trống → PTK) / tạo lại phiếu cho dòng đang chọn trong Log |
 | `resendPendingApprovals()` | Manual (menu) | Gửi lại email phê duyệt cho mọi yêu cầu còn chờ (link mới) |
 | `confirmApprovalFromPage()` | google.script.run | Bước 2 phê duyệt: kiểm lại chữ ký, chỉ ghi khi còn CHỜ DUYỆT |
@@ -280,6 +281,13 @@ Trước khi kết thúc MỌI phiên làm việc trong workspace này, tạo ho
 - Menu "📄 Tạo lại phiếu mượn (dòng đang chọn)": chỉ gửi CB quản lý.
 - Test: `tests/backend_regression.cjs` 125 test (94 cũ + 31 mới; harness có thêm `opts.globals` và `slipGlobals` giả Drive/Docs).
 - ✅ Đã deploy **version 19** (28/10, xác minh `@19`, code trên Google khớp repo). ⚠️ **CHƯA kiểm thử với Drive/Docs/email thật.** Việc còn lại: menu Tạo mẫu phiếu mượn (Cho phép) → mượn thử 1 TB < 100 tr và 1 TB ≥ 100 tr → in thử PDF.
+
+## Changes Log (Session 01/11/2026 — Định dạng lại mẫu phiếu mượn)
+
+- Mẫu phiếu cũ dựng bằng bảng/đoạn mặc định (quốc hiệu bị viền, chữ thường) → viết lại `buildSlipTemplateBody_` theo bản phác v2: A4 dọc, lề 2,5/1,5/2/2 cm, Times New Roman, quốc hiệu không viền, bảng thông tin viền mảnh + cột nhãn nền xám, "Hạn trả" đậm, 2 ô ký cân nhau. Tên trường in "TRƯỜNG ĐH KHOA HỌC TỰ NHIÊN" (đúng bản phác).
+- Menu **"🎨 Dựng lại mẫu phiếu mượn (định dạng chuẩn)"** (`rebuildLoanSlipTemplate`): dựng lại đúng Google Doc mẫu đang có (giữ ID), **xóa mọi chỉnh sửa tay** trong mẫu; phiếu đã phát hành không đổi. Phiếu cũ muốn đẹp phải "Tạo lại phiếu mượn (dòng đang chọn)".
+- ⚠️ Bài học Docs API: không giả định vị trí phần tử sau `body.clear()` (`getChild(1).asParagraph()` trả null → lỗi `setAlignment`); dùng `append*`, kiểm `getType()` trước `asX()`. Mock Docs trong `tests/backend_regression.cjs` chỉ ghi lại lời gọi → KHÔNG thay được lần chạy thật trên Google Docs.
+- ✅ Đã deploy **version 20** (01/11, xác minh `@20`, smoke test API OK), test backend 136/136.
 
 ## Deploy Apps Script (clasp)
 
