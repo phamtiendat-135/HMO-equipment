@@ -297,7 +297,7 @@ test('P1-07 nâng cấu trúc: dòng cũ được gán Mã giao dịch, thêm he
   const ids = h.log.rows.slice(1).map(r => r[18]);
   assert.ok(ids.every(id => /^L\d{6}-[0-9A-F]{6}$/.test(id)), ids.join(','));
   assert.equal(new Set(ids).size, ids.length);
-  assert.equal(h.props.LOG_SCHEMA_VERSION, '4');
+  assert.equal(h.props.LOG_SCHEMA_VERSION, '5');
   assert.match(h.log.rows[1][14], /SEARCH\("chối"/, 'công thức quá hạn cũ được cập nhật');
 });
 
@@ -1695,7 +1695,30 @@ test('Phiếu: sheet còn cấu trúc v3 (22 cột) khi duyệt yêu cầu cũ �
   assert.ok(h.ctx.applyApprovalDecision_('approve', loanId).ok);
   assert.equal(h.log.rows[0][col(h).SLIP], 'Phiếu mượn', 'header cột W được thêm');
   assert.equal(h.log.rows[1][col(h).SLIP], `https://docs.google.com/document/d/${st.copies[0].id}/edit`);
-  assert.equal(h.props.LOG_SCHEMA_VERSION, '4');
+  assert.equal(h.props.LOG_SCHEMA_VERSION, '5');
+});
+
+// ====================== Đào tạo / NCKH: Log v5 ======================
+test('Log v5: LOG_WIDTH = 26 và SERVICE/SERVICE_REF/EXERCISE = 23/24/25', () => {
+  const h = harness();
+  assert.equal(run(h, 'LOG_WIDTH'), 26);
+  const c = col(h);
+  assert.deepEqual([c.SERVICE, c.SERVICE_REF, c.EXERCISE], [23, 24, 25]);
+  assert.equal(run(h, 'LOG_SCHEMA_VERSION'), '5');
+});
+test('Log v5: sheet cấu trúc v4 (23 cột) → tự nâng, thêm header X–Z, dữ liệu cũ nguyên vẹn', () => {
+  const old = legacyLoan('Cũ', '✅ Đã phê duyệt', 'cu@example.invalid');
+  while (old.length < 23) old.push('');
+  old[18] = 'L-OLD001';
+  const h = harness([old]);
+  h.props.LOG_SCHEMA_VERSION = '4';
+  h.log.maxCols = 23;
+  const unchanged = r => r.slice(0, 23).filter((_, i) => i !== 14); // cột O (công thức Quá hạn) luôn được ghi lại khi nâng cấu trúc
+  const before = unchanged(h.log.rows[1]);
+  h.ctx.onFormSubmitBorrow(formEvent(borrowFields({ 'Mã QR thiết bị': 'HMO-LAB-0002' })));
+  assert.deepEqual(h.log.rows[0].slice(23, 26), ['Phục vụ', 'Mã học phần / đề tài', 'Tên bài thực tập']);
+  assert.deepEqual(unchanged(h.log.rows[1]), before, 'dòng cũ không đổi');
+  assert.equal(h.props.LOG_SCHEMA_VERSION, '5');
 });
 
 // ---------- Kết quả ----------

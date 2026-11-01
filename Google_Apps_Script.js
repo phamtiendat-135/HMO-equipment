@@ -221,22 +221,26 @@ function parseDate_(val) {
 // Mọi chỗ đọc/ghi Log_Muon_Tra dùng chung các hằng số và hàm dưới đây, để "đang mượn",
 // "giữ chỗ", "đã trả" chỉ có MỘT định nghĩa (review 28/09: P1-05, P1-07, P1-08).
 
-/** Chỉ số cột Log_Muon_Tra (0-based). S, T, U thêm từ 29/09/2026; V từ 19/10/2026; W (link phiếu mượn) từ 27/10/2026. */
+/** Chỉ số cột Log_Muon_Tra (0-based). S, T, U thêm từ 29/09/2026; V từ 19/10/2026; W (link phiếu mượn) từ 27/10/2026; X–Z (phục vụ hoạt động) từ 01/11/2026. */
 const LOG_COL = {
   QR: 0, NAME: 1, BORROWER: 2, UNIT: 3, PURPOSE: 4, LOCATION: 5,
   BORROW_DATE: 6, DUE_DATE: 7, RETURN_DATE: 8, COND_OUT: 9, COND_IN: 10,
   ACCESSORIES: 11, APPROVAL: 12, NOTE: 13, OVERDUE: 14, EMAIL: 15,
-  HOURS: 16, REMINDED: 17, LOAN_ID: 18, BORROW_SOURCE: 19, RETURN_SOURCE: 20, INSPECTION: 21, SLIP: 22
+  HOURS: 16, REMINDED: 17, LOAN_ID: 18, BORROW_SOURCE: 19, RETURN_SOURCE: 20, INSPECTION: 21, SLIP: 22,
+  SERVICE: 23, SERVICE_REF: 24, EXERCISE: 25
 };
-const LOG_WIDTH = LOG_COL.SLIP + 1;
+const LOG_WIDTH = LOG_COL.EXERCISE + 1;
 const LOG_NEW_HEADERS = [
   [LOG_COL.LOAN_ID, 'Mã giao dịch'],
   [LOG_COL.BORROW_SOURCE, 'Nguồn phản hồi mượn'],
   [LOG_COL.RETURN_SOURCE, 'Nguồn phản hồi trả'],
   [LOG_COL.INSPECTION, 'Kiểm tra nhận lại'],
-  [LOG_COL.SLIP, 'Phiếu mượn']
+  [LOG_COL.SLIP, 'Phiếu mượn'],
+  [LOG_COL.SERVICE, 'Phục vụ'],
+  [LOG_COL.SERVICE_REF, 'Mã học phần / đề tài'],
+  [LOG_COL.EXERCISE, 'Tên bài thực tập']
 ];
-const LOG_SCHEMA_VERSION = '4';
+const LOG_SCHEMA_VERSION = '5';
 const PROP_LOG_SCHEMA = 'LOG_SCHEMA_VERSION';
 
 // ONSITE chỉ dùng khi hiển thị (displayStatus_); loanStatus_ coi khai báo tại chỗ là đã trả (có cột I).
