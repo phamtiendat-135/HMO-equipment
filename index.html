@@ -93,28 +93,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 .inactive-notice .big { font-size: 28px; margin-bottom: 6px; }
 
 /* Input sections (Đào tạo & Nghiên cứu KH) */
-.input-sections { padding: 0 20px 16px; display: flex; flex-direction: column; gap: 10px; }
-.input-section { border: 1.5px solid #e0e0e0; border-radius: 10px; overflow: hidden; }
-.input-section-header { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: #fafafa; cursor: pointer; user-select: none; transition: background 0.15s; }
-.input-section-header:hover { background: #f0f4ff; }
-.input-section-header .sec-icon { font-size: 20px; }
-.input-section-header .sec-label { flex: 1; font-size: 13px; font-weight: 600; color: #2F5496; }
-.input-section-header .sec-desc { font-size: 11px; color: #aaa; }
-.input-section-header .arrow { font-size: 12px; color: #aaa; transition: transform 0.2s; }
-.input-section-header.open .arrow { transform: rotate(180deg); }
-.input-section-body { display: none; padding: 14px; border-top: 1px solid #f0f0f0; background: white; }
-.input-section-body.open { display: block; }
-.input-section-body label { font-size: 12px; color: #888; display: block; margin-bottom: 6px; }
-.input-section-body input { width: 100%; border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 10px 12px; font-size: 14px; outline: none; transition: border-color 0.15s; }
-.input-section-body input:focus { border-color: #2F5496; }
-.input-section-body .hint { font-size: 11px; color: #aaa; margin-top: 6px; line-height: 1.4; }
-.input-section-body .submit-row { display: flex; gap: 8px; margin-top: 12px; }
-.submit-btn { flex: 1; background: #2F5496; color: white; border: none; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
-.submit-btn:hover { background: #1a3a6b; }
-.submit-btn:active { transform: scale(0.98); }
-.clear-btn { background: #f5f5f5; color: #888; border: none; border-radius: 8px; padding: 10px 14px; font-size: 13px; cursor: pointer; }
-.clear-btn:hover { background: #eee; }
-.success-msg { display: none; background: #e8f5e9; color: #2e7d32; border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-top: 10px; text-align: center; }
 
 /* Not found */
 .not-found { text-align: center; padding: 60px 20px; }
@@ -1271,9 +1249,7 @@ const FORMS = {
   maintain: 'https://docs.google.com/forms/d/e/1FAIpQLSc0mJj0Q_DXoUewdFE3yWi9wUgL3Qrw2jQKmfPKZGUb2jU6cw/viewform?usp=pp_url&entry.1832659835=',
   report: 'https://docs.google.com/forms/d/e/1FAIpQLSfuqZ1GzbTnboOz5In7fvYcRK8b2GIluDk3_UYbEBAbH5b6eQ/viewform?usp=pp_url&entry.2054726393=',
   // Sử dụng tại chỗ (không cần duyệt) — dán URL in ra từ createOnsiteFormOnly() trong Create_Google_Forms.js
-  onsite: 'https://docs.google.com/forms/d/e/1FAIpQLSeOh3PyIn_Ho2ebSJJPvpG5uQL9eHiQlxGUtVrYkPZbdGj_sQ/viewform?usp=pp_url&entry.1095952640=',
-  training: 'https://docs.google.com/forms/d/e/FORM_ID_DAOTAO/viewform?usp=pp_url&entry.FIELD_QR=',
-  research: 'https://docs.google.com/forms/d/e/FORM_ID_NCKH/viewform?usp=pp_url&entry.FIELD_QR='
+  onsite: 'https://docs.google.com/forms/d/e/1FAIpQLSeOh3PyIn_Ho2ebSJJPvpG5uQL9eHiQlxGUtVrYkPZbdGj_sQ/viewform?usp=pp_url&entry.1095952640='
 };
 // Chưa có form tại chỗ → giữ 1 nút "Đăng ký mượn/Sử dụng" như cũ
 const ONSITE_READY = !FORMS.onsite.includes('FORM_ID');
@@ -1347,37 +1323,6 @@ function getEquipImage(qrCode, eq) {
     return `<div class="equip-image-box"><img src="${eq.image}" alt="${eq.name}" onerror="this.parentElement.innerHTML='<div class=equip-image-placeholder><div class=ph-icon>📷</div><div class=ph-text>Chưa có hình ảnh</div></div>'"></div>`;
   }
   return `<div class="equip-image-box"><div class="equip-image-placeholder"><div class="ph-icon">📷</div><div class="ph-text">Chưa có hình ảnh thiết bị</div></div></div>`;
-}
-
-function toggleSection(headerId) {
-  const header = document.getElementById(headerId);
-  const body = document.getElementById(headerId + '-body');
-  header.classList.toggle('open');
-  body.classList.toggle('open');
-}
-
-function submitInput(sectionId, qrCode, type) {
-  const input = document.getElementById(sectionId + '-input');
-  const val = input.value.trim();
-  if (!val) { input.focus(); input.style.borderColor = '#e53935'; return; }
-  input.style.borderColor = '#e0e0e0';
-  
-  // Build form URL with QR and entered code
-  let url = '';
-  if (type === 'training') url = FORMS.training + encodeURIComponent(qrCode) + '&entry.FIELD_MAHP=' + encodeURIComponent(val);
-  if (type === 'research') url = FORMS.research + encodeURIComponent(qrCode) + '&entry.FIELD_MADT=' + encodeURIComponent(val);
-  
-  // Open form (khi chưa có URL thực, hiện thông báo)
-  if (url.includes('FORM_ID')) {
-    const msg = document.getElementById(sectionId + '-success');
-    // Chưa có form thật → KHÔNG báo thành công, giữ nguyên nội dung đã nhập
-    msg.textContent = '⚠ Chưa ghi nhận: chức năng này chưa được kết nối. Vui lòng báo CB quản lý.';
-    msg.style.color = '#c62828';
-    msg.style.display = 'block';
-    setTimeout(() => { msg.style.display = 'none'; }, 6000);
-  } else {
-    window.open(url, '_blank');
-  }
 }
 
 /**
@@ -1700,51 +1645,6 @@ function showEquipment(qrCode) {
         <div class="history-list" id="history-list"></div>
       </div>
 
-      <div class="input-sections">
-        <!-- Đào tạo -->
-        <div class="input-section">
-          <div class="input-section-header" id="sec-train" onclick="toggleSection('sec-train')">
-            <span class="sec-icon">🎓</span>
-            <div>
-              <div class="sec-label">Đào tạo</div>
-              <div class="sec-desc">Ghi mã học phần sử dụng thiết bị này</div>
-            </div>
-            <span class="arrow">▼</span>
-          </div>
-          <div class="input-section-body" id="sec-train-body">
-            <label>Mã học phần</label>
-            <input type="text" id="sec-train-input" placeholder="VD: MHH3101, TH3051..." maxlength="50">
-            <div class="hint">Nhập mã học phần trong chương trình đào tạo có sử dụng thiết bị này. Có thể nhập nhiều mã, cách nhau bởi dấu phẩy.</div>
-            <div class="submit-row">
-              <button class="submit-btn" onclick="submitInput('sec-train', '${qrCode}', 'training')">Ghi nhận</button>
-              <button class="clear-btn" onclick="document.getElementById('sec-train-input').value=''">Xóa</button>
-            </div>
-            <div class="success-msg" id="sec-train-success"></div>
-          </div>
-        </div>
-
-        <!-- Nghiên cứu KH -->
-        <div class="input-section">
-          <div class="input-section-header" id="sec-research" onclick="toggleSection('sec-research')">
-            <span class="sec-icon">🔬</span>
-            <div>
-              <div class="sec-label">Nghiên cứu khoa học</div>
-              <div class="sec-desc">Ghi mã đề tài có sử dụng thiết bị này</div>
-            </div>
-            <span class="arrow">▼</span>
-          </div>
-          <div class="input-section-body" id="sec-research-body">
-            <label>Mã đề tài / dự án</label>
-            <input type="text" id="sec-research-input" placeholder="VD: QG.25.01, NAFOSTED-101..." maxlength="100">
-            <div class="hint">Nhập mã đề tài nghiên cứu khoa học có sử dụng thiết bị. Có thể nhập nhiều mã, cách nhau bởi dấu phẩy.</div>
-            <div class="submit-row">
-              <button class="submit-btn" onclick="submitInput('sec-research', '${qrCode}', 'research')">Ghi nhận</button>
-              <button class="clear-btn" onclick="document.getElementById('sec-research-input').value=''">Xóa</button>
-            </div>
-            <div class="success-msg" id="sec-research-success"></div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <button class="action-btn primary" onclick="showAll()" style="width:100%;margin-bottom:16px">

@@ -201,18 +201,14 @@ function openPage(search = '', api = () => ({}), html = HTML) {
     assert.match(html, /Có sự cố/);
   });
 
-  // ---------------- Đào tạo / NCKH chưa kết nối ----------------
-  await test('Đào tạo/NCKH chưa có form: KHÔNG báo "Đã ghi nhận", giữ nội dung đã nhập', async () => {
+  // ---------------- Đào tạo / NCKH khai ngay trên form mượn / tại chỗ ----------------
+  await test('Trang tra cứu: không còn hai ô Đào tạo/NCKH giữ chỗ (khai trên form mượn / tại chỗ)', async () => {
     const p = openPage('?id=HMO-OBS-8693', () => ({ _borrowStatus: { available: true, borrowedCount: 0 } }));
     await tick();
-    const input = p.d.getElementById('sec-train-input');
-    assert.ok(input, 'có ô nhập đào tạo');
-    input.value = 'HMO2001';
-    p.w.submitInput('sec-train', 'HMO-OBS-8693', 'training');
-    const msg = p.d.getElementById('sec-train-success').textContent;
-    assert.ok(!/Đã ghi nhận/.test(msg), msg);
-    assert.match(msg, /Chưa ghi nhận/);
-    assert.equal(input.value, 'HMO2001');
+    assert.equal(p.d.getElementById('sec-train'), null);
+    assert.equal(p.d.getElementById('sec-research'), null);
+    assert.equal(typeof p.w.submitInput, 'undefined');
+    assert.ok(!/FORM_ID_DAOTAO|FORM_ID_NCKH/.test(HTML), 'không còn form giả giữ chỗ');
   });
 
   // ---------------- Nhật ký toàn Khoa ----------------
@@ -236,7 +232,7 @@ function openPage(search = '', api = () => ({}), html = HTML) {
     const ctx = vm.createContext({
       self: { addEventListener: (t, f) => { handlers[t] = f; }, skipWaiting() {}, clients: { claim: () => Promise.resolve() },
         location: { hostname: 'example.test' } },
-      caches: { keys: () => Promise.resolve(['hmo-equipment-v12', 'hmo-equipment-v13', 'other-app-v1']),
+      caches: { keys: () => Promise.resolve(['hmo-equipment-v12', 'hmo-equipment-v14', 'other-app-v1']),
         delete: k => { deleted.push(k); return Promise.resolve(true); } },
       URL, Response: class {}, JSON, Promise, fetch: () => Promise.reject(new Error('x'))
     });
