@@ -1912,6 +1912,74 @@ test('NCKH: lượt thiếu mã đề tài vào missingProject; thiết bị kh�
   assert.equal(rep.rows[0].equipName, 'HMO-GONE');
 });
 
+// ====================== Đào tạo / NCKH: ghi sheet báo cáo ======================
+/** Harness có Log 26 cột + danh mục: MHH3101 (5 giờ thực hành). Mọi lượt nằm trong năm 2025 (kỳ đã đóng, không phụ thuộc giờ chạy test). */
+function reportHarness(rows) {
+  const h = harness();
+  h.sheets.Log_Muon_Tra.rows = [LOG_HEADERS.slice(), ...rows];
+  h.sheets.Log_Muon_Tra.maxCols = 26;
+  h.sheets.Danh_Muc_Hoc_Phan = new Sheet('Danh_Muc_Hoc_Phan', [CATALOG_HEADERS.slice(), ['MHH3101', 'Máng sóng', 2, 25, 5, '']]);
+  return h;
+}
+const sheetRows = (h, name) => json(h.sheets[name].rows);
+const tuRow = (over = {}) => dvRow(Object.assign({ service: 'Đào tạo', ref: 'MHH3101' }, over));
+test('Báo cáo Đào tạo: dòng [QR, tên, mã HP, tên HP, giờ tín chỉ, giờ chạy máy, số buổi, bài thực tập]', () => {
+  const h = reportHarness([tuRow({ exercise: 'Bài 1' }), tuRow({ exercise: 'Bài 2' })]);
+  h.ctx.generatePurposeReports(2025);
+  const rows = sheetRows(h, 'Bao_Cao_Dao_Tao_2025');
+  assert.deepEqual(rows[1].slice(0, 8), ['Mã QR', 'Tên thiết bị', 'Mã học phần', 'Tên học phần', 'Giờ tín chỉ thực hành',
+    'Giờ chạy máy', 'Số buổi', 'Danh mục bài thực tập']);
+  assert.deepEqual(rows[2], [QR, 'Máy đo chất lượng nước', 'MHH3101', 'Máng sóng', 5, 16, 2, 'Bài 1; Bài 2']);
+});
+test('Báo cáo Đào tạo: học phần chưa có trong danh mục → ghi "Chưa có trong danh mục"; lượt thiếu mã ở phần cuối', () => {
+  const h = reportHarness([tuRow({ ref: 'ZZZ999' }), tuRow({ ref: '' })]);
+  h.ctx.generatePurposeReports(2025);
+  const rows = sheetRows(h, 'Bao_Cao_Dao_Tao_2025');
+  assert.equal(rows[2][2], 'ZZZ999');
+  assert.equal(rows[2][4], 'Chưa có trong danh mục');
+  const at = rows.findIndex(r => r[0] === 'Lượt Đào tạo thiếu mã học phần');
+  assert.ok(at > 2, 'có phần liệt kê lượt thiếu mã');
+  assert.deepEqual([rows[at + 1][0], rows[at + 1][5], rows[at + 1][6]], [QR, 8, 1]);
+});
+test('Báo cáo NCKH: dòng đề tài + dòng "Tổng số đề tài khác nhau"; lượt thiếu mã đề tài ở phần cuối', () => {
+  const h = reportHarness([dvRow({ service: 'NCKH', ref: 'QG.25.01, NAFOSTED-101' }), dvRow({ service: 'NCKH', ref: 'qg.25.01' }),
+    dvRow({ service: 'NCKH', ref: '' })]);
+  h.ctx.generatePurposeReports(2025);
+  const rows = sheetRows(h, 'Bao_Cao_NCKH_2025');
+  assert.deepEqual(rows[1].slice(0, 4), ['Mã QR', 'Tên thiết bị', 'Mã đề tài', 'Số lượt']);
+  assert.deepEqual(rows[2].slice(0, 4), [QR, 'Máy đo chất lượng nước', 'NAFOSTED-101', 1]);
+  assert.deepEqual(rows[3].slice(0, 4), [QR, 'Máy đo chất lượng nước', 'QG.25.01', 2]);
+  assert.deepEqual([rows[4][2], rows[4][3]], ['Tổng số đề tài khác nhau', 2]);
+  const at = rows.findIndex(r => r[0] === 'Lượt NCKH thiếu mã đề tài');
+  assert.ok(at > 4);
+  assert.deepEqual([rows[at + 1][0], rows[at + 1][3]], [QR, 1]);
+});
+test('Báo cáo năm: generateAnnualUsageReport cũng tạo hai sheet mới và vẫn tạo Bao_Cao_Nam_YYYY', () => {
+  const h = reportHarness([tuRow({ exercise: 'Bài 1' }), dvRow({ service: 'NCKH', ref: 'QG.25.01' })]);
+  h.ctx.sendAnnualReportEmail_ = () => {};
+  h.ctx.generateAnnualUsageReport(2025);
+  assert.ok(h.sheets.Bao_Cao_Nam_2025, 'báo cáo năm cũ vẫn có');
+  assert.ok(h.sheets.Bao_Cao_Dao_Tao_2025 && h.sheets.Bao_Cao_NCKH_2025);
+});
+test('Báo cáo Đào tạo/NCKH: chạy lại cùng năm ghi đè, không nhân đôi dòng', () => {
+  const h = reportHarness([tuRow({ exercise: 'Bài 1' })]);
+  h.ctx.generatePurposeReports(2025);
+  const first = sheetRows(h, 'Bao_Cao_Dao_Tao_2025');
+  h.ctx.generatePurposeReports(2025);
+  assert.deepEqual(sheetRows(h, 'Bao_Cao_Dao_Tao_2025'), first);
+});
+test('Báo cáo Đào tạo: thiết bị đã xóa khỏi Master_Data vẫn có dòng (tên = mã QR), không ném lỗi', () => {
+  const h = reportHarness([tuRow({ qr: 'HMO-GONE-0001' })]);
+  h.ctx.generatePurposeReports(2025);
+  const rows = sheetRows(h, 'Bao_Cao_Dao_Tao_2025');
+  assert.deepEqual(rows[2].slice(0, 2), ['HMO-GONE-0001', 'HMO-GONE-0001']);
+});
+test('Báo cáo Đào tạo/NCKH: thiếu sheet Log → báo lỗi, không tạo sheet rỗng gây hiểu nhầm là "không có ai dùng"', () => {
+  const h = harness([], { noLog: true });
+  assert.throws(() => h.ctx.generatePurposeReports(2025), /Log_Muon_Tra/);
+  assert.ok(!h.sheets.Bao_Cao_Dao_Tao_2025);
+});
+
 // ---------- Kết quả ----------
 let failed = 0;
 for (const [ok, name, err] of results) {

@@ -2849,6 +2849,9 @@ function generateAnnualUsageReport(year) {
   sendAnnualReportEmail_(targetYear, reportRows, totalBorrows, totalHoursAll,
     { countActive, countAvg, countPoor, countUnused });
 
+  // Hai báo cáo Đào tạo / NCKH chạy SAU báo cáo chính + email: lỗi ở đây không làm mất báo cáo năm đã gửi.
+  writePurposeReports_(ss, targetYear, periodStart, periodEnd, masterMap);
+
   try {
     SpreadsheetApp.getUi().alert(
       `✅ Báo cáo năm ${targetYear} hoàn tất!\n` +
@@ -2914,7 +2917,7 @@ function buildTrainingReport_(usages, catalog, masterMap) {
       m.sessions++; m.hours += u.hours;
       return;
     }
-    const key = u.qr + ' ' + code;
+    const key = u.qr + '\u0000' + code;
     const g = groups[key] || (groups[key] = { qr: u.qr, code: code, hours: 0, sessions: 0, exercises: [] });
     g.hours += u.hours; g.sessions++;
     if (u.exercise && g.exercises.indexOf(u.exercise) < 0) g.exercises.push(u.exercise);
@@ -2949,7 +2952,7 @@ function buildResearchReport_(usages, masterMap) {
       return;
     }
     codes.forEach(code => {
-      const key = u.qr + ' ' + code;
+      const key = u.qr + '\u0000' + code;
       const g = groups[key] || (groups[key] = { qr: u.qr, equipName: equipNameOf_(masterMap, u.qr), project: code, sessions: 0 });
       g.sessions++;
     });
@@ -2960,6 +2963,110 @@ function buildResearchReport_(usages, masterMap) {
   rows.forEach(r => { projectCountByQr[r.qr] = (projectCountByQr[r.qr] || 0) + 1; });
   const missingProject = Object.keys(missing).sort().map(qr => missing[qr]);
   return { rows: rows, projectCountByQr: projectCountByQr, missingProject: missingProject };
+}
+
+
+const NOT_IN_CATALOG_TEXT = 'Chưa có trong danh mục';
+
+/** Master_Data → { "HMO-XXX-0000": { name } } (chỉ để hiện tên thiết bị trong báo cáo). */
+function readMasterNames_(ss) {
+  const sheet = ss.getSheetByName(CONFIG.SHEETS.MASTER);
+  if (!sheet) throw new Error('Không tìm thấy sheet ' + CONFIG.SHEETS.MASTER);
+  const data = sheet.getDataRange().getValues();
+  const colQr = data[0].indexOf('Mã QR');
+  const colName = data[0].indexOf('Tên thiết bị');
+  const names = {};
+  for (let i = 1; i < data.length; i++) {
+    const qr = String(data[i][colQr] || '').trim();
+    if (qr) names[qr] = { name: colName >= 0 ? String(data[i][colName] || '') : '' };
+  }
+  return names;
+}
+
+/**
+ * Tạo / ghi đè một sheet báo cáo: dòng 1 tiêu đề, dòng 2 tiêu đề cột, dữ liệu từ dòng 3.
+ * layout = { rows, boldRows: [chỉ số dòng dữ liệu], warnCells: [[chỉ số dòng, chỉ số cột 0-based]] }.
+ */
+function writeReportSheet_(ss, name, title, headers, widths, layout) {
+  let sheet = ss.getSheetByName(name);
+  if (sheet) { sheet.clearContents(); sheet.clearFormats(); }
+  else sheet = ss.insertSheet(name);
+  const width = headers.length;
+  sheet.getRange(1, 1, 1, width).merge().setValue(title)
+    .setFontWeight('bold').setFontSize(13).setHorizontalAlignment('center')
+    .setBackground('#1565C0').setFontColor('white');
+  sheet.getRange(2, 1, 1, width).setValues([headers])
+    .setFontWeight('bold').setBackground('#1E88E5').setFontColor('white')
+    .setHorizontalAlignment('center').setWrap(true);
+  sheet.setFrozenRows(2);
+  if (layout.rows.length) {
+    const padded = layout.rows.map(r => Array.from({ length: width }, (_, i) => (i < r.length ? r[i] : '')));
+    sheet.getRange(3, 1, padded.length, width).setValues(padded);
+    layout.boldRows.forEach(i => sheet.getRange(3 + i, 1, 1, width).setFontWeight('bold').setBackground('#E3F2FD'));
+    layout.warnCells.forEach(([i, c]) => sheet.getRange(3 + i, c + 1).setBackground('#FFE0B2'));
+  }
+  widths.forEach((w, i) => sheet.setColumnWidth(i + 1, w));
+}
+
+function trainingSheetLayout_(report) {
+  const rows = [], warnCells = [], boldRows = [];
+  report.rows.forEach(r => {
+    if (r.creditHours === null) warnCells.push([rows.length, 4]);
+    rows.push([r.qr, r.equipName, r.code, r.courseName, r.creditHours === null ? NOT_IN_CATALOG_TEXT : r.creditHours,
+      r.machineHours, r.sessions, r.exercises.join('; ')]);
+  });
+  if (report.missingCode.length) {
+    rows.push([]);
+    boldRows.push(rows.length);
+    rows.push(['Lượt Đào tạo thiếu mã học phần']);
+    report.missingCode.forEach(m => rows.push([m.qr, m.equipName, '', '', '', m.hours, m.sessions, '']));
+  }
+  return { rows: rows, boldRows: boldRows, warnCells: warnCells };
+}
+
+function researchSheetLayout_(report) {
+  const rows = [], boldRows = [];
+  report.rows.forEach((r, i) => {
+    rows.push([r.qr, r.equipName, r.project, r.sessions]);
+    const next = report.rows[i + 1];
+    if (!next || next.qr !== r.qr) {
+      boldRows.push(rows.length);
+      rows.push(['', '', 'Tổng số đề tài khác nhau', report.projectCountByQr[r.qr]]);
+    }
+  });
+  if (report.missingProject.length) {
+    rows.push([]);
+    boldRows.push(rows.length);
+    rows.push(['Lượt NCKH thiếu mã đề tài']);
+    report.missingProject.forEach(m => rows.push([m.qr, m.equipName, '', m.sessions]));
+  }
+  return { rows: rows, boldRows: boldRows, warnCells: [] };
+}
+
+/** Ghi hai sheet Bao_Cao_Dao_Tao_YYYY và Bao_Cao_NCKH_YYYY từ Log_Muon_Tra + Danh_Muc_Hoc_Phan. */
+function writePurposeReports_(ss, year, periodStart, periodEnd, masterMap) {
+  const logSheet = ss.getSheetByName(CONFIG.SHEETS.LOG_MUON);
+  if (!logSheet) throw new Error('Không tìm thấy sheet ' + CONFIG.SHEETS.LOG_MUON);
+  const usages = collectPurposeUsage_(logSheet.getDataRange().getValues(), periodStart, periodEnd);
+
+  const training = buildTrainingReport_(usages, readCourseCatalog_(ss), masterMap);
+  writeReportSheet_(ss, `Bao_Cao_Dao_Tao_${year}`, `BÁO CÁO SỬ DỤNG THIẾT BỊ CHO ĐÀO TẠO NĂM ${year} — KHOA KTTV&HDH`,
+    ['Mã QR', 'Tên thiết bị', 'Mã học phần', 'Tên học phần', 'Giờ tín chỉ thực hành', 'Giờ chạy máy', 'Số buổi',
+      'Danh mục bài thực tập'], [130, 220, 100, 220, 130, 100, 80, 380], trainingSheetLayout_(training));
+
+  const research = buildResearchReport_(usages, masterMap);
+  writeReportSheet_(ss, `Bao_Cao_NCKH_${year}`, `BÁO CÁO SỬ DỤNG THIẾT BỊ CHO NGHIÊN CỨU KHOA HỌC NĂM ${year} — KHOA KTTV&HDH`,
+    ['Mã QR', 'Tên thiết bị', 'Mã đề tài', 'Số lượt'], [130, 220, 220, 80], researchSheetLayout_(research));
+}
+
+/** Menu: tạo riêng hai báo cáo Đào tạo / NCKH (không gửi email). Mặc định năm hiện tại, kỳ tính như báo cáo năm. */
+function generatePurposeReports(year) {
+  const targetYear = year || new Date().getFullYear();
+  const periodStart = new Date(targetYear, 0, 1);
+  const periodEnd = new Date(Math.min(new Date(targetYear + 1, 0, 1).getTime(), Date.now()));
+  const ss = SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID);
+  writePurposeReports_(ss, targetYear, periodStart, periodEnd, readMasterNames_(ss));
+  slipToast_(`Đã tạo Bao_Cao_Dao_Tao_${targetYear} và Bao_Cao_NCKH_${targetYear}.`);
 }
 
 
@@ -4380,6 +4487,7 @@ function onOpen() {
     .addItem('Gửi báo cáo tháng', 'monthlyReport')
     .addSeparator()
     .addItem('📊 Tạo báo cáo hiệu quả sử dụng năm nay', 'generateAnnualUsageReport')
+    .addItem('📚 Tạo báo cáo Đào tạo / NCKH năm nay', 'generatePurposeReports')
     .addItem('🔢 Backfill giờ sử dụng (chạy 1 lần)', 'backfillUsageHours')
     .addSeparator()
     .addItem('Đồng bộ Form → Log_Muon_Tra', 'syncFormResponsesToLog')
