@@ -2727,18 +2727,12 @@ function generateAnnualUsageReport(year) {
       const status = loanStatus_(logData[i]);
       if (status === LOAN_STATUS.PENDING || status === LOAN_STATUS.REJECTED) continue;
 
-      // Giữ giờ bắt đầu thật nếu ô là Date (khai báo tại chỗ tính theo giờ, không theo ngày)
-      const rawStart = logData[i][LOG_COL.BORROW_DATE];
-      const start = (rawStart instanceof Date && !isNaN(rawStart.getTime())) ? rawStart : parseDate_(rawStart);
-      if (!start) continue;
-      const returned = logData[i][LOG_COL.RETURN_DATE];
-      const end = returned instanceof Date ? returned : (parseDate_(returned) || new Date());
-      const overlapMs = Math.min(end.getTime(), periodEnd.getTime()) - Math.max(start.getTime(), periodStart.getTime());
-      if (overlapMs <= 0) continue; // khoản mượn không giao với kỳ báo cáo
+      const hours = loanOverlapHours_(logData[i], periodStart, periodEnd);
+      if (hours <= 0) continue; // khoản mượn không giao với kỳ báo cáo
 
       if (!stats[qr]) stats[qr] = { times: 0, totalHours: 0, completedTimes: 0 };
       stats[qr].times++;
-      stats[qr].totalHours += overlapMs / 3600000;
+      stats[qr].totalHours += hours;
       stats[qr].completedTimes++;
     }
   }
@@ -2862,6 +2856,110 @@ function generateAnnualUsageReport(year) {
       `• Email tóm tắt đã gửi đến: ${CONFIG.ADMIN_EMAIL}`
     );
   } catch (e) { /* trigger — không có UI */ }
+}
+
+
+// ==================== BÁO CÁO ĐÀO TẠO / NCKH ====================
+
+/**
+ * Số giờ của một dòng Log nằm trong [periodStart, periodEnd). Dùng chung cho báo cáo năm và báo cáo Đào tạo / NCKH
+ * để hai báo cáo không bao giờ lệch nhau. Giữ giờ bắt đầu thật nếu ô là Date (tại chỗ tính theo giờ);
+ * chưa trả thì tính tới hiện tại. Không đọc được ngày bắt đầu hoặc không giao với kỳ → 0.
+ */
+function loanOverlapHours_(row, periodStart, periodEnd) {
+  const rawStart = row[LOG_COL.BORROW_DATE];
+  const start = (rawStart instanceof Date && !isNaN(rawStart.getTime())) ? rawStart : parseDate_(rawStart);
+  if (!start) return 0;
+  const returned = row[LOG_COL.RETURN_DATE];
+  const end = returned instanceof Date ? returned : (parseDate_(returned) || new Date());
+  const overlapMs = Math.min(end.getTime(), periodEnd.getTime()) - Math.max(start.getTime(), periodStart.getTime());
+  return overlapMs > 0 ? overlapMs / 3600000 : 0;
+}
+
+/**
+ * Các lượt có khai Đào tạo / NCKH, đã bàn giao thật (bỏ chờ duyệt / bị từ chối) và có giờ nằm trong kỳ.
+ * logData = toàn bộ giá trị sheet, dòng 0 là tiêu đề.
+ */
+function collectPurposeUsage_(logData, periodStart, periodEnd) {
+  const usages = [];
+  for (let i = 1; i < logData.length; i++) {
+    const row = logData[i];
+    const qr = String(row[LOG_COL.QR] || '').trim();
+    const service = String(row[LOG_COL.SERVICE] || '').trim();
+    if (!qr || (service !== SERVICE_TYPE.TRAINING && service !== SERVICE_TYPE.RESEARCH)) continue;
+    const status = loanStatus_(row);
+    if (status === LOAN_STATUS.PENDING || status === LOAN_STATUS.REJECTED) continue;
+    const hours = loanOverlapHours_(row, periodStart, periodEnd);
+    if (hours <= 0) continue;
+    usages.push({ qr: qr, service: service, ref: String(row[LOG_COL.SERVICE_REF] || '').trim(),
+      exercise: String(row[LOG_COL.EXERCISE] || '').trim(), hours: hours });
+  }
+  return usages;
+}
+
+const round1_ = n => Math.round(n * 10) / 10;
+const equipNameOf_ = (masterMap, qr) => (masterMap[qr] && masterMap[qr].name) || qr;
+
+/**
+ * Báo cáo Đào tạo theo (thiết bị, học phần). Giờ chạy máy CỘNG DỒN các buổi; giờ tín chỉ lấy từ danh mục
+ * (KHÔNG cộng dồn, mỗi thiết bị đủ giờ của học phần; null = chưa có trong danh mục). Lượt thiếu mã → missingCode.
+ */
+function buildTrainingReport_(usages, catalog, masterMap) {
+  const groups = {};
+  const missing = {};
+  usages.filter(u => u.service === SERVICE_TYPE.TRAINING).forEach(u => {
+    const code = normalizeCourseCode_(u.ref);
+    if (!code) {
+      const m = missing[u.qr] || (missing[u.qr] = { qr: u.qr, equipName: equipNameOf_(masterMap, u.qr), sessions: 0, hours: 0 });
+      m.sessions++; m.hours += u.hours;
+      return;
+    }
+    const key = u.qr + ' ' + code;
+    const g = groups[key] || (groups[key] = { qr: u.qr, code: code, hours: 0, sessions: 0, exercises: [] });
+    g.hours += u.hours; g.sessions++;
+    if (u.exercise && g.exercises.indexOf(u.exercise) < 0) g.exercises.push(u.exercise);
+  });
+  const rows = Object.keys(groups).map(key => {
+    const g = groups[key];
+    const entry = catalog[g.code];
+    return { qr: g.qr, equipName: equipNameOf_(masterMap, g.qr), code: g.code,
+      courseName: entry ? entry.name : '', creditHours: entry ? entry.practiceHours : null,
+      machineHours: round1_(g.hours), sessions: g.sessions, exercises: g.exercises };
+  }).sort((a, b) => a.qr.localeCompare(b.qr) || a.code.localeCompare(b.code));
+  const missingCode = Object.keys(missing).sort().map(qr => ({ qr: qr, equipName: missing[qr].equipName,
+    sessions: missing[qr].sessions, hours: round1_(missing[qr].hours) }));
+  return { rows: rows, missingCode: missingCode };
+}
+
+/** Mã đề tài trong một ô: tách bằng , hoặc ;, viết hoa, bỏ trùng và mã trống. */
+function splitProjectCodes_(text) {
+  const codes = String(text || '').split(/[,;]/).map(c => c.trim().toUpperCase()).filter(Boolean);
+  return codes.filter((c, i) => codes.indexOf(c) === i);
+}
+
+/** Báo cáo NCKH theo (thiết bị, đề tài): chỉ đếm lượt và số đề tài, không tính giờ. Lượt thiếu mã → missingProject. */
+function buildResearchReport_(usages, masterMap) {
+  const groups = {};
+  const missing = {};
+  usages.filter(u => u.service === SERVICE_TYPE.RESEARCH).forEach(u => {
+    const codes = splitProjectCodes_(u.ref);
+    if (!codes.length) {
+      const m = missing[u.qr] || (missing[u.qr] = { qr: u.qr, equipName: equipNameOf_(masterMap, u.qr), sessions: 0 });
+      m.sessions++;
+      return;
+    }
+    codes.forEach(code => {
+      const key = u.qr + ' ' + code;
+      const g = groups[key] || (groups[key] = { qr: u.qr, equipName: equipNameOf_(masterMap, u.qr), project: code, sessions: 0 });
+      g.sessions++;
+    });
+  });
+  const rows = Object.keys(groups).map(key => groups[key])
+    .sort((a, b) => a.qr.localeCompare(b.qr) || a.project.localeCompare(b.project));
+  const projectCountByQr = {};
+  rows.forEach(r => { projectCountByQr[r.qr] = (projectCountByQr[r.qr] || 0) + 1; });
+  const missingProject = Object.keys(missing).sort().map(qr => missing[qr]);
+  return { rows: rows, projectCountByQr: projectCountByQr, missingProject: missingProject };
 }
 
 

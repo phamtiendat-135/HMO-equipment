@@ -1822,6 +1822,96 @@ test('Danh mục HP: thiếu sheet → danh mục rỗng, không lỗi', () => {
   assert.deepEqual(readCatalog(harness()), {});
 });
 
+// ====================== Đào tạo / NCKH: tổng hợp dữ liệu báo cáo ======================
+const Y25 = [new Date(2025, 0, 1), new Date(2026, 0, 1)];
+const json = x => JSON.parse(JSON.stringify(x));
+/** Dòng Log 26 cột để thử tổng hợp: over = { qr, borrow, ret, approval, service, ref, exercise }. */
+function dvRow(over = {}) {
+  const r = legacyLoan('A', over.approval || '✅ Đã phê duyệt');
+  while (r.length < 26) r.push('');
+  r[0] = 'qr' in over ? over.qr : QR;
+  r[6] = over.borrow || new Date(2025, 2, 10, 8, 0); r[8] = 'ret' in over ? over.ret : new Date(2025, 2, 10, 16, 0);
+  r[23] = over.service ?? ''; r[24] = over.ref ?? ''; r[25] = over.exercise ?? '';
+  return r;
+}
+test('Tổng hợp: loanOverlapHours_ — lượt vắt qua năm chỉ tính phần trong năm; chưa trả tính tới hết kỳ', () => {
+  const h = harness();
+  const cross = dvRow({ borrow: new Date(2024, 11, 30), ret: new Date(2025, 0, 3) });
+  assert.equal(h.ctx.loanOverlapHours_(cross, ...Y25), 48);
+  const open = dvRow({ borrow: new Date(2025, 11, 30), ret: '' });
+  assert.equal(h.ctx.loanOverlapHours_(open, ...Y25), 48);
+  const outside = dvRow({ borrow: new Date(2024, 5, 1), ret: new Date(2024, 5, 2) });
+  assert.equal(h.ctx.loanOverlapHours_(outside, ...Y25), 0);
+});
+test('Tổng hợp: collectPurposeUsage_ loại chờ duyệt, bị từ chối, Khác, dòng cũ (cột X rỗng), dòng không QR', () => {
+  const h = harness();
+  const rows = [dvRow({ service: 'Đào tạo', ref: 'MHH3101', exercise: 'Bài 1' }),
+    dvRow({ service: 'Đào tạo', ref: 'MHH3101', approval: run(h, 'APPROVAL_PENDING_TEXT'), ret: '' }),
+    dvRow({ service: 'Đào tạo', ref: 'MHH3101', approval: '❌ Từ chối — PTK', ret: '' }),
+    dvRow({ service: 'Khác' }), dvRow({ service: '' }), dvRow({ service: 'NCKH', ref: 'X', qr: '' }),
+    dvRow({ service: 'NCKH', ref: 'QG.25.01', borrow: new Date(2024, 1, 1), ret: new Date(2024, 1, 2) })];
+  const out = json(h.ctx.collectPurposeUsage_([LOG_HEADERS, ...rows], ...Y25));
+  assert.deepEqual(out, [{ qr: QR, service: 'Đào tạo', ref: 'MHH3101', exercise: 'Bài 1', hours: 8 }]);
+});
+const cat = (code, name, hours) => ({ [code]: { name, practiceHours: hours } });
+const tu = (ref, hours, exercise = '', qr = QR) => ({ qr, service: 'Đào tạo', ref, exercise, hours });
+test('Đào tạo: hai nhóm 8 giờ + 8 giờ cùng học phần → giờ chạy máy 16, 2 buổi, giờ tín chỉ 5', () => {
+  const h = harness();
+  const rep = json(h.ctx.buildTrainingReport_([tu('MHH3101', 8, 'Bài 1'), tu('MHH3101', 8, 'Bài 2')],
+    cat('MHH3101', 'Máng sóng', 5), { [QR]: { name: 'Máy đo' } }));
+  assert.deepEqual(rep.rows, [{ qr: QR, equipName: 'Máy đo', code: 'MHH3101', courseName: 'Máng sóng',
+    creditHours: 5, machineHours: 16, sessions: 2, exercises: ['Bài 1', 'Bài 2'] }]);
+});
+test('Đào tạo: giờ tín chỉ 5 qua 10 buổi vẫn là 5 (không cộng dồn)', () => {
+  const h = harness();
+  const usages = Array.from({ length: 10 }, () => tu('MHH3101', 2));
+  const rep = json(h.ctx.buildTrainingReport_(usages, cat('MHH3101', 'x', 5), {}));
+  assert.equal(rep.rows[0].creditHours, 5);
+  assert.equal(rep.rows[0].machineHours, 20);
+});
+test('Đào tạo: học phần dùng 2 thiết bị → mỗi thiết bị đủ giờ tín chỉ, sắp theo mã QR', () => {
+  const h = harness();
+  const rep = json(h.ctx.buildTrainingReport_([tu('MHH3101', 4, '', 'HMO-B'), tu('MHH3101', 3, '', 'HMO-A')],
+    cat('MHH3101', 'x', 5), {}));
+  assert.deepEqual(rep.rows.map(r => [r.qr, r.creditHours, r.machineHours]), [['HMO-A', 5, 3], ['HMO-B', 5, 4]]);
+});
+test('Đào tạo: "mhh 3101" và "MHH3101" gộp một dòng', () => {
+  const h = harness();
+  const rep = json(h.ctx.buildTrainingReport_([tu('mhh 3101', 2), tu('MHH3101', 3)], cat('MHH3101', 'x', 5), {}));
+  assert.equal(rep.rows.length, 1);
+  assert.equal(rep.rows[0].machineHours, 5);
+});
+test('Đào tạo: học phần không có trong danh mục → creditHours null; giờ thực hành trống cũng null', () => {
+  const h = harness();
+  const rep = json(h.ctx.buildTrainingReport_([tu('ZZZ999', 2), tu('MHH3200', 1)], cat('MHH3200', 'Y', null), {}));
+  assert.deepEqual(rep.rows.map(r => [r.code, r.creditHours]), [['MHH3200', null], ['ZZZ999', null]]);
+});
+test('Đào tạo: lượt thiếu mã học phần vào missingCode, không vào rows; tên thiết bị lạ = mã QR', () => {
+  const h = harness();
+  const rep = json(h.ctx.buildTrainingReport_([tu('', 3), tu('', 2), tu('MHH3101', 1)], cat('MHH3101', 'x', 5), {}));
+  assert.deepEqual(rep.rows.map(r => r.code), ['MHH3101']);
+  assert.deepEqual(rep.missingCode, [{ qr: QR, equipName: QR, sessions: 2, hours: 5 }]);
+});
+test('Đào tạo: bài thực tập duy nhất, giữ thứ tự, bỏ bài trống', () => {
+  const h = harness();
+  const rep = json(h.ctx.buildTrainingReport_([tu('A1', 1, 'B2'), tu('A1', 1, ''), tu('A1', 1, 'B1'), tu('A1', 1, 'B2')], {}, {}));
+  assert.deepEqual(rep.rows[0].exercises, ['B2', 'B1']);
+});
+const nc = (ref, qr = QR) => ({ qr, service: 'NCKH', ref, exercise: '', hours: 0 });
+test('NCKH: "QG.25.01, qg.25.01" đếm một đề tài; nhiều mã mỗi đề tài +1 lượt; đếm đề tài theo thiết bị', () => {
+  const h = harness();
+  const rep = json(h.ctx.buildResearchReport_([nc('QG.25.01, qg.25.01'), nc('QG.25.01; NAFOSTED-101')], { [QR]: { name: 'Máy đo' } }));
+  assert.deepEqual(rep.rows, [{ qr: QR, equipName: 'Máy đo', project: 'NAFOSTED-101', sessions: 1 },
+    { qr: QR, equipName: 'Máy đo', project: 'QG.25.01', sessions: 2 }]);
+  assert.deepEqual(rep.projectCountByQr, { [QR]: 2 });
+});
+test('NCKH: lượt thiếu mã đề tài vào missingProject; thiết bị không có trong Master vẫn hiện (tên = mã QR)', () => {
+  const h = harness();
+  const rep = json(h.ctx.buildResearchReport_([nc(''), nc(' '), nc('X1', 'HMO-GONE')], {}));
+  assert.deepEqual(rep.missingProject, [{ qr: QR, equipName: QR, sessions: 2 }]);
+  assert.equal(rep.rows[0].equipName, 'HMO-GONE');
+});
+
 // ---------- Kết quả ----------
 let failed = 0;
 for (const [ok, name, err] of results) {
