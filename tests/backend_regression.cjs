@@ -1788,6 +1788,40 @@ test('Dịch vụ: chọn "Nghiên cứu khoa học" hoặc "nckh" viết thư�
   assert.equal(ghiMuon(h, { 'Phục vụ hoạt động': 'Nghiên cứu khoa học (NCKH)', 'Mã đề tài (NCKH)': 'X1' })[23], 'NCKH');
 });
 
+// ====================== Đào tạo / NCKH: danh mục học phần ======================
+const CATALOG_HEADERS = ['Mã học phần', 'Tên học phần', 'Số tín chỉ', 'Giờ lý thuyết', 'Giờ thực hành', 'Ghi chú (khóa / ngành)'];
+const withCatalog = rows => {
+  const h = harness();
+  h.sheets.Danh_Muc_Hoc_Phan = new Sheet('Danh_Muc_Hoc_Phan', [CATALOG_HEADERS.slice(), ...rows]);
+  return h;
+};
+const readCatalog = h => JSON.parse(JSON.stringify(h.ctx.readCourseCatalog_(h.ctx.SpreadsheetApp.openById('x'))));
+test('Danh mục HP: ensureCourseCatalogSheet tạo sheet đủ 6 header; chạy lần 2 không xóa dữ liệu đã nhập', () => {
+  const h = harness();
+  h.ctx.ensureCourseCatalogSheet();
+  assert.deepEqual(Array.from(h.sheets.Danh_Muc_Hoc_Phan.rows[0]), CATALOG_HEADERS);
+  h.sheets.Danh_Muc_Hoc_Phan.rows.push(['MHH3101', 'Máng sóng', 2, 20, 5, '']);
+  h.ctx.ensureCourseCatalogSheet();
+  assert.equal(h.sheets.Danh_Muc_Hoc_Phan.rows.length, 2);
+  assert.equal(h.sheets.Danh_Muc_Hoc_Phan.rows[1][0], 'MHH3101');
+});
+test('Danh mục HP: cùng mã nhiều mức (3 và 5, "mhh 3101") → lấy 5', () => {
+  const h = withCatalog([['mhh 3101', 'Máng sóng', 2, 20, 3, ''], ['MHH3101', 'Máng sóng K2', 2, 15, 5, '']]);
+  const cat = readCatalog(h);
+  assert.equal(cat.MHH3101.practiceHours, 5);
+  assert.equal(cat.MHH3101.name, 'Máng sóng');
+});
+test('Danh mục HP: giờ thực hành trống hoặc chữ → null, KHÔNG phải 0; "7,5" → 7.5', () => {
+  const h = withCatalog([['A1', 'a', 2, 20, '', ''], ['A2', 'b', 2, 20, 'abc', ''], ['A3', 'c', 2, 20, '7,5', '']]);
+  const cat = readCatalog(h);
+  assert.equal(cat.A1.practiceHours, null);
+  assert.equal(cat.A2.practiceHours, null);
+  assert.equal(cat.A3.practiceHours, 7.5);
+});
+test('Danh mục HP: thiếu sheet → danh mục rỗng, không lỗi', () => {
+  assert.deepEqual(readCatalog(harness()), {});
+});
+
 // ---------- Kết quả ----------
 let failed = 0;
 for (const [ok, name, err] of results) {

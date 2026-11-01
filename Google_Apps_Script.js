@@ -23,7 +23,8 @@ const CONFIG = {
     LOG_MUON: 'Log_Muon_Tra',
     LOG_BAOTRI: 'Log_Bao_Tri',
     LOG_HONG: 'Log_Bao_Hong',
-    CANBO: 'Can_Bo_QL'
+    CANBO: 'Can_Bo_QL',
+    COURSES: 'Danh_Muc_Hoc_Phan'
   },
 
   // Email Phó Trưởng khoa (nhận tất cả thông báo)
@@ -1295,6 +1296,51 @@ function readServiceFields_(find) {
   }
   if (service === SERVICE_TYPE.RESEARCH) return { service: service, serviceRef: find(['mã đề tài']), exercise: '' };
   return { service: service, serviceRef: '', exercise: '' };
+}
+
+// ---------- Danh mục học phần (giờ thực hành theo chương trình đào tạo) ----------
+const COURSE_CATALOG_HEADERS = ['Mã học phần', 'Tên học phần', 'Số tín chỉ', 'Giờ lý thuyết', 'Giờ thực hành',
+  'Ghi chú (khóa / ngành)'];
+
+/** Menu: tạo sheet Danh_Muc_Hoc_Phan (có tiêu đề) nếu chưa có. Đã có → giữ nguyên dữ liệu. */
+function ensureCourseCatalogSheet() {
+  const ss = SpreadsheetApp.openById(CONFIG.MASTER_SHEET_ID);
+  let sheet = ss.getSheetByName(CONFIG.SHEETS.COURSES);
+  if (sheet) {
+    slipToast_(`Đã có sheet ${CONFIG.SHEETS.COURSES}, giữ nguyên dữ liệu.`);
+    return sheet;
+  }
+  sheet = ss.insertSheet(CONFIG.SHEETS.COURSES);
+  sheet.getRange(1, 1, 1, COURSE_CATALOG_HEADERS.length).setValues([COURSE_CATALOG_HEADERS])
+    .setFontWeight('bold').setBackground('#E8EAF6');
+  sheet.setFrozenRows(1);
+  slipToast_(`Đã tạo sheet ${CONFIG.SHEETS.COURSES}. Dán chương trình đào tạo vào, báo cáo dùng cột "Giờ thực hành".`);
+  return sheet;
+}
+
+/**
+ * Đọc danh mục: { "MHH3101": { name, practiceHours } }. Cùng mã nhiều dòng → giờ thực hành LỚN NHẤT;
+ * ô trống / không phải số → null (chưa có, không phải 0). Thiếu sheet → {}.
+ */
+function readCourseCatalog_(ss) {
+  const sheet = ss.getSheetByName(CONFIG.SHEETS.COURSES);
+  if (!sheet || sheet.getLastRow() < 2) return {};
+  const data = sheet.getDataRange().getValues();
+  const colCode = findColIndex_(data[0], ['mã học phần']);
+  const colName = findColIndex_(data[0], ['tên học phần']);
+  const colPractice = findColIndex_(data[0], ['giờ thực hành']);
+  if (colCode < 0) return {};
+  const catalog = {};
+  for (let i = 1; i < data.length; i++) {
+    const code = normalizeCourseCode_(data[i][colCode]);
+    if (!code) continue;
+    const entry = catalog[code] || (catalog[code] = { name: '', practiceHours: null });
+    if (!entry.name && colName >= 0) entry.name = String(data[i][colName] || '').trim();
+    const raw = colPractice >= 0 ? String(data[i][colPractice]).trim().replace(',', '.') : '';
+    const hours = raw === '' ? NaN : Number(raw);
+    if (!isNaN(hours) && (entry.practiceHours === null || hours > entry.practiceHours)) entry.practiceHours = hours;
+  }
+  return catalog;
 }
 
 function readBorrowRequest_(namedValues, cellValues) {
@@ -4247,6 +4293,8 @@ function onOpen() {
     .addSeparator()
     .addItem('📧 Tạo cột Email CB quản lý (Master_Data)', 'ensureManagerEmailColumn')
     .addItem('🔍 Gửi lại email kiểm tra đang chờ', 'resendPendingInspections')
+    .addSeparator()
+    .addItem('📚 Tạo sheet Danh mục học phần', 'ensureCourseCatalogSheet')
     .addSeparator()
     .addItem('📄 Tạo mẫu phiếu mượn (chạy 1 lần)', 'createLoanSlipTemplate')
     .addItem('🎨 Dựng lại mẫu phiếu mượn (định dạng chuẩn)', 'rebuildLoanSlipTemplate')
