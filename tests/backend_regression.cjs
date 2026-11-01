@@ -1980,6 +1980,36 @@ test('Báo cáo Đào tạo/NCKH: thiếu sheet Log → báo lỗi, không tạo
   assert.ok(!h.sheets.Bao_Cao_Dao_Tao_2025);
 });
 
+// ====================== Đào tạo / NCKH: hợp đồng với Create_Google_Forms.js ======================
+const FORMS_SOURCE = fs.readFileSync('Create_Google_Forms.js', 'utf8');
+const purposeTitles = () => {
+  const block = /const PURPOSE_QUESTIONS = \{([^}]*)\}/.exec(FORMS_SOURCE);
+  assert.ok(block, 'Create_Google_Forms.js phải khai báo const PURPOSE_QUESTIONS');
+  return Object.fromEntries([...block[1].matchAll(/(\w+):\s*'([^']+)'/g)].map(m => [m[1], m[2]]));
+};
+test('Hợp đồng form: PURPOSE_QUESTIONS khai báo đúng 4 tên câu hỏi theo spec', () => {
+  assert.deepEqual(purposeTitles(), { SERVICE: 'Phục vụ hoạt động', COURSE: 'Mã học phần',
+    EXERCISE: 'Tên bài thực tập / thí nghiệm', PROJECT: 'Mã đề tài (NCKH)' });
+});
+test('Hợp đồng form: đúng các tên trong Create_Google_Forms.js thì readServiceFields_ đọc đủ 3 trường', () => {
+  const t = purposeTitles();
+  const h = harness();
+  const find = h.ctx.namedValueFinder_({ [t.SERVICE]: ['Đào tạo'], [t.COURSE]: ['mhh 3101'], [t.EXERCISE]: ['Bài 1'], [t.PROJECT]: [''] });
+  assert.deepEqual(json(h.ctx.readServiceFields_(find)), { service: 'Đào tạo', serviceRef: 'MHH3101', exercise: 'Bài 1' });
+  const findNc = h.ctx.namedValueFinder_({ [t.SERVICE]: ['NCKH (nghiên cứu khoa học)'], [t.COURSE]: [''], [t.EXERCISE]: [''], [t.PROJECT]: ['QG.25.01'] });
+  assert.deepEqual(json(h.ctx.readServiceFields_(findNc)), { service: 'NCKH', serviceRef: 'QG.25.01', exercise: '' });
+});
+test('Hợp đồng form: Create_Google_Forms.js biên dịch được (không lỗi cú pháp, không ký tự NUL)', () => {
+  assert.ok(!FORMS_SOURCE.includes(String.fromCharCode(0)));
+  assert.doesNotThrow(() => new vm.Script(FORMS_SOURCE));
+  assert.ok(!SOURCE.includes(String.fromCharCode(0)), 'Google_Apps_Script.js không được chứa ký tự NUL');
+});
+test('Hợp đồng form: addPurposeQuestions là hàm có sẵn, chạy lại an toàn (bỏ qua form đã có câu Phục vụ hoạt động)', () => {
+  assert.match(FORMS_SOURCE, /function addPurposeQuestions\(\)/);
+  assert.match(FORMS_SOURCE, /PURPOSE_QUESTIONS\.SERVICE/);
+  assert.match(FORMS_SOURCE, /PageNavigationType\.SUBMIT/);
+});
+
 // ---------- Kết quả ----------
 let failed = 0;
 for (const [ok, name, err] of results) {

@@ -226,6 +226,68 @@ function createOnsiteFormOnly() {
 }
 
 /**
+ * Tên 4 câu hỏi "Phục vụ hoạt động" thêm vào form Mượn mang đi + Sử dụng tại chỗ (01/11/2026).
+ * Google_Apps_Script.js đọc câu trả lời theo ĐÚNG các tên này (readServiceFields_) — đổi tên thì sửa cả hai bên.
+ * Tránh chữ "mục đích", "mã qr", "họ và tên", "số giờ", "ngày mượn", "người sử dụng": các hàm đọc form cũ sẽ đọc nhầm.
+ */
+const PURPOSE_QUESTIONS = {
+  SERVICE: 'Phục vụ hoạt động',
+  COURSE: 'Mã học phần',
+  EXERCISE: 'Tên bài thực tập / thí nghiệm',
+  PROJECT: 'Mã đề tài (NCKH)'
+};
+
+/**
+ * Chạy MỘT LẦN (chạy lại an toàn): thêm câu "Phục vụ hoạt động" + các trang rẽ nhánh vào form Mượn mang đi và form
+ * Sử dụng tại chỗ ĐANG CHẠY. Không đổi các câu hiện có nên mã QR điền sẵn (entry.…) vẫn dùng được.
+ *   Đào tạo → trang "Mã học phần" + "Tên bài thực tập / thí nghiệm" (bắt buộc) → gửi
+ *   NCKH    → trang "Mã đề tài (NCKH)" (bắt buộc) → gửi
+ *   Khác    → gửi luôn
+ * Form tìm qua các tab Form Responses của Sheet (form nào có câu "Ngày dự kiến trả" là mượn, có câu
+ * "Số giờ sử dụng (dự kiến)" là tại chỗ); các form khác bỏ qua.
+ */
+function addPurposeQuestions() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const lines = [];
+  ss.getSheets().forEach(sheet => {
+    const url = sheet.getFormUrl();
+    if (!url) return;
+    const form = FormApp.openByUrl(url);
+    const titles = form.getItems().map(item => item.getTitle());
+    const kind = titles.some(t => t.indexOf('Ngày dự kiến trả') >= 0) ? 'Mượn mang đi'
+      : titles.some(t => t.indexOf('Số giờ sử dụng') >= 0) ? 'Sử dụng tại chỗ' : '';
+    if (!kind) { lines.push('— bỏ qua (không phải form mượn / tại chỗ): ' + form.getTitle()); return; }
+    if (titles.indexOf(PURPOSE_QUESTIONS.SERVICE) >= 0) { lines.push('— đã có câu hỏi, bỏ qua: ' + kind); return; }
+    addPurposeQuestionsToForm_(form);
+    lines.push('✓ đã thêm vào form ' + kind + ' — sửa: ' + form.getEditUrl());
+  });
+  Logger.log(lines.join('\n') || 'Không tìm thấy form nào gắn với Sheet.');
+}
+
+function addPurposeQuestionsToForm_(form) {
+  const service = form.addMultipleChoiceItem();
+  service.setTitle(PURPOSE_QUESTIONS.SERVICE).setRequired(true);
+
+  const training = form.addPageBreakItem().setTitle('Phục vụ Đào tạo');
+  form.addTextItem().setTitle(PURPOSE_QUESTIONS.COURSE).setRequired(true)
+    .setHelpText('Mã học phần theo chương trình đào tạo, ví dụ MHH3101. Mỗi lần khai MỘT mã học phần.');
+  form.addParagraphTextItem().setTitle(PURPOSE_QUESTIONS.EXERCISE).setRequired(true)
+    .setHelpText('Dùng làm minh chứng danh mục bài thực tập, thí nghiệm. Hai nhóm dùng riêng thì mỗi nhóm khai một lần.');
+  training.setGoToPage(FormApp.PageNavigationType.SUBMIT);
+
+  const research = form.addPageBreakItem().setTitle('Phục vụ Nghiên cứu khoa học');
+  form.addTextItem().setTitle(PURPOSE_QUESTIONS.PROJECT).setRequired(true)
+    .setHelpText('Mã đề tài, dự án có dùng thiết bị. Nhiều đề tài thì cách nhau bằng dấu phẩy.');
+  research.setGoToPage(FormApp.PageNavigationType.SUBMIT);
+
+  service.setChoices([
+    service.createChoice('Đào tạo', training),
+    service.createChoice('NCKH (nghiên cứu khoa học)', research),
+    service.createChoice('Khác', FormApp.PageNavigationType.SUBMIT)
+  ]);
+}
+
+/**
  * Form ngắn cho cán bộ dùng thiết bị NGAY TẠI PHÒNG: không phê duyệt, không quét trả.
  * Tên câu hỏi "Họ và tên người sử dụng" và "Số giờ sử dụng" là chữ ký nhận diện form
  * (FORM_SIGNATURES.onsite trong Google_Apps_Script.js) — đổi tên thì sửa cả hai bên.
