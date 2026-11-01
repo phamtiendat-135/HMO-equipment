@@ -36,6 +36,6 @@
 **Cập nhật ~11:30:** anh Đạt xác nhận menu "Dựng lại mẫu phiếu mượn" chạy ổn (mẫu mới đã dựng). Chạy test 136/136 → `clasp create-version` → **version 20** (lần đầu lỗi mạng ENOTFOUND, thử lại được; mô tả version gõ sai chính tả "quoc hiem", không ảnh hưởng) → `clasp update-deployment … -V 20` → `clasp list-deployments` xác nhận `@20`. Smoke test Web App: `?action=history&id=HMO-OBS-8688` trả `{"ok":true,…,"history":[]}`. Chưa so sánh code trên Google với repo bằng `clasp pull`.
 
 **Còn lại / chưa xác nhận:**
-- Chưa commit, chưa push GitHub (3 file đổi: `Google_Apps_Script.js`, `tests/backend_regression.cjs`, `CLAUDE.md` + file summary này).
+- ✅ Đã commit `791acd0` và push lên `origin/main` (Google_Apps_Script.js, tests/backend_regression.cjs, CLAUDE.md, summary).
 - Chưa in thử PDF phiếu mới (menu "Tạo lại phiếu mượn" trên dòng mượn thử) để xem vừa 1 trang, chữ không xuống dòng xấu.
 - Từ 28/10: mượn thử 1 TB ≥ 100 tr; thiết kế Đào tạo/NCKH.
