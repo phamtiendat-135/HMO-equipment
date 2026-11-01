@@ -98,6 +98,10 @@ QR Label on device
 | `onFormSubmitMaintenance(e)` / `onFormSubmitDamage(e)` | qua dispatcher | Ghi `Log_Bao_Tri` / `Log_Bao_Hong`, báo admin |
 | `createLoanSlipTemplate()` | Manual (menu, 1 lần) | Dựng Google Doc mẫu phiếu mượn (14 dấu `{{...}}`), lưu `LOAN_SLIP_TEMPLATE_ID`; có mẫu rồi thì không tạo lại. **Chưa chạy = tính năng phiếu ngủ** |
 | `issueLoanSlip_(d)` / `createLoanSlip_(d)` | qua `notifyLoanRequest_` (< 100 tr) và `applyApprovalDecision_` (≥ 100 tr, sau khi duyệt) | Sao chép mẫu → điền → PDF + Word → ghi link cột W. **Không bao giờ ném lỗi**: lỗi → email PTK "Không tạo được phiếu mượn", giao dịch/email xác nhận vẫn đi |
+| `readServiceFields_(find)` / `normalizeCourseCode_` | qua `readBorrowRequest_` / `readOnsiteRequest_` | Đọc 4 câu "Phục vụ hoạt động" → Log cột X–Z (Phục vụ · Mã học phần/đề tài · Tên bài thực tập). Thiếu mã KHÔNG từ chối lượt |
+| `ensureCourseCatalogSheet()` / `readCourseCatalog_` | Manual (menu "📚 Tạo sheet Danh mục học phần") | Sheet `Danh_Muc_Hoc_Phan` (Mã HP · Tên · Số TC · Giờ LT · **Giờ thực hành** · Ghi chú); trùng mã → giờ lớn nhất; trống = chưa có (không phải 0) |
+| `loanOverlapHours_` / `collectPurposeUsage_` / `buildTrainingReport_` / `buildResearchReport_` | qua báo cáo | Hàm thuần: giờ lượt trong kỳ (dùng chung với báo cáo năm), gom theo (thiết bị, học phần) / (thiết bị, đề tài) |
+| `generatePurposeReports(year)` / `writePurposeReports_` | Manual (menu "📚 Tạo báo cáo Đào tạo / NCKH năm nay") + cuối `generateAnnualUsageReport` | Ghi đè `Bao_Cao_Dao_Tao_YYYY`, `Bao_Cao_NCKH_YYYY` (không gửi email) |
 | `rebuildLoanSlipTemplate()` / `rebuildLoanSlipTemplate_()` | Manual (menu "🎨 Dựng lại mẫu phiếu mượn", có hỏi xác nhận) | Dựng lại nội dung + định dạng (A4, lề NĐ 30, quốc hiệu không viền, bảng viền mảnh, 2 ô ký) trong CHÍNH Google Doc mẫu đang có (giữ ID). **Xóa mọi chỉnh sửa tay** trong mẫu; phiếu đã phát hành không đổi. Dùng sau khi sửa `buildSlipTemplateBody_` |
 | `sendSlipToManagers_(d, slip)` / `regenerateLoanSlip()` | tự động / menu | Email PDF+Word cho CB quản lý (trống → PTK) / tạo lại phiếu cho dòng đang chọn trong Log |
 | `resendPendingApprovals()` | Manual (menu) | Gửi lại email phê duyệt cho mọi yêu cầu còn chờ (link mới) |
@@ -288,6 +292,18 @@ Trước khi kết thúc MỌI phiên làm việc trong workspace này, tạo ho
 - Menu **"🎨 Dựng lại mẫu phiếu mượn (định dạng chuẩn)"** (`rebuildLoanSlipTemplate`): dựng lại đúng Google Doc mẫu đang có (giữ ID), **xóa mọi chỉnh sửa tay** trong mẫu; phiếu đã phát hành không đổi. Phiếu cũ muốn đẹp phải "Tạo lại phiếu mượn (dòng đang chọn)".
 - ⚠️ Bài học Docs API: không giả định vị trí phần tử sau `body.clear()` (`getChild(1).asParagraph()` trả null → lỗi `setAlignment`); dùng `append*`, kiểm `getType()` trước `asX()`. Mock Docs trong `tests/backend_regression.cjs` chỉ ghi lại lời gọi → KHÔNG thay được lần chạy thật trên Google Docs.
 - ✅ Đã deploy **version 20** (01/11, xác minh `@20`, smoke test API OK), test backend 136/136.
+
+## Changes Log (Session 01/11/2026 — Khai báo Đào tạo / NCKH, Log v5)
+
+- Spec: `docs/superpowers/specs/2026-11-01-dao-tao-nckh-design.md`; kế hoạch: `docs/superpowers/plans/2026-11-01-dao-tao-nckh.md`.
+- Form mượn mang đi + form tại chỗ có thêm câu **"Phục vụ hoạt động"** (Đào tạo / NCKH / Khác) rẽ nhánh: Đào tạo → "Mã học phần" + "Tên bài thực tập / thí nghiệm"; NCKH → "Mã đề tài (NCKH)". Thêm vào form ĐANG CHẠY bằng `addPurposeQuestions()` (`Create_Google_Forms.js`, chạy tay 1 lần, chạy lại an toàn). 4 tên câu hỏi nằm ở `PURPOSE_QUESTIONS` và phải khớp `readServiceFields_`.
+- `Log_Muon_Tra` cấu trúc **v5**: cột X "Phục vụ", Y "Mã học phần / đề tài", Z "Tên bài thực tập" (`LOG_COL.SERVICE/SERVICE_REF/EXERCISE`, `LOG_WIDTH` = 26).
+- Quy tắc báo cáo (anh Đạt chốt): **Đào tạo** = giờ tín chỉ thực hành theo đề cương (tra `Danh_Muc_Hoc_Phan`, KHÔNG cộng dồn, thiết bị nào cũng ghi đủ giờ của học phần, nhiều mức → lấy cao nhất) + giờ chạy máy (cộng dồn các buổi, cùng cách tính giờ với báo cáo năm) + danh mục bài thực tập; **NCKH** = chỉ đề tài, không tính giờ.
+- Thiếu mã học phần/đề tài → vẫn ghi lượt, báo cáo liệt kê riêng; học phần chưa có trong danh mục → "Chưa có trong danh mục".
+- Trang tra cứu: bỏ hai ô giữ chỗ Đào tạo/NCKH (`index.html` + `QR_Landing_Page.html`), `sw.js` v14.
+- Test: `node tests/backend_regression.cjs` **173**, `node tests/frontend_regression.cjs <thư-mục>/node_modules/jsdom` **28** (jsdom cài ngoài repo: `npm i jsdom --prefix <thư mục tạm>`).
+- ⚠️ Bài học khi sinh code bằng script qua shell: dấu `\` có thể bị nuốt (đã gây ký tự NUL thật và xuống dòng trong chuỗi JS) → test biên dịch `Create_Google_Forms.js` + kiểm không có NUL nằm trong bộ test.
+- **Việc còn lại:** nạp chương trình đào tạo vào `Danh_Muc_Hoc_Phan` (anh Đạt gửi file sau); triển khai (mục 8 của kế hoạch) và kiểm tra form thật chưa làm tại thời điểm viết.
 
 ## Deploy Apps Script (clasp)
 

@@ -206,6 +206,21 @@ Email gửi người mượn xưng "thầy/cô", có logo Khoa, kèm bản chữ
 
 ---
 
+### QT-02D: KHAI PHỤC VỤ ĐÀO TẠO / NCKH KHI MƯỢN HOẶC DÙNG THIẾT BỊ
+
+**Áp dụng:** mọi lần mượn mang đi (QT-02A) hoặc sử dụng tại chỗ (QT-02B), để cuối năm Khoa lập báo cáo hiệu quả sử dụng thiết bị.
+
+| Bước | Thao tác | Người thực hiện |
+|---|---|---|
+| 1 | Cuối form mượn / tại chỗ, chọn **Phục vụ hoạt động**: **Đào tạo**, **NCKH** hoặc **Khác** | Người mượn / sử dụng |
+| 2 | **Đào tạo:** điền **một mã học phần** (ví dụ MHH3101) và **tên bài thực tập / thí nghiệm**. Hai nhóm sinh viên dùng riêng thì mỗi nhóm khai một lần | Người mượn / sử dụng |
+| 3 | **NCKH:** điền **mã đề tài** (nhiều đề tài thì cách nhau bằng dấu phẩy). Không cần khai giờ cho mục đích này | Người mượn / sử dụng |
+| 4 | Hệ thống ghi vào nhật ký; **giờ chạy máy** lấy từ chính giờ mượn / giờ dùng đã khai, **giờ tín chỉ** tra từ chương trình đào tạo do Khoa nạp. Cán bộ không phải khai giờ tín chỉ | Hệ thống |
+
+Thiếu mã học phần hoặc mã đề tài **không** làm lượt mượn bị từ chối, nhưng báo cáo cuối năm sẽ liệt kê riêng để cán bộ bổ sung. Báo cáo: mục 9.4 của `HUONG_DAN_TRIEN_KHAI.md`.
+
+---
+
 ### QT-03: BẢO TRÌ VÀ HIỆU CHUẨN
 
 **Chu kỳ khuyến nghị:**
@@ -337,5 +352,6 @@ Theo `HMO_Master_Equipment_Database.xlsx`: **mọi thiết bị đang hoạt đ�
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
 | 1.0 | 28/04/2026 | Ban hành lần đầu |
+| 2.0 (dự thảo) | 01/11/2026 | Thêm khai báo Phục vụ hoạt động (Đào tạo / NCKH) khi mượn hoặc dùng thiết bị (QT-02D); báo cáo Đào tạo / NCKH cuối năm |
 | 2.0 (dự thảo) | 27/10/2026 | Thêm phiếu mượn thiết bị (mượn mang đi): tự điền từ form, người mượn và CB quản lý nhận, hai bên ký khi bàn giao |
 | 2.0 (dự thảo) | 19/10/2026 | Tách mượn mang đi / sử dụng tại chỗ; hệ thống tự kiểm tra và từ chối; PTK duyệt qua email; TB < 100 tr tự ghi nhận; kiểm tra khi nhận lại và xử lý sự cố; bảng nhắc việc và email tự động; báo cáo hiệu quả sử dụng năm; Nhật ký toàn Khoa; bảo trì nhắc cả CB quản lý; cập nhật kiểm kê (làm tay), hạ tầng, phụ lục C |

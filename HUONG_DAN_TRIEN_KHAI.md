@@ -50,6 +50,8 @@ Tem QR trên thiết bị ──► Trang tra cứu (GitHub Pages, cài được
 | `Log_Muon_Tra` | Mọi khoản mượn mang đi, sử dụng tại chỗ, trả | **Hệ thống ghi**; chỉ sửa tay khi xử lý sự cố (mục 9) |
 | `Log_Bao_Tri` | Bản ghi bảo trì / hiệu chuẩn | Hệ thống ghi |
 | `Log_Bao_Hong` | Báo hỏng (từ form) + sự cố phát hiện khi kiểm tra nhận lại | Hệ thống ghi; PTK cập nhật cột "Trạng thái xử lý" |
+| `Danh_Muc_Hoc_Phan` | Chương trình đào tạo: mã học phần, số tín chỉ, giờ lý thuyết / **giờ thực hành** (báo cáo Đào tạo dùng cột này) | PTK / người vận hành nạp từ CTĐT; tạo bằng menu "📚 Tạo sheet Danh mục học phần" |
+| `Bao_Cao_Dao_Tao_YYYY`, `Bao_Cao_NCKH_YYYY` | Báo cáo Đào tạo (giờ tín chỉ + giờ chạy máy + bài thực tập) và NCKH (đề tài) theo thiết bị | **Hệ thống ghi** (ghi đè mỗi lần chạy), mục 9.4 |
 | `Can_Bo_QL`, `Thong_Ke` | Danh sách cán bộ, thống kê | Tham khảo |
 | `Form Responses …` (5 tab) | Dữ liệu thô từ 5 form | **Không xoá, không sửa** (được đổi tên tab) |
 
@@ -68,7 +70,7 @@ Tem QR trên thiết bị ──► Trang tra cứu (GitHub Pages, cài được
 
 Sửa Master_Data có hiệu lực **ngay**, không cần deploy.
 
-### 2.3 Log_Muon_Tra — cấu trúc A–W
+### 2.3 Log_Muon_Tra — cấu trúc A–Z
 
 | Cột | Ý nghĩa | Cột | Ý nghĩa |
 |---|---|---|---|
@@ -83,8 +85,11 @@ Sửa Master_Data có hiệu lực **ngay**, không cần deploy.
 | I | Ngày trả (khai trả / tại chỗ: giờ kết thúc) | T, U | Nguồn phản hồi mượn / trả (chống ghi trùng) |
 | J, K | Tình trạng khi mượn / khi trả | V | **Kiểm tra nhận lại** (⏳ Chờ kiểm tra · ✅ Hoạt động tốt · ⚠️ Có sự cố · 🔧 Đã khắc phục) |
 | | | W | **Phiếu mượn** (link Google Doc của phiếu mượn mang đi, hệ thống tự ghi; trống nếu chưa có phiếu) |
+| | | X | **Phục vụ** (Đào tạo / NCKH / Khác; trống = lượt cũ hoặc form chưa có câu hỏi) |
+| | | Y | **Mã học phần / đề tài** (Đào tạo: một mã học phần, viết hoa, không khoảng trắng; NCKH: một hoặc nhiều mã đề tài) |
+| | | Z | **Tên bài thực tập** (chỉ Đào tạo; làm minh chứng danh mục bài thực tập) |
 
-Các cột S–W do hệ thống tự thêm (cấu trúc phiên bản 4, cờ `LOG_SCHEMA_VERSION` trong Script Properties). **Không xoá cột, không chèn cột giữa A–W.**
+Các cột S–Z do hệ thống tự thêm (cấu trúc phiên bản 5, cờ `LOG_SCHEMA_VERSION` trong Script Properties). **Không xoá cột, không chèn cột giữa A–Z.**
 
 ---
 
@@ -102,6 +107,7 @@ Các cột S–W do hệ thống tự thêm (cấu trúc phiên bản 4, cờ `L
 - Form tạo bằng script trong tài khoản trường mặc định **chỉ cho người @hus.edu.vn**. Tạo xong phải vào **Cài đặt → Câu trả lời**: tắt giới hạn tổ chức, chọn thu email "Do người trả lời nhập" (form tại chỗ đã mở ngày 21/10/2026).
 - Cả 5 form gửi phản hồi về **Sheet master**; trigger `onFormSubmitDispatch` bắt chung.
 - Tạo form mới bằng script `Create_Google_Forms.js` (dán vào **một dự án Apps Script riêng**). Ví dụ `createOnsiteFormOnly()` chỉ tạo form tại chỗ. **Không chạy `createAllForms()`**: hàm này tạo lại cả 4 form cũ thành bản trùng.
+- **Phục vụ hoạt động (từ 01/11/2026):** form 1 (mượn mang đi) và form 2 (tại chỗ) có thêm câu bắt buộc "Phục vụ hoạt động" (Đào tạo / NCKH / Khác), rẽ nhánh: Đào tạo → "Mã học phần" + "Tên bài thực tập / thí nghiệm" (bắt buộc); NCKH → "Mã đề tài (NCKH)" (bắt buộc); Khác → gửi luôn. Thêm vào form đang chạy bằng hàm `addPurposeQuestions()` trong `Create_Google_Forms.js` (chạy tay một lần, chạy lại an toàn, không đổi mã QR điền sẵn). Hệ thống đọc theo **đúng 4 tên câu hỏi** này (`PURPOSE_QUESTIONS`, `readServiceFields_`) — đổi tên thì sửa cả hai bên. Thiếu mã học phần / mã đề tài vẫn ghi lượt, báo cáo sẽ liệt kê riêng.
 - Nên sửa lời cảm ơn của form 3 thành: "Đã ghi nhận khai trả — cán bộ quản lý sẽ kiểm tra thiết bị."
 
 ---
@@ -200,7 +206,7 @@ Có thể chỉnh trong `CONFIG` (đầu `Google_Apps_Script.js`, sửa xong ph�
 
 ### 8.1 Test tự động (chạy trước mỗi lần deploy)
 ```powershell
-node tests/backend_regression.cjs                                  # Apps Script (90 test)
+node tests/backend_regression.cjs                                  # Apps Script (173 test)
 node tests/frontend_regression.cjs <thư-mục>/node_modules/jsdom    # trang tra cứu (28 test)
 ```
 Cài jsdom một lần, **ngoài repo**: `npm i jsdom@24.1.3` trong một thư mục tạm.
@@ -240,7 +246,10 @@ Cài jsdom một lần, **ngoài repo**: `npm i jsdom@24.1.3` trong một thư m
 | 🔑 Tạo mã truy cập Nhật ký mới | Đổi mã khi cần (mã cũ hết hiệu lực) |
 | 📘 / 📧 Tạo cột Link hướng dẫn / Email CB quản lý | Một lần |
 | 🔍 Gửi lại email kiểm tra đang chờ | Sau khi điền email CB, hoặc CB báo không thấy email |
+| 📚 Tạo sheet Danh mục học phần | Một lần: tạo sheet `Danh_Muc_Hoc_Phan` có tiêu đề; có rồi thì giữ nguyên dữ liệu |
+| 📚 Tạo báo cáo Đào tạo / NCKH năm nay | Tạo riêng hai sheet báo cáo (không gửi email), mục 9.4. Cũng tự chạy cùng báo cáo năm 1/1 |
 | 📄 Tạo mẫu phiếu mượn (chạy 1 lần) | Mục 7 bước 4; chạy lại không tạo mẫu mới |
+| 🎨 Dựng lại mẫu phiếu mượn (định dạng chuẩn) | Dựng lại Google Doc mẫu theo định dạng chuẩn; **xóa chỉnh sửa tay** trong mẫu (có hỏi xác nhận) |
 | 📄 Tạo lại phiếu mượn (dòng đang chọn) | Chọn một dòng trong Log_Muon_Tra rồi bấm: tạo phiếu mới, đổi link cột W, gửi email cho CB quản lý (người mượn không nhận lại). Chỉ dòng mượn mang đi đã được chấp nhận |
 
 ### 9.3 Xử lý sự cố thường gặp
@@ -258,6 +267,17 @@ Cài jsdom một lần, **ngoài repo**: `npm i jsdom@24.1.3` trong một thư m
 | Thiết bị hỏng hẳn | Đổi cột tình trạng trong Master_Data thành "Hỏng" → hệ thống tự chặn mượn |
 | PTK nhận "⚠️ Không tạo được phiếu mượn …" | Đọc nguyên nhân trong email (hết quota Drive, mẫu bị xóa, chưa cấp quyền…). Sửa xong → chọn dòng giao dịch → menu **Tạo lại phiếu mượn** |
 | Mẫu phiếu bị xóa nhầm | Xóa dòng `LOAN_SLIP_TEMPLATE_ID` trong Script Properties rồi chạy menu **Tạo mẫu phiếu mượn** |
+
+### 9.4 Báo cáo Đào tạo / NCKH
+
+Form báo cáo cuối năm của Khoa đòi: **Đào tạo** — mỗi thiết bị, các học phần có dùng, kèm *giờ tín chỉ thực hành theo đề cương* và *giờ chạy máy thực tế*, có minh chứng danh mục bài thực tập; **NCKH** — chỉ tính theo đề tài, không tính giờ.
+
+- **Nguồn dữ liệu:** cột X–Z của `Log_Muon_Tra` (cán bộ khai trên form mượn / tại chỗ) và sheet `Danh_Muc_Hoc_Phan`.
+- **Chạy:** tự động cùng báo cáo năm (ngày 1/1, cho năm trước), hoặc menu "📚 Tạo báo cáo Đào tạo / NCKH năm nay". Mỗi lần chạy **ghi đè** `Bao_Cao_Dao_Tao_YYYY`, `Bao_Cao_NCKH_YYYY`.
+- **Giờ chạy máy** = giờ của các lượt hợp lệ nằm trong năm (tính như báo cáo năm: tại chỗ = số giờ khai báo; mượn mang đi = từ lúc mượn đến lúc trả), **cộng dồn** các buổi cùng thiết bị và cùng học phần. Bỏ lượt chờ duyệt và bị từ chối. Hai nhóm dùng riêng (8 giờ + 8 giờ) → 16 giờ.
+- **Giờ tín chỉ thực hành** lấy từ cột "Giờ thực hành" của `Danh_Muc_Hoc_Phan`, **không cộng dồn** theo buổi; học phần dùng nhiều thiết bị thì **mỗi thiết bị ghi đủ**; mã có nhiều dòng (khác khóa / ngành) → lấy **mức cao nhất**. Học phần chưa có trong danh mục (hoặc giờ thực hành trống) → ô ghi "Chưa có trong danh mục" (tô màu), không để 0.
+- **Cuối mỗi sheet** có phần liệt kê lượt **thiếu mã học phần / mã đề tài** để cán bộ khai bổ sung (sửa trực tiếp cột Y của Log rồi chạy lại báo cáo).
+- **Nạp chương trình đào tạo:** dán các cột Mã học phần | Tên học phần | Số tín chỉ | Giờ lý thuyết | Giờ thực hành | Ghi chú vào `Danh_Muc_Hoc_Phan`; mã được so khớp không phân biệt hoa thường và khoảng trắng.
 
 ---
 
