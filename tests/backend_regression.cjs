@@ -1721,6 +1721,73 @@ test('Log v5: sheet cấu trúc v4 (23 cột) → tự nâng, thêm header X–Z
   assert.equal(h.props.LOG_SCHEMA_VERSION, '5');
 });
 
+// ====================== Đào tạo / NCKH: đọc và ghi câu trả lời ======================
+const LAB = 'HMO-LAB-0002';
+const dichVuFields = (over = {}) => Object.assign({
+  'Phục vụ hoạt động': 'Đào tạo', 'Mã học phần': 'mhh 3101', 'Tên bài thực tập / thí nghiệm': 'Bài 1: Máng sóng',
+  'Mã đề tài (NCKH)': ''
+}, over);
+const ghiTaiCho = (h, over = {}, service = {}) => {
+  h.ctx.onFormSubmitDispatch(formEvent(Object.assign(onsiteFields({ 'Mã QR thiết bị': LAB }), dichVuFields(service), over), 'Form Responses 5'));
+  return lastRow(h);
+};
+const ghiMuon = (h, service = {}) => {
+  h.ctx.onFormSubmitDispatch(formEvent(Object.assign(borrowFields({ 'Mã QR thiết bị': LAB }), dichVuFields(service))));
+  return lastRow(h);
+};
+const dich = row => [row[23], row[24], row[25]];
+test('Dịch vụ: tại chỗ Đào tạo "mhh 3101" → X = Đào tạo, Y = MHH3101, Z = tên bài', () => {
+  const h = harness();
+  assert.deepEqual(dich(ghiTaiCho(h)), ['Đào tạo', 'MHH3101', 'Bài 1: Máng sóng']);
+});
+test('Dịch vụ: mượn mang đi NCKH nhiều mã → X = NCKH, Y = đúng như đã nhập, Z rỗng', () => {
+  const h = harness();
+  const row = ghiMuon(h, { 'Phục vụ hoạt động': 'NCKH', 'Mã học phần': '', 'Tên bài thực tập / thí nghiệm': '',
+    'Mã đề tài (NCKH)': ' QG.25.01, NAFOSTED-101 ' });
+  assert.deepEqual(dich(row), ['NCKH', 'QG.25.01, NAFOSTED-101', '']);
+});
+test('Dịch vụ: chọn Khác → X = Khác, Y và Z rỗng dù trường còn dữ liệu cũ', () => {
+  const h = harness();
+  assert.deepEqual(dich(ghiTaiCho(h, {}, { 'Phục vụ hoạt động': 'Khác' })), ['Khác', '', '']);
+});
+test('Dịch vụ: Đào tạo nhưng thiếu mã học phần → VẪN ghi lượt, không từ chối', () => {
+  const h = harness();
+  const row = ghiTaiCho(h, {}, { 'Mã học phần': '' });
+  assert.deepEqual(dich(row), ['Đào tạo', '', 'Bài 1: Máng sóng']);
+  assert.ok(!String(row[12]).startsWith(run(h, 'AUTO_REJECT_PREFIX')), 'không được tự từ chối');
+  assert.ok(row[8] instanceof Date, 'tại chỗ vẫn tự đóng theo số giờ khai báo');
+});
+test('Dịch vụ: form cũ chưa có câu mới → X–Z rỗng, vẫn ghi bình thường', () => {
+  const h = harness();
+  h.ctx.onFormSubmitDispatch(formEvent(onsiteFields({ 'Mã QR thiết bị': LAB }), 'Form Responses 5'));
+  assert.deepEqual(dich(lastRow(h)), ['', '', '']);
+  assert.equal(lastRow(h)[0], LAB);
+});
+test('Dịch vụ: bộ câu hỏi mới không đổi kết quả đọc các trường cũ', () => {
+  const h = harness();
+  const nv = fields => Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, [v]]));
+  const strip = o => { const c = JSON.parse(JSON.stringify(o)); ['service', 'serviceRef', 'exercise'].forEach(k => delete c[k]); return c; };
+  const borrow = borrowFields(), onsite = onsiteFields();
+  assert.deepEqual(strip(h.ctx.readBorrowRequest_(nv(Object.assign({}, borrow, dichVuFields())), null)),
+    strip(h.ctx.readBorrowRequest_(nv(borrow), null)));
+  assert.deepEqual(strip(h.ctx.readOnsiteRequest_(nv(Object.assign({}, onsite, dichVuFields())))),
+    strip(h.ctx.readOnsiteRequest_(nv(onsite))));
+});
+test('Dịch vụ: bộ câu hỏi mới không làm classifyFormEvent_ nhận nhầm loại form', () => {
+  const h = harness();
+  const nv = fields => Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, [v]]));
+  assert.equal(h.ctx.classifyFormEvent_(nv(Object.assign(borrowFields(), dichVuFields()))), 'borrow');
+  assert.equal(h.ctx.classifyFormEvent_(nv(Object.assign(onsiteFields(), dichVuFields()))), 'onsite');
+});
+test('Dịch vụ: tên bài bắt đầu bằng "=" được ghi dạng chữ (chống chèn công thức)', () => {
+  const h = harness();
+  assert.equal(ghiTaiCho(h, {}, { 'Tên bài thực tập / thí nghiệm': '=1+1' })[25], "'=1+1");
+});
+test('Dịch vụ: chọn "Nghiên cứu khoa học" hoặc "nckh" viết thường vẫn nhận là NCKH', () => {
+  const h = harness();
+  assert.equal(ghiMuon(h, { 'Phục vụ hoạt động': 'Nghiên cứu khoa học (NCKH)', 'Mã đề tài (NCKH)': 'X1' })[23], 'NCKH');
+});
+
 // ---------- Kết quả ----------
 let failed = 0;
 for (const [ok, name, err] of results) {

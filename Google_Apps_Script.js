@@ -1268,6 +1268,35 @@ function onFormSubmitBorrow(e) {
   notifyLoanRequest_(loan);
 }
 
+/** Mục đích phục vụ của lượt mượn / dùng (form mượn và form tại chỗ, thêm 01/11/2026). */
+const SERVICE_TYPE = { TRAINING: 'Đào tạo', RESEARCH: 'NCKH', OTHER: 'Khác' };
+
+/** Mã học phần: viết hoa, bỏ mọi khoảng trắng ("mhh 3101" → "MHH3101"). */
+function normalizeCourseCode_(text) {
+  return String(text == null ? '' : text).replace(/\s+/g, '').toUpperCase();
+}
+
+function classifyService_(answer) {
+  const key = normalizeText_(answer);
+  if (!key) return '';
+  if (key.includes('dao tao')) return SERVICE_TYPE.TRAINING;
+  if (key.includes('nckh') || key.includes('nghien cuu')) return SERVICE_TYPE.RESEARCH;
+  return SERVICE_TYPE.OTHER;
+}
+
+/**
+ * Đọc 3 câu trả lời "Phục vụ hoạt động" từ find = namedValueFinder_(...). Form chưa có câu mới → toàn chuỗi rỗng.
+ * Thiếu mã học phần / mã đề tài KHÔNG phải lỗi: lượt dùng là thật, báo cáo sẽ gắn cờ thiếu mã.
+ */
+function readServiceFields_(find) {
+  const service = classifyService_(find(['phục vụ hoạt động']));
+  if (service === SERVICE_TYPE.TRAINING) {
+    return { service: service, serviceRef: normalizeCourseCode_(find(['mã học phần'])), exercise: find(['tên bài thực tập']) };
+  }
+  if (service === SERVICE_TYPE.RESEARCH) return { service: service, serviceRef: find(['mã đề tài']), exercise: '' };
+  return { service: service, serviceRef: '', exercise: '' };
+}
+
 function readBorrowRequest_(namedValues, cellValues) {
   const find = namedValueFinder_(namedValues);
   const findDate = formDateFinder_(namedValues, cellValues);
@@ -1285,7 +1314,8 @@ function readBorrowRequest_(namedValues, cellValues) {
     accessories: find(['phụ kiện']),
     note: find(['ghi chú', 'lưu ý']),
     email: find(['email', 'thư điện tử']),
-    phone: find(['điện thoại', 'phone'])
+    phone: find(['điện thoại', 'phone']),
+    ...readServiceFields_(find)
   };
 }
 
@@ -1319,7 +1349,8 @@ function readOnsiteRequest_(namedValues) {
     hours: validHours ? Math.round(hours * 10) / 10 : null,
     note: find(['ghi chú', 'lưu ý']),
     email: find(['email', 'thư điện tử']),
-    phone: find(['điện thoại', 'phone'])
+    phone: find(['điện thoại', 'phone']),
+    ...readServiceFields_(find)
   };
 }
 
@@ -1391,6 +1422,9 @@ function recordLoanRequest_(ss, req, sourceId) {
     row[LOG_COL.APPROVAL] = rejectReason ? AUTO_REJECT_PREFIX + rejectReason
       : (onsite ? ONSITE_TEXT : (needsApproval ? APPROVAL_PENDING_TEXT : ''));
     row[LOG_COL.NOTE] = asText_(req.note);
+    row[LOG_COL.SERVICE] = asText_(req.service);
+    row[LOG_COL.SERVICE_REF] = asText_(req.serviceRef);
+    row[LOG_COL.EXERCISE] = asText_(req.exercise);
     row[LOG_COL.OVERDUE] = overdueFormula_(loan.rowNum); // cột hệ thống — công thức có chủ đích
     row[LOG_COL.EMAIL] = asText_(req.email);
     row[LOG_COL.LOAN_ID] = loan.loanId;
