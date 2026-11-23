@@ -305,6 +305,11 @@ Trước khi kết thúc MỌI phiên làm việc trong workspace này, tạo ho
 - ⚠️ Bài học khi sinh code bằng script qua shell: dấu `\` có thể bị nuốt (đã gây ký tự NUL thật và xuống dòng trong chuỗi JS) → test biên dịch `Create_Google_Forms.js` + kiểm không có NUL nằm trong bộ test.
 - **Việc còn lại:** nạp chương trình đào tạo vào `Danh_Muc_Hoc_Phan` (anh Đạt gửi file sau); triển khai (mục 8 của kế hoạch) và kiểm tra form thật chưa làm tại thời điểm viết.
 
+## Changes Log (Session 23/11/2026 — Trả thiết bị nhiều chiếc, Apps Script v22)
+
+- Lỗi: một người mượn N chiếc cùng mã (N dòng) → `pickLoanToClose_` thấy N khoản khớp người trả → từ chối mọi lần khai trả ("CẦN XỬ LÝ TAY"), người mượn bị nhắc quá hạn mãi (thực tế: HMO-OBS-8688, 12/11).
+- Sửa: nhiều khoản cùng một người (email, rồi họ tên) → đóng khoản mượn sớm nhất; **mỗi lần khai trả = 1 chiếc**. Test 175/175. ✅ Deploy **version 22** (xác minh `@22`).
+
 ## Deploy Apps Script (clasp)
 
 Script là **container-bound** trong Sheet master. Cấu hình đã có sẵn trong repo: `.clasp.json`, `.claspignore`, `appsscript.json`.

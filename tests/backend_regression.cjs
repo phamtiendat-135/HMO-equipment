@@ -385,6 +385,28 @@ test('P1-04 A trả → đóng khoản của A (khớp email), B vẫn mở', ()
   assert.ok(h.log.rows[1][8] instanceof Date);
   assert.equal(h.log.rows[2][8], '');
 });
+test('P1-04 một người mượn 2 chiếc cùng mã → mỗi lần khai trả đóng 1 khoản (cũ nhất trước)', () => {
+  // Thực tế 12/11/2026: HMO-OBS-8688 (6 chiếc), 1 người mượn 2 chiếc = 2 dòng, khai trả 2 lần đều bị từ chối
+  const a1 = legacyLoan('Nguyễn Văn A', '✅ Đã phê duyệt', 'a@example.invalid');
+  const a2 = legacyLoan('Nguyễn Văn A', '✅ Đã phê duyệt', 'a@example.invalid');
+  const h = harness([a1, a2]);
+  h.ctx.onFormSubmitReturn(formEvent(returnFields(), 'Form Responses 2'));
+  assert.ok(h.log.rows[1][8] instanceof Date, 'lần 1 đóng khoản thứ nhất');
+  assert.equal(h.log.rows[2][8], '');
+  h.ctx.onFormSubmitReturn(formEvent(returnFields(), 'Form Responses 2'));
+  assert.ok(h.log.rows[2][8] instanceof Date, 'lần 2 đóng khoản thứ hai');
+  assert.ok(!h.mail.some(m => /CẦN XỬ LÝ TAY/.test(m[1])));
+  h.ctx.onFormSubmitReturn(formEvent(returnFields(), 'Form Responses 2'));
+  assert.ok(h.mail.some(m => /CẦN XỬ LÝ TAY/.test(m[1])), 'lần 3: không còn khoản mở → báo xử lý tay');
+});
+test('P1-04 một người mượn 2 chiếc, khai trả không có email → khớp theo họ tên, đóng 1 khoản', () => {
+  const h = harness([legacyLoan('Nguyễn Văn A', '✅ Đã phê duyệt', ''), legacyLoan('Nguyễn Văn A', '✅ Đã phê duyệt', ''),
+    legacyLoan('Trần Thị B', '✅ Đã phê duyệt', 'b@example.invalid')]);
+  h.ctx.onFormSubmitReturn(formEvent(returnFields({ 'Email Address': '' }), 'Form Responses 2'));
+  assert.ok(h.log.rows[1][8] instanceof Date);
+  assert.equal(h.log.rows[2][8], '');
+  assert.equal(h.log.rows[3][8], '', 'khoản của B không bị đụng');
+});
 test('P1-04 không xác định được khoản → KHÔNG đóng, báo xử lý tay', () => {
   const h = twoOnLoan();
   h.ctx.onFormSubmitReturn(formEvent(returnFields({ 'Họ và tên người trả': 'Người lạ', 'Email Address': 'x@example.invalid' }), 'Form Responses 2'));

@@ -1803,7 +1803,8 @@ function onFormSubmitDispatch(e) {
 /**
  * Xử lý form TRẢ. Chỉ đóng khoản mượn khi xác định được CHẮC CHẮN khoản nào:
  *   - 1 khoản đang mượn → đóng khoản đó (cảnh báo nếu người trả khác người mượn)
- *   - nhiều khoản → khớp theo email, rồi theo họ tên người mượn; không khớp duy nhất → KHÔNG đóng
+ *   - nhiều khoản → khớp theo email, rồi theo họ tên người mượn; cùng một người mượn nhiều chiếc →
+ *     đóng khoản mượn sớm nhất (mỗi lần khai trả = 1 chiếc); không khớp ai → KHÔNG đóng
  * Ngày trả trước ngày mượn hoặc ở tương lai → KHÔNG đóng. Mọi trường hợp đều báo PTK.
  */
 function onFormSubmitReturn(e) {
@@ -1867,10 +1868,14 @@ function pickLoanToClose_(data, req) {
       : 'Không có khoản mượn nào đang mở cho thiết bị này' };
   }
   const same = (a, b) => a && b && normalizeText_(a) === normalizeText_(b);
+  // Thiết bị nhiều chiếc: mỗi chiếc mượn là 1 dòng. Nhiều khoản cùng một người (khớp email, rồi họ tên)
+  // là các chiếc giống nhau → mỗi lần khai trả đóng 1 khoản, khoản mượn sớm nhất trước.
+  const oldest = list => list.slice().sort((x, y) =>
+    ((parseDate_(data[x][LOG_COL.BORROW_DATE]) || 0) - (parseDate_(data[y][LOG_COL.BORROW_DATE]) || 0)) || x - y)[0];
   const byEmail = onLoan.filter(i => same(data[i][LOG_COL.EMAIL], req.email));
-  if (byEmail.length === 1) return { index: byEmail[0] };
+  if (byEmail.length) return { index: oldest(byEmail) };
   const byName = onLoan.filter(i => same(data[i][LOG_COL.BORROWER], req.returner));
-  if (byName.length === 1) return { index: byName[0] };
+  if (byName.length) return { index: oldest(byName) };
   return { problem: `Có ${onLoan.length} khoản đang mượn thiết bị này; không xác định được khoản ` +
     'nào khớp với người trả (email/họ tên). Vui lòng đóng thủ công đúng dòng.' };
 }
