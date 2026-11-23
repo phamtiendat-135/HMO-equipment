@@ -286,13 +286,6 @@ function escapeHtml_(value) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
-/** "Phan Hoàng Nam" → "Phan H. N." — dùng cho dữ liệu công khai theo từng thiết bị. */
-function maskName_(name) {
-  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
-  if (!parts.length) return '';
-  return [parts[0]].concat(parts.slice(1).map(p => p.charAt(0).toUpperCase() + '.')).join(' ');
-}
-
 function startOfToday_() {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
@@ -4353,7 +4346,7 @@ function doGet(e) {
 }
 
 /**
- * Lịch sử của MỘT thiết bị — dữ liệu công khai: tên người mượn đã che bớt, KHÔNG trả địa điểm,
+ * Lịch sử của MỘT thiết bị — dữ liệu công khai: họ tên đầy đủ (anh Đạt chốt 23/11/2026), KHÔNG trả địa điểm,
  * email hay ghi chú. Bỏ qua yêu cầu bị từ chối. Trả null nếu không đọc được dữ liệu.
  */
 function getUsageHistory_(qrCode) {
@@ -4368,7 +4361,7 @@ function getUsageHistory_(qrCode) {
       if (status === LOAN_STATUS.REJECTED) continue;
       const hours = row[LOG_COL.HOURS];
       history.push({
-        borrower: maskName_(row[LOG_COL.BORROWER]) || 'Chưa ghi nhận',
+        borrower: String(row[LOG_COL.BORROWER] || '').trim() || 'Chưa ghi nhận',
         borrowDate: formatDateVN_(parseDate_(row[LOG_COL.BORROW_DATE])),
         returnDate: formatDateVN_(parseDate_(row[LOG_COL.RETURN_DATE])),
         usageHours: (hours === '' || hours == null) ? null : Number(hours),
@@ -4448,7 +4441,7 @@ function getAllBorrowStatuses_() {
 /**
  * Trạng thái mượn của một thiết bị cho landing page.
  *   { available: true,  borrowedCount: 0 }
- *   { available: false, borrowedCount: N, borrower (đã che), dueDate, daysOverdue, status }
+ *   { available: false, borrowedCount: N, borrower (họ tên đầy đủ), dueDate, daysOverdue, status }
  *     (status 'onsite' → dueDate là giờ kết thúc "HH:mm dd/MM")
  *   { available: null,  borrowedCount: 0 }   ← lỗi đọc dữ liệu (landing page ẩn badge)
  */
@@ -4467,7 +4460,7 @@ function checkBorrowStatus_(qrCode) {
     return {
       available: false,
       borrowedCount: open.length,
-      borrower: maskName_(latest[LOG_COL.BORROWER]),
+      borrower: String(latest[LOG_COL.BORROWER] || '').trim(),
       dueDate: status === LOAN_STATUS.ONSITE
         ? formatDateVN_(latest[LOG_COL.RETURN_DATE], 'HH:mm dd/MM') : formatDateVN_(due),
       daysOverdue: overdueDays,

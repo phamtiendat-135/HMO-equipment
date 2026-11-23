@@ -110,7 +110,7 @@ QR Label on device
 | `findBorrowSheets_()` | Helper | Tự động tìm sheet chứa dữ liệu mượn/trả (fuzzy column matching) |
 | `findColIndex_()` | Helper | Fuzzy matching tên cột (hỗ trợ cả tên Form và tên Log) |
 | `lookupEquipment(qrCode)` | API call | Returns equipment data by QR code |
-| `doGet(e)` | Web App endpoint | `?id=` (chỉ trường công khai), `history` (tên che, không địa điểm), `alllog` (cần mã), `allStatus`, `approve/reject` (chỉ hiện trang xác nhận) |
+| `doGet(e)` | Web App endpoint | `?id=` (chỉ trường công khai), `history` (họ tên đầy đủ từ v23, không địa điểm/email), `alllog` (cần mã), `allStatus`, `approve/reject` (chỉ hiện trang xác nhận) |
 | `onOpen()` | Sheet open | Menu "Quản lý TB" (gồm gửi lại email phê duyệt, tạo mã truy cập Nhật ký) |
 
 ## Approval Workflow
@@ -309,6 +309,8 @@ Trước khi kết thúc MỌI phiên làm việc trong workspace này, tạo ho
 
 - Lỗi: một người mượn N chiếc cùng mã (N dòng) → `pickLoanToClose_` thấy N khoản khớp người trả → từ chối mọi lần khai trả ("CẦN XỬ LÝ TAY"), người mượn bị nhắc quá hạn mãi (thực tế: HMO-OBS-8688, 12/11).
 - Sửa: nhiều khoản cùng một người (email, rồi họ tên) → đóng khoản mượn sớm nhất; **mỗi lần khai trả = 1 chiếc**. Test 175/175. ✅ Deploy **version 22** (xác minh `@22`).
+- Anh Đạt chốt: lịch sử từng thiết bị + badge "đang mượn" hiện **họ tên đầy đủ** (bỏ `maskName_`, quyết định riêng tư 29/09 được thay). Vẫn không trả email/địa điểm/ghi chú. ✅ Deploy **version 23** (xác minh `@23`).
+- Sổ giấy trang 2–3 (25 dòng, `so_giay/`, gitignored) đã dán vào `Log_Muon_Tra` sau trang 1; mã tạm `TAM-ALEC-AEM1HR` (máy ALEC chưa có trong Master_Data).
 
 ## Deploy Apps Script (clasp)
 

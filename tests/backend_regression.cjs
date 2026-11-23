@@ -451,14 +451,15 @@ test('API ?id= chỉ trả trường công khai, không có ghi chú nội bộ'
   assert.ok(!('Nguyên giá (tr.đ)' in out));
   assert.equal(out._borrowStatus.available, true);
 });
-test('Lịch sử từng thiết bị: tên đã che, không có địa điểm, bỏ khoản bị từ chối', () => {
-  const h = harness([legacyLoan('Phan Hoàng Nam', '✅ Đã phê duyệt'), legacyLoan('Lê Văn C', '❌ Từ chối — PTK')]);
+test('Lịch sử từng thiết bị: họ tên đầy đủ (23/11), không có địa điểm/email/ghi chú, bỏ khoản bị từ chối', () => {
+  const h = harness([legacyLoan('Phan Hoàng Nam', '✅ Đã phê duyệt', 'nam@example.invalid'), legacyLoan('Lê Văn C', '❌ Từ chối — PTK')]);
   const out = JSON.parse(h.ctx.doGet({ parameter: { action: 'history', id: QR } }).text);
   assert.equal(out.ok, true);
   assert.equal(out.history.length, 1);
-  assert.equal(out.history[0].borrower, 'Phan H. N.');
+  assert.equal(out.history[0].borrower, 'Phan Hoàng Nam');
   assert.ok(!('location' in out.history[0]));
-  assert.equal(h.ctx.checkBorrowStatus_(QR).borrower, 'Phan H. N.');
+  assert.ok(!/example\.invalid/.test(JSON.stringify(out)), 'không lộ email');
+  assert.equal(h.ctx.checkBorrowStatus_(QR).borrower, 'Phan Hoàng Nam');
 });
 test('Thiếu sheet log → báo LỖI, không báo "rảnh"/"không có lịch sử"', () => {
   const h = harness([], { noLog: true });
